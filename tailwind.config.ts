@@ -1,3 +1,4 @@
+
 import type { Config } from "tailwindcss";
 
 export default {
@@ -18,6 +19,9 @@ export default {
 			}
 		},
 		extend: {
+			fontFamily: {
+				heebo: ['Heebo', 'sans-serif'],
+			},
 			colors: {
 				border: 'hsl(var(--border))',
 				input: 'hsl(var(--input))',
@@ -61,7 +65,17 @@ export default {
 					'accent-foreground': 'hsl(var(--sidebar-accent-foreground))',
 					border: 'hsl(var(--sidebar-border))',
 					ring: 'hsl(var(--sidebar-ring))'
-				}
+				},
+				whiskey: {
+					DEFAULT: '#E67E22',
+					light: '#F39C12',
+					dark: '#D35400',
+				},
+				gray: {
+					DEFAULT: '#444444',
+					light: '#666666',
+					dark: '#222222',
+				},
 			},
 			borderRadius: {
 				lg: 'var(--radius)',
