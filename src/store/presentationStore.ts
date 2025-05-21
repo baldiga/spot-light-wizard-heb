@@ -2,23 +2,29 @@
 import { create } from 'zustand';
 import { PresentationFormData, PresentationOutline, Chapter } from '@/types/presentation';
 import { generateId } from '@/utils/helpers';
+import { generatePresentationOutline } from '@/services/openaiService';
 
 interface PresentationState {
   formData: PresentationFormData | null;
   outline: PresentationOutline | null;
   chapters: Chapter[];
+  isLoading: boolean;
+  error: string | null;
   setFormData: (data: PresentationFormData) => void;
   setOutline: (outline: PresentationOutline) => void;
   setChapters: (chapters: Chapter[]) => void;
   updateChapter: (chapterId: string, title: string) => void;
   updatePoint: (chapterId: string, pointId: string, content: string) => void;
-  generateDummyOutline: () => void;
+  generateOutlineFromAPI: () => Promise<void>;
+  generateDummyOutline: () => void; // Keeping for fallback
 }
 
-export const usePresentationStore = create<PresentationState>((set) => ({
+export const usePresentationStore = create<PresentationState>((set, get) => ({
   formData: null,
   outline: null,
   chapters: [],
+  isLoading: false,
+  error: null,
   
   setFormData: (data) => set({ formData: data }),
   setOutline: (outline) => set({ outline }),
@@ -42,6 +48,36 @@ export const usePresentationStore = create<PresentationState>((set) => ({
         : chapter
     )
   })),
+
+  generateOutlineFromAPI: async () => {
+    const { formData } = get();
+    
+    if (!formData) {
+      set({ error: "אין מידע זמין ליצירת מבנה הרצאה" });
+      return;
+    }
+    
+    set({ isLoading: true, error: null });
+    
+    try {
+      const outlineData = await generatePresentationOutline(formData);
+      
+      set({ 
+        outline: outlineData,
+        chapters: outlineData.chapters,
+        isLoading: false 
+      });
+    } catch (error) {
+      console.error("Failed to generate outline:", error);
+      set({ 
+        error: "אירעה שגיאה ביצירת מבנה ההרצאה. נסה שנית.", 
+        isLoading: false 
+      });
+      
+      // Fallback to dummy outline if API fails
+      get().generateDummyOutline();
+    }
+  },
 
   generateDummyOutline: () => {
     const dummyChapters: Chapter[] = [
@@ -106,7 +142,8 @@ export const usePresentationStore = create<PresentationState>((set) => ({
         },
         salesGuide: "פתח בהצגת האתגר, הדגם כיצד המוצר/שירות שלך פותר אותו, הצג עדויות והצלחות קודמות, הסבר את התהליך בפשטות, הדגש את הערך והתועלת, הצג אפשרויות שונות והצעה מיוחדת למשתתפי ההרצאה.",
         postPresentationPlan: "שליחת מייל תודה עם סיכום הנקודות המרכזיות והצעה לפגישת המשך, שליחת סקר משוב קצר לאיסוף תובנות, מעקב טלפוני אישי עם משתתפים מעוניינים, הצעת חבילת התנסות בשירות במחיר מיוחד"
-      }
+      },
+      error: null
     });
   }
 }));

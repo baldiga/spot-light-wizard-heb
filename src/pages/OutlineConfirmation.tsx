@@ -3,18 +3,18 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { usePresentationStore } from '@/store/presentationStore';
 import { useToast } from '@/hooks/use-toast';
 import SpotlightLogo from '@/components/SpotlightLogo';
 import ChapterEditor from '@/components/ChapterEditor';
+import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
+import { AlertTriangle, Loader2 } from 'lucide-react';
 
 const OutlineConfirmation = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { formData, chapters, generateDummyOutline } = usePresentationStore();
-  const [isLoading, setIsLoading] = useState(true);
+  const { formData, chapters, isLoading, error, generateOutlineFromAPI, generateDummyOutline } = usePresentationStore();
+  const [apiAttempted, setApiAttempted] = useState(false);
 
   useEffect(() => {
     if (!formData) {
@@ -27,17 +27,26 @@ const OutlineConfirmation = () => {
       return;
     }
 
-    // Simulate API call to generate the outline
-    const timeout = setTimeout(() => {
-      generateDummyOutline();
-      setIsLoading(false);
-    }, 2000);
+    const generateOutline = async () => {
+      setApiAttempted(true);
+      await generateOutlineFromAPI();
+    };
 
-    return () => clearTimeout(timeout);
-  }, [formData, navigate, toast, generateDummyOutline]);
+    if (!apiAttempted) {
+      generateOutline();
+    }
+  }, [formData, navigate, toast, generateOutlineFromAPI, apiAttempted]);
 
   const handleConfirm = () => {
     navigate('/presentation-summary');
+  };
+
+  const handleRetry = async () => {
+    await generateOutlineFromAPI();
+  };
+
+  const handleFallbackToDummy = () => {
+    generateDummyOutline();
   };
 
   if (isLoading) {
@@ -45,7 +54,11 @@ const OutlineConfirmation = () => {
       <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50">
         <SpotlightLogo className="w-16 h-16 mb-6" />
         <h2 className="text-2xl font-bold text-gray-800 mb-4">יוצרים את מבנה ההרצאה...</h2>
-        <div className="w-12 h-12 border-4 border-whiskey border-t-transparent rounded-full animate-spin"></div>
+        <p className="text-gray-600 mb-6">אנו מעבדים את המידע שהזנת כדי ליצור מבנה מותאם אישית</p>
+        <div className="flex items-center gap-2">
+          <Loader2 className="h-8 w-8 animate-spin text-whiskey" />
+          <span className="text-whiskey font-medium">אנא המתן...</span>
+        </div>
       </div>
     );
   }
@@ -57,6 +70,22 @@ const OutlineConfirmation = () => {
           <SpotlightLogo className="w-12 h-12 mr-3" />
           <h1 className="text-3xl font-bold text-gray-dark">אישור מבנה ההרצאה</h1>
         </div>
+
+        {error && (
+          <Alert variant="destructive" className="mb-6">
+            <AlertTriangle className="h-4 w-4" />
+            <AlertTitle>שגיאה ביצירת מבנה ההרצאה</AlertTitle>
+            <AlertDescription>{error}</AlertDescription>
+            <div className="mt-4 flex gap-4">
+              <Button variant="outline" onClick={handleRetry}>
+                נסה שנית
+              </Button>
+              <Button variant="default" onClick={handleFallbackToDummy}>
+                השתמש במבנה לדוגמה
+              </Button>
+            </div>
+          </Alert>
+        )}
 
         <div className="mb-6 bg-white p-6 rounded-lg shadow border border-gray-200">
           <h2 className="text-xl font-semibold text-gray-800 mb-4">אנחנו יצרנו עבורך מבנה הרצאה. אנא בדוק ועדכן במידת הצורך:</h2>
