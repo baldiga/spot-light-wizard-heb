@@ -225,12 +225,12 @@ const PresentationSummary = () => {
           </TabsContent>
 
           <TabsContent value="sales" className="bg-white p-6 rounded-lg shadow border border-gray-200">
-            <div className="mb-8">
+            <div className="mb-8 text-right">
               <h2 className="text-2xl font-bold text-gray-800 mb-4">מהלך המכירה בהרצאה</h2>
               <div className="space-y-6">
                 {salesStepsContent.map((step, idx) => (
-                  <div key={idx} className="bg-gray-50 p-4 rounded-lg border border-gray-100">
-                    <div className="flex items-center mb-2">
+                  <div key={idx} className="bg-gray-50 p-4 rounded-lg border border-gray-100 text-right">
+                    <div className="flex items-center mb-2 justify-start">
                       <div className="min-w-8 h-8 rounded-full bg-whiskey text-white flex items-center justify-center ml-3 text-lg font-bold">
                         {idx + 1}
                       </div>
@@ -244,10 +244,10 @@ const PresentationSummary = () => {
 
             <Separator className="my-6" />
 
-            <div>
+            <div className="text-right">
               <h2 className="text-2xl font-bold text-gray-800 mb-4">תכנית פעולה לאחר ההרצאה</h2>
               <div className="bg-gray-50 p-4 rounded-lg border border-gray-100">
-                <p className="text-gray-600 leading-relaxed">{outline.postPresentationPlan}</p>
+                <p className="text-gray-600 leading-relaxed text-right">{outline.postPresentationPlan}</p>
               </div>
             </div>
           </TabsContent>
