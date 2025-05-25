@@ -1,4 +1,3 @@
-
 import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -59,41 +58,149 @@ const PresentationSummary = () => {
 
   const generateSlideshow = () => {
     const slides = [
-      { number: 1, headline: "שקף פתיחה", content: "כותרת ההרצאה, שם המרצה ותפקידו", visual: "לוגו או תמונה רלוונטית" },
-      { number: 2, headline: "הצגה עצמית", content: "רקע המרצה, הישגים והתמחות", visual: "תמונה אישית או הישגים" },
-      { number: 3, headline: "מבנה ההרצאה", content: "סקירת הנושאים שיוצגו", visual: "תוכן עניינים ויזואלי" },
-      { number: 4, headline: "פתיחה מעוררת עניין", content: "סיפור, עובדה מפתיעה או שאלה רטורית", visual: "גרף או תמונה תומכת" },
+      { 
+        number: 1, 
+        headline: "שקף פתיחה", 
+        content: `כותרת ההרצאה: "${formData.idea.substring(0, 50)}...", שם המרצה ותפקידו - יצירת רושם ראשון חיובי והצגת הנושא המרכזי`, 
+        visual: "לוגו או תמונה רלוונטית שמייצגת את תחום ההתמחות" 
+      },
+      { 
+        number: 2, 
+        headline: "הצגה עצמית", 
+        content: `רקע המרצה: ${formData.speakerBackground.substring(0, 40)}... - בניית אמינות והראיה שיש לכם את הידע והניסיון`, 
+        visual: "תמונה אישית מקצועית או הישגים משמעותיים בתחום" 
+      },
+      { 
+        number: 3, 
+        headline: "מבנה ההרצאה", 
+        content: "סקירת הנושאים שיוצגו - יצירת ציפיות ברורות ועזרה לקהל להכין את עצמו מנטלית למסע הלמידה", 
+        visual: "תוכן עניינים ויזואלי עם איקונים או תרשים זרימה" 
+      },
+      { 
+        number: 4, 
+        headline: "פתיחה מעוררת עניין", 
+        content: "סיפור אישי, עובדה מפתיעה או שאלה רטורית הקשורה לנושא - יצירת חיבור רגשי וגרימה לקהל לשים לב", 
+        visual: "גרף מרשים, תמונה דרמטית או סטטיסטיקה מפתיעה" 
+      },
     ];
 
     chapters.forEach((chapter, idx) => {
       slides.push({
         number: slides.length + 1,
         headline: `${chapter.title} - כותרת`,
-        content: `הצגת הנושא: ${chapter.title}`,
-        visual: "אייקון או תמונה רלוונטית"
+        content: `הצגת הנושא: ${chapter.title} - הסבר מדוע הנושא הזה חשוב ואיך הוא משפיע על החיים או העסק של הקהל`,
+        visual: "אייקון או תמונה רלוונטית שמסמלת את הנושא"
       });
       
       chapter.points.forEach((point, pointIdx) => {
         slides.push({
           number: slides.length + 1,
           headline: `${chapter.title} - נקודה ${pointIdx + 1}`,
-          content: point.content,
-          visual: "תרשים, גרף או דוגמה"
+          content: `${point.content} - הסבר מעמיק עם דוגמאות ממשיות, כלים מעשיים שהקהל יוכל ליישם מיד`,
+          visual: "תרשים, גרף, דוגמה ויזואלית או צילום מסך שמדגים את הנקודה"
         });
       });
     });
 
     slides.push(
-      { number: slides.length + 1, headline: "הדגמת המוצר/שירות", content: "הצגה חיה או תיאור מפורט", visual: "צילום מסך או דגמה" },
-      { number: slides.length + 2, headline: "עדויות לקוחות", content: "המלצות והצלחות", visual: "תמונות לקוחות וציטוטים" },
-      { number: slides.length + 3, headline: "סיכום נקודות מפתח", content: "3-5 הנקודות החשובות ביותר", visual: "רשימה או אינפוגרפיקה" },
-      { number: slides.length + 4, headline: "קריאה לפעולה", content: formData.callToAction, visual: "פרטי יצירת קשר וקישורים" }
+      { 
+        number: slides.length + 1, 
+        headline: "הדגמת המוצר/שירות", 
+        content: `הצגה חיה של ${formData.serviceOrProduct} - הראיה כיצד הפתרון עובד בפועל וכיצד הוא פותר את הבעיות שהוזכרו בהרצאה`, 
+        visual: "צילום מסך חי, דגמה אינטראקטיבית או וידאו קצר" 
+      },
+      { 
+        number: slides.length + 2, 
+        headline: "עדויות לקוחות", 
+        content: "סיפורי הצלחה אמיתיים ומדידים - הוכחה חברתית שהפתרון עובד ויוצר תוצאות מוחשיות", 
+        visual: "תמונות לקוחות אמיתיים, ציטוטים מעוצבים ונתוני הצלחה" 
+      },
+      { 
+        number: slides.length + 3, 
+        headline: "סיכום נקודות מפתח", 
+        content: "3-5 הנקודות החשובות ביותר מההרצאה - חזרה על התובנות העיקריות שהקהל צריך לזכור ולקחת איתו הביתה", 
+        visual: "רשימה מעוצבת, אינפוגרפיקה או מפת מחשבה" 
+      },
+      { 
+        number: slides.length + 4, 
+        headline: "קריאה לפעולה", 
+        content: `${formData.callToAction} - הסבר ברור מה הצעד הבא, מתי לעשות אותו ואיך, יצירת תחושת דחיפות ורצון לפעול עכשיו`, 
+        visual: "פרטי יצירת קשר בולטים, QR קוד, קישורים ומידע על הטבות מיוחדות" 
+      }
     );
 
     return slides;
   };
 
   const slideshow = generateSlideshow();
+
+  const generateOrganizationEmail = () => {
+    const audienceType = formData.audienceProfile.includes('מנהל') ? 'מנהלים' : 
+                        formData.audienceProfile.includes('עובד') ? 'עובדים' : 
+                        formData.audienceProfile.includes('יזם') ? 'יזמים' : 'אנשי מקצוע';
+    
+    const expertise = formData.speakerBackground.includes('שנ') ? 'ותק של שנים רבות' :
+                     formData.speakerBackground.includes('מומח') ? 'מומחיות מוכחת' :
+                     formData.speakerBackground.includes('ניסיון') ? 'ניסיון עשיר' : 'רקע מקצועי מרשים';
+
+    return `נושא: ${formData.idea} - הזדמנות לחיזוק והעצמת הצוות שלכם
+
+שלום [שם איש קשר],
+
+לפני שלושה חודשים פגשתי מנכ"ל של חברת טכנולוגיה מובילה שסיפר לי על אתגר מעניין: הצוות שלו היה מלא בכישרונות, אבל משהו חסר. הם היו טכנית מעולים, אבל נאבקו בדיוק עם הנושא של ${formData.idea.substring(0, 30)}...
+
+אחרי הרצאה שנתתי לצוות שלהם, התוצאות היו מדהימות. תוך שבועיים, הם דיווחו על שיפור משמעותי בביצועים והתפוקה. למעשה, זה מה שהוביל אותי ליצור את ההרצאה הזו.
+
+ראיתי את הפעילות המרשימה של ${"{שם החברה}"} ב${"{תחום רלוונטי}"} והבנתי שיש לכם צוות של ${audienceType} איכותיים. עם ${expertise} שלי ב${formData.serviceOrProduct}, אני משוכנע שאוכל לתרום גם לארגון שלכם.
+
+ההרצאה "${formData.idea}" מיועדת במיוחד ל${formData.audienceProfile} ונבנתה על בסיס של ${formData.speakerBackground}. במהלך ${formData.duration} דקות, הצוות שלכם יקבל:
+
+• כלים מעשיים שניתן ליישם מיד
+• תובנות מעולם האמיתי שמבוססות על ניסיון
+• אסטרטגיות מוכחות לשיפור הביצועים
+• השראה ומוטיבציה לצמיחה אישית ומקצועית
+
+מה שמייחד את ההרצאה הזו הוא שהיא לא רק תיאורטית - היא מבוססת על מקרים אמיתיים, כולל הסיפור שסיפרתי לכם בתחילת המייל. המטרה היא שהצוות שלכם יצא עם ${formData.callToAction} ברור ומעשי.
+
+ההרצאה יכולה להתקיים במשרדיכם, באולם אירועים או אפילו בפורמט היברידי - כמו שנוח לכם. אני גם מציע מפגש מעקב קצר כדי לוודא שהתובנות מיושמות בפועל.
+
+האם תהיו פתוחים לשיחה קצרה של 15 דקות כדי שאוכל להציג את התוכנית המלאה ולהבין את הצרכים הספציפיים של הצוות שלכם? אני זמין [הציעו 2-3 אפשרויות זמן קונקרטיות].
+
+מצפה לשמוע מכם,
+
+[השם שלך]
+[תפקיד ותחום התמחות]
+[טלפון] | [אימייל] | [לינקדאין]
+
+P.S. - אשמח לשלוח לכם המלצות מחברות דומות שכבר חוו את ההרצאה. התוצאות מדברות בעד עצמן.`;
+  };
+
+  const enhancedOpeningStyles = [
+    {
+      style: "פתיחה עם סיפור אישי מעורר השראה",
+      example: "איך להשתמש בפתיח הזה: התחילו עם 'לפני שלוש שנים עמדתי מול בחירה שהשפיעה על כל מה שאני עושה היום...'. ספרו על רגע מפנה שהוביל אתכם לתחום של ההרצאה."
+    },
+    {
+      style: "עובדה או סטטיסטיקה מפתיעה הקשורה לנושא",
+      example: "איך להשתמש בפתיח הזה: 'האם ידעתם ש-97% מהחברות שלא משקיעות ב[הנושא שלכם] נכשלות תוך שנתיים?' הציגו נתון מדויק ומפתיע שקשור ישירות לתוכן ההרצאה."
+    },
+    {
+      style: "שאלה רטורית שמניעה את הקהל לחשיבה",
+      example: "איך להשתמש בפתיח הזה: 'מה הדבר האחד שאם הייתם משנים אותו היום, החיים שלכם היו נראים אחרת לגמרי?' תנו לקהל רגע להרהר ואז קשרו לנושא ההרצאה."
+    },
+    {
+      style: "תרחיש דמיוני שמעמיד את הקהל במצב רלוונטי",
+      example: "איך להשתמש בפתיח הזה: 'תארו לעצמכם שאתם מתעוררים מחר בבוקר והבעיה הגדולה ביותר שלכם ב[הנושא] נפתרה. איך החיים שלכם נראים?' צייצו תמונה חיה שהקהל תוכל להתחבר אליה."
+    },
+    {
+      style: "ציטוט מעורר מחשבה מאדם מפורסם או מקור מוכר",
+      example: "איך להשתמש בפתיח הזה: הביאו ציטוט רלוונטי והסבירו מדוע הוא משמעותי עבור הנושא שלכם. למשל: 'איינשטיין אמר פעם... והיום אני רוצה להראות לכם איך המילים האלה רלוונטיות יותר מתמיד.'"
+    },
+    {
+      style: "פתיחה עם אינטראקציה או פעילות קצרה עם הקהל",
+      example: "איך להשתמש בפתיח הזה: 'אני רוצה שתרימו יד מי מכם ש[שאלה רלוונטית]'. או 'בואו נעשה ניסוי קצר - כולכם תעמדו ו...'. צרו מעורבות מיידית שמחברת לנושא."
+    }
+  ];
 
   return (
     <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8 dir-rtl">
@@ -161,20 +268,20 @@ const PresentationSummary = () => {
 
           <TabsContent value="outline" className="bg-white p-6 rounded-lg shadow border border-gray-200">
             <h2 className="text-2xl font-bold text-gray-800 mb-6 text-right">מבנה ראשי הפרקים</h2>
-            <div className="space-y-8 text-right">
+            <div className="space-y-8 text-right dir-rtl">
               {chapters.map((chapter, idx) => (
-                <div key={chapter.id}>
-                  <div className="flex items-center mb-4 justify-start">
-                    <div className="w-10 h-10 rounded-full bg-whiskey text-white flex items-center justify-center ml-3 text-lg font-bold">
+                <div key={chapter.id} className="text-right">
+                  <div className="flex items-center mb-4 justify-end">
+                    <h3 className="text-xl font-bold text-gray-800 mr-3">{chapter.title}</h3>
+                    <div className="w-10 h-10 rounded-full bg-whiskey text-white flex items-center justify-center text-lg font-bold">
                       {idx + 1}
                     </div>
-                    <h3 className="text-xl font-bold text-gray-800">{chapter.title}</h3>
                   </div>
                   <ul className="space-y-3 pr-14">
                     {chapter.points.map(point => (
-                      <li key={point.id} className="flex items-start">
-                        <span className="text-whiskey ml-2">•</span>
-                        <span className="text-gray-600">{point.content}</span>
+                      <li key={point.id} className="flex items-start justify-end text-right">
+                        <span className="text-gray-600 mr-2">{point.content}</span>
+                        <span className="text-whiskey">•</span>
                       </li>
                     ))}
                   </ul>
@@ -186,16 +293,23 @@ const PresentationSummary = () => {
           <TabsContent value="opening" className="bg-white p-6 rounded-lg shadow border border-gray-200">
             <div className="mb-8 text-right">
               <h2 className="text-2xl font-bold text-gray-800 mb-4">סגנונות פתיחה מוצלחים</h2>
-              <ul className="space-y-4">
-                {outline.openingStyles.map((style, idx) => (
-                  <li key={idx} className="flex items-start">
-                    <div className="min-w-8 h-8 rounded-full bg-whiskey text-white flex items-center justify-center ml-3 text-lg font-bold mt-1">
-                      {idx + 1}
+              <div className="space-y-6">
+                {enhancedOpeningStyles.map((item, idx) => (
+                  <div key={idx} className="text-right">
+                    <div className="flex items-start justify-end mb-3">
+                      <div className="text-right mr-3">
+                        <p className="text-gray-800 font-semibold mb-1">{item.style}</p>
+                      </div>
+                      <div className="min-w-8 h-8 rounded-full bg-whiskey text-white flex items-center justify-center text-lg font-bold mt-1">
+                        {idx + 1}
+                      </div>
                     </div>
-                    <p className="text-gray-600 pt-1">{style}</p>
-                  </li>
+                    <div className="bg-gray-50 p-3 rounded-lg border border-gray-100 text-right pr-11">
+                      <p className="text-gray-600 text-sm">{item.example}</p>
+                    </div>
+                  </div>
                 ))}
-              </ul>
+              </div>
             </div>
 
             <Separator className="my-6" />
@@ -203,12 +317,12 @@ const PresentationSummary = () => {
             <div className="text-right">
               <h2 className="text-2xl font-bold text-gray-800 mb-4">חלוקת זמן מומלצת</h2>
               <div className="bg-gray-50 p-4 rounded-lg border border-gray-100">
-                <div className="space-y-2">
-                  <p className="text-gray-600">פתיחה: {timeDistribution.opening} דקות (10%)</p>
-                  <p className="text-gray-600">פרק ראשון: {timeDistribution.chapter1} דקות (25%)</p>
-                  <p className="text-gray-600">פרק שני: {timeDistribution.chapter2} דקות (35%)</p>
-                  <p className="text-gray-600">פרק שלישי: {timeDistribution.chapter3} דקות (20%)</p>
-                  <p className="text-gray-600">סיכום וקריאה לפעולה: {timeDistribution.closing} דקות (10%)</p>
+                <div className="space-y-2 text-right">
+                  <p className="text-gray-600">פתיחה: {timeDistribution.opening} דקות</p>
+                  <p className="text-gray-600">פרק ראשון: {timeDistribution.chapter1} דקות</p>
+                  <p className="text-gray-600">פרק שני: {timeDistribution.chapter2} דקות</p>
+                  <p className="text-gray-600">פרק שלישי: {timeDistribution.chapter3} דקות</p>
+                  <p className="text-gray-600">סיכום וקריאה לפעולה: {timeDistribution.closing} דקות</p>
                 </div>
               </div>
             </div>
@@ -217,16 +331,16 @@ const PresentationSummary = () => {
           <TabsContent value="interactive" className="bg-white p-6 rounded-lg shadow border border-gray-200">
             <div className="mb-8 text-right">
               <h2 className="text-2xl font-bold text-gray-800 mb-4">פעילויות אינטראקטיביות</h2>
-              <ul className="space-y-4">
+              <div className="space-y-4">
                 {outline.interactiveActivities.map((activity, idx) => (
-                  <li key={idx} className="flex items-start">
-                    <div className="min-w-8 h-8 rounded-full bg-whiskey text-white flex items-center justify-center ml-3 text-lg font-bold mt-1">
+                  <div key={idx} className="flex items-start justify-end text-right">
+                    <p className="text-gray-600 pt-1 mr-3">{activity}</p>
+                    <div className="min-w-8 h-8 rounded-full bg-whiskey text-white flex items-center justify-center text-lg font-bold mt-1">
                       {idx + 1}
                     </div>
-                    <p className="text-gray-600 pt-1">{activity}</p>
-                  </li>
+                  </div>
                 ))}
-              </ul>
+              </div>
             </div>
 
             <Separator className="my-6" />
@@ -234,13 +348,13 @@ const PresentationSummary = () => {
             <div className="text-right">
               <h2 className="text-2xl font-bold text-gray-800 mb-4">שאלות לדיון</h2>
               {Object.entries(outline.discussionQuestions).map(([section, questions], idx) => (
-                <div key={idx} className="mb-4">
+                <div key={idx} className="mb-4 text-right">
                   <h3 className="font-semibold text-gray-800 mb-2">{section}</h3>
                   <ul className="space-y-2 pr-4">
                     {questions.map((question, qIdx) => (
-                      <li key={qIdx} className="flex items-start">
-                        <span className="text-whiskey ml-2">•</span>
-                        <span className="text-gray-600">{question}</span>
+                      <li key={qIdx} className="flex items-start justify-end text-right">
+                        <span className="text-gray-600 mr-2">{question}</span>
+                        <span className="text-whiskey">•</span>
                       </li>
                     ))}
                   </ul>
@@ -344,25 +458,8 @@ const PresentationSummary = () => {
                   <div>
                     <h4 className="font-semibold text-gray-800 mb-3">דוגמת מייל למכירה</h4>
                     <div className="bg-gray-50 p-4 rounded-lg border border-gray-100">
-                      <div className="text-gray-600 leading-relaxed">
-                        <p className="mb-3">נושא: הזדמנות לחיזוק הצוות שלכם - {formData.idea}</p>
-                        <p className="mb-3">שלום [שם איש קשר],</p>
-                        <p className="mb-3">
-                          ראיתי את הפעילות המרשימה של {"{שם החברה}"} ב{"{תחום רלוונטי}"} והייתי רוצה להציע הרצאה ייחודית 
-                          שיכולה לתרום לצוות שלכם.
-                        </p>
-                        <p className="mb-3">
-                          ההרצאה "{formData.idea}" מיועדת ל{formData.audienceProfile} ותעניק לצוות שלכם כלים מעשיים 
-                          ב{formData.serviceOrProduct}.
-                        </p>
-                        <p className="mb-3">רקע שלי: {formData.speakerBackground}</p>
-                        <p className="mb-3">
-                          ההרצאה נמשכת {formData.duration} דקות ויכולה להתקיים במשרדיכם או באולם אירועים לבחירתכם.
-                        </p>
-                        <p className="mb-3">
-                          אשמח לקבוע פגישה קצרה כדי להציג את התוכנית המלאה ולהבין את הצרכים הספציפיים שלכם.
-                        </p>
-                        <p>בברכה,<br/>[השם שלך]<br/>[פרטי יצירת קשר]</p>
+                      <div className="text-gray-600 leading-relaxed whitespace-pre-line text-right">
+                        {generateOrganizationEmail()}
                       </div>
                     </div>
                   </div>
