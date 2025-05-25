@@ -49,9 +49,24 @@ const OutlineConfirmation = () => {
     generateDummyOutline();
   };
 
+  const salesSteps = [
+    {
+      title: "הצגת הערך הייחודי (USP)",
+      description: "הדגש את מה שמבדיל אותך ואת הפתרון שלך מהמתחרים. הסבר למה אתה הכתובת הנכונה לפתור את הבעיה שהקהל מתמודד איתה."
+    },
+    {
+      title: "הסבר מדוע זו ההצעה המושלמת",
+      description: "צור קשר בין הבעיה שהקהל חווה לבין הפתרון שאתה מציע. הראה איך המוצר או השירות שלך עונה בדיוק על הצרכים שלהם."
+    },
+    {
+      title: "פירוט תוכן ההצעה",
+      description: "הצג בצורה ברורה ומפורטת מה הלקוח יקבל. כלול את כל הרכיבים, השירותים, הבונוסים והערך המוסף שהוא יזכה בהם."
+    }
+  ];
+
   if (isLoading) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50">
+      <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 dir-rtl">
         <SpotlightLogo className="w-16 h-16 mb-6" />
         <h2 className="text-2xl font-bold text-gray-800 mb-4">יוצרים את מבנה ההרצאה...</h2>
         <p className="text-gray-600 mb-6">אנו מעבדים את המידע שהזנת כדי ליצור מבנה מותאם אישית</p>
@@ -64,19 +79,19 @@ const OutlineConfirmation = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8 dir-rtl">
       <div className="max-w-4xl mx-auto">
         <div className="flex items-center justify-center mb-8">
-          <SpotlightLogo className="w-12 h-12 mr-3" />
+          <SpotlightLogo className="w-12 h-12 ml-3" />
           <h1 className="text-3xl font-bold text-gray-dark">אישור מבנה ההרצאה</h1>
         </div>
 
         {error && (
-          <Alert variant="destructive" className="mb-6">
+          <Alert variant="destructive" className="mb-6 text-right">
             <AlertTriangle className="h-4 w-4" />
             <AlertTitle>שגיאה ביצירת מבנה ההרצאה</AlertTitle>
             <AlertDescription>{error}</AlertDescription>
-            <div className="mt-4 flex gap-4">
+            <div className="mt-4 flex gap-4 justify-start">
               <Button variant="outline" onClick={handleRetry}>
                 נסה שנית
               </Button>
@@ -87,7 +102,7 @@ const OutlineConfirmation = () => {
           </Alert>
         )}
 
-        <div className="mb-6 bg-white p-6 rounded-lg shadow border border-gray-200">
+        <div className="mb-6 bg-white p-6 rounded-lg shadow border border-gray-200 text-right">
           <h2 className="text-xl font-semibold text-gray-800 mb-4">אנחנו יצרנו עבורך מבנה הרצאה. אנא בדוק ועדכן במידת הצורך:</h2>
           <p className="text-gray-600 mb-2">
             <strong>נושא ההרצאה:</strong> {formData?.idea.substring(0, 100)}...
@@ -106,6 +121,30 @@ const OutlineConfirmation = () => {
             />
           ))}
         </div>
+
+        <Card className="mb-8 border-whiskey/20">
+          <CardHeader className="bg-whiskey/5">
+            <CardTitle className="text-xl text-gray-dark text-right">מהלך מכירה</CardTitle>
+          </CardHeader>
+          <CardContent className="pt-6">
+            <div className="text-right">
+              <p className="text-gray-600 mb-6">שלושת השלבים החיוניים לשלב ההצעה בהרצאה:</p>
+              <div className="space-y-4">
+                {salesSteps.map((step, idx) => (
+                  <div key={idx} className="bg-gray-50 p-4 rounded-lg border border-gray-100 text-right">
+                    <div className="flex items-center mb-2 justify-start">
+                      <div className="min-w-8 h-8 rounded-full bg-whiskey text-white flex items-center justify-center ml-3 text-lg font-bold">
+                        {idx + 1}
+                      </div>
+                      <h3 className="font-semibold text-gray-800">{step.title}</h3>
+                    </div>
+                    <p className="text-gray-600 pr-11">{step.description}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
 
         <div className="flex justify-between">
           <Button 
