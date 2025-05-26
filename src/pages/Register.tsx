@@ -22,10 +22,15 @@ const Register = () => {
     lastName: '',
     phone: '',
     email: '',
+    password: '',
     termsConsent: false,
   });
-  const [loginEmail, setLoginEmail] = useState('');
+  const [loginData, setLoginData] = useState({
+    email: '',
+    password: '',
+  });
   const [verificationCode, setVerificationCode] = useState('');
+  const [pendingAuthData, setPendingAuthData] = useState<any>(null);
 
   // Check if user is already authenticated and handle redirection
   useEffect(() => {
@@ -60,23 +65,6 @@ const Register = () => {
     setIsLoading(true);
 
     try {
-      // Check if email already exists
-      const { data: existingUser } = await supabase
-        .from('user_registrations')
-        .select('email')
-        .eq('email', formData.email)
-        .single();
-
-      if (existingUser) {
-        toast({
-          title: "שגיאה",
-          description: "כתובת המייל כבר רשומה במערכת",
-          variant: "destructive"
-        });
-        setIsLoading(false);
-        return;
-      }
-
       // Generate verification code
       const code = generateVerificationCode();
       const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes from now
@@ -103,6 +91,12 @@ const Register = () => {
 
       if (emailError) throw emailError;
 
+      // Store registration data for after verification
+      setPendingAuthData({
+        type: 'register',
+        ...formData
+      });
+
       setStep('verify');
       toast({
         title: "קוד אימות נשלח",
@@ -126,11 +120,11 @@ const Register = () => {
     setIsLoading(true);
 
     try {
-      // Check if user exists in our database
+      // Check if user exists in our database first
       const { data: existingUser } = await supabase
         .from('user_registrations')
         .select('email, first_name')
-        .eq('email', loginEmail)
+        .eq('email', loginData.email)
         .single();
 
       if (!existingUser) {
@@ -143,37 +137,60 @@ const Register = () => {
         return;
       }
 
-      // Generate verification code
-      const code = generateVerificationCode();
-      const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
+      // Try to sign in with Supabase auth
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: loginData.email,
+        password: loginData.password,
+      });
 
-      // Store verification code
-      const { error: verificationError } = await supabase
-        .from('email_verifications')
-        .insert({
-          email: loginEmail,
-          code: code,
-          expires_at: expiresAt.toISOString(),
+      if (error) {
+        // If password is wrong or user doesn't exist in auth, send verification code
+        const code = generateVerificationCode();
+        const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
+
+        await supabase
+          .from('email_verifications')
+          .insert({
+            email: loginData.email,
+            code: code,
+            expires_at: expiresAt.toISOString(),
+          });
+
+        await supabase.functions.invoke('send-verification-email', {
+          body: {
+            email: loginData.email,
+            firstName: existingUser.first_name,
+            code: code,
+          },
         });
 
-      if (verificationError) throw verificationError;
+        setPendingAuthData({
+          type: 'login',
+          email: loginData.email,
+          password: loginData.password
+        });
 
-      // Send verification email
-      const { error: emailError } = await supabase.functions.invoke('send-verification-email', {
-        body: {
-          email: loginEmail,
-          firstName: existingUser.first_name,
-          code: code,
-        },
-      });
+        setMode('verify');
+        toast({
+          title: "קוד אימות נשלח",
+          description: "בדוק את תיבת המייל שלך וזין את קוד האימות",
+        });
+      } else {
+        // Login successful
+        toast({
+          title: "התחברות הושלמה בהצלחה!",
+          description: "ברוכים השבים ל-Spotlight",
+        });
 
-      if (emailError) throw emailError;
-
-      setMode('verify');
-      toast({
-        title: "קוד אימות נשלח",
-        description: "בדוק את תיבת המייל שלך וזין את קוד האימות",
-      });
+        // Navigate to post-auth destination
+        const postAuthDestination = sessionStorage.getItem('post_auth_destination');
+        if (postAuthDestination) {
+          sessionStorage.removeItem('post_auth_destination');
+          navigate(postAuthDestination);
+        } else {
+          navigate('/presentation-summary');
+        }
+      }
 
     } catch (error: any) {
       console.error('Login error:', error);
@@ -191,7 +208,7 @@ const Register = () => {
     e.preventDefault();
     setIsLoading(true);
 
-    const emailToVerify = mode === 'verify' ? loginEmail : formData.email;
+    const emailToVerify = pendingAuthData?.email || formData.email;
 
     try {
       // Verify the code
@@ -230,18 +247,31 @@ const Register = () => {
         .update({ used: true })
         .eq('id', verification.id);
 
-      // Handle new registration vs existing user login
-      if (mode === 'register' && step === 'verify') {
-        // This is a new registration
+      if (pendingAuthData?.type === 'register') {
+        // Create Supabase auth user
+        const { data: authData, error: authError } = await supabase.auth.signUp({
+          email: pendingAuthData.email,
+          password: pendingAuthData.password,
+          options: {
+            data: {
+              first_name: pendingAuthData.firstName,
+              last_name: pendingAuthData.lastName,
+            }
+          }
+        });
+
+        if (authError) throw authError;
+
+        // Store user registration data
         const { error: registrationError } = await supabase
           .from('user_registrations')
           .insert({
-            first_name: formData.firstName,
-            last_name: formData.lastName,
-            phone: formData.phone,
-            email: formData.email,
+            first_name: pendingAuthData.firstName,
+            last_name: pendingAuthData.lastName,
+            phone: pendingAuthData.phone,
+            email: pendingAuthData.email,
             newsletter_consent: false,
-            terms_consent: formData.termsConsent,
+            terms_consent: pendingAuthData.termsConsent,
             verified: true,
           });
 
@@ -251,18 +281,31 @@ const Register = () => {
           title: "רישום הושלם בהצלחה!",
           description: "ברוכים הבאים ל-Spotlight",
         });
+
       } else {
-        // This is an existing user login
+        // Login existing user - create Supabase auth user if doesn't exist
+        const { data: authData, error: signInError } = await supabase.auth.signInWithPassword({
+          email: pendingAuthData.email,
+          password: pendingAuthData.password,
+        });
+
+        if (signInError) {
+          // If sign in fails, try to sign up (migrate existing user to auth)
+          const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+            email: pendingAuthData.email,
+            password: pendingAuthData.password,
+          });
+
+          if (signUpError) throw signUpError;
+        }
+
         toast({
           title: "התחברות הושלמה בהצלחה!",
           description: "ברוכים השבים ל-Spotlight",
         });
       }
 
-      // Create a temporary session by storing user info
-      sessionStorage.setItem('verified_user_email', emailToVerify);
-      
-      // Check for post-auth destination and navigate accordingly
+      // Navigate to post-auth destination
       const postAuthDestination = sessionStorage.getItem('post_auth_destination');
       if (postAuthDestination) {
         sessionStorage.removeItem('post_auth_destination');
@@ -289,8 +332,8 @@ const Register = () => {
     try {
       const code = generateVerificationCode();
       const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
-      const emailToSend = mode === 'verify' ? loginEmail : formData.email;
-      const nameToSend = mode === 'verify' ? 'משתמש' : formData.firstName;
+      const emailToSend = pendingAuthData?.email || formData.email;
+      const nameToSend = pendingAuthData?.firstName || 'משתמש';
 
       await supabase
         .from('email_verifications')
@@ -353,7 +396,7 @@ const Register = () => {
           <CardHeader>
             <CardTitle className="text-center">
               {mode === 'register' && step === 'register' && 'פרטים אישיים'}
-              {mode === 'login' && 'כתובת מייל'}
+              {mode === 'login' && 'פרטי התחברות'}
               {(mode === 'verify' || step === 'verify') && 'קוד אימות'}
             </CardTitle>
           </CardHeader>
@@ -403,6 +446,22 @@ const Register = () => {
                     value={formData.email}
                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                     className="text-right"
+                  />
+                </div>
+
+                <div>
+                  <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
+                    סיסמה *
+                  </label>
+                  <Input
+                    id="password"
+                    type="password"
+                    required
+                    minLength={6}
+                    value={formData.password}
+                    onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                    className="text-right"
+                    placeholder="לפחות 6 תווים"
                   />
                 </div>
 
@@ -475,10 +534,25 @@ const Register = () => {
                     type="email"
                     required
                     maxLength={500}
-                    value={loginEmail}
-                    onChange={(e) => setLoginEmail(e.target.value)}
+                    value={loginData.email}
+                    onChange={(e) => setLoginData({ ...loginData, email: e.target.value })}
                     className="text-right"
                     placeholder="הזן את כתובת המייל שלך"
+                  />
+                </div>
+
+                <div>
+                  <label htmlFor="loginPassword" className="block text-sm font-medium text-gray-700 mb-1">
+                    סיסמה *
+                  </label>
+                  <Input
+                    id="loginPassword"
+                    type="password"
+                    required
+                    value={loginData.password}
+                    onChange={(e) => setLoginData({ ...loginData, password: e.target.value })}
+                    className="text-right"
+                    placeholder="הזן את הסיסמה שלך"
                   />
                 </div>
 
@@ -490,10 +564,10 @@ const Register = () => {
                   {isLoading ? (
                     <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      שולח קוד...
+                      מתחבר...
                     </>
                   ) : (
-                    'שלח קוד אימות'
+                    'התחבר'
                   )}
                 </Button>
 
@@ -527,7 +601,7 @@ const Register = () => {
                 </div>
 
                 <div className="text-center text-sm text-gray-600">
-                  <p>נשלח קוד אימות לכתובת: {mode === 'verify' ? loginEmail : formData.email}</p>
+                  <p>נשלח קוד אימות לכתובת: {pendingAuthData?.email || formData.email}</p>
                   <button
                     type="button"
                     onClick={resendCode}
@@ -563,6 +637,7 @@ const Register = () => {
                       setStep('register');
                     }
                     setVerificationCode('');
+                    setPendingAuthData(null);
                   }}
                   className="w-full"
                 >

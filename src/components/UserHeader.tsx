@@ -27,7 +27,7 @@ const UserHeader = () => {
         .from('user_registrations')
         .select('*')
         .eq('email', user.email)
-        .single();
+        .maybeSingle();
 
       if (error) throw error;
       return data as Profile;
@@ -43,6 +43,11 @@ const UserHeader = () => {
     }
   };
 
+  const handleSignOut = async () => {
+    await supabase.auth.signOut();
+    navigate('/');
+  };
+
   if (isLoading) {
     return (
       <div className="flex items-center space-x-4">
@@ -55,21 +60,31 @@ const UserHeader = () => {
   return (
     <div className="flex items-center space-x-4">
       {user && profile ? (
-        <Button
-          variant="ghost"
-          onClick={handleAuthAction}
-          className="flex items-center space-x-2 hover:bg-gray-100"
-        >
-          <Avatar className="h-8 w-8">
-            <AvatarImage src={profile.avatar_url || undefined} alt={profile.first_name} />
-            <AvatarFallback>
-              {profile.first_name.charAt(0)}{profile.last_name.charAt(0)}
-            </AvatarFallback>
-          </Avatar>
-          <span className="text-sm font-medium">
-            {profile.first_name} {profile.last_name}
-          </span>
-        </Button>
+        <div className="flex items-center space-x-2">
+          <Button
+            variant="ghost"
+            onClick={handleAuthAction}
+            className="flex items-center space-x-2 hover:bg-gray-100"
+          >
+            <Avatar className="h-8 w-8">
+              <AvatarImage src={profile.avatar_url || undefined} alt={profile.first_name} />
+              <AvatarFallback>
+                {profile.first_name.charAt(0)}{profile.last_name.charAt(0)}
+              </AvatarFallback>
+            </Avatar>
+            <span className="text-sm font-medium">
+              {profile.first_name} {profile.last_name}
+            </span>
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleSignOut}
+            className="text-sm"
+          >
+            התנתק
+          </Button>
+        </div>
       ) : (
         <Button
           onClick={handleAuthAction}
