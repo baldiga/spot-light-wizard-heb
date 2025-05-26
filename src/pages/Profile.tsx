@@ -103,8 +103,12 @@ const Profile = () => {
         // Filter and validate the data structure
         const validPresentations = presentationsData.filter(
           (item): item is UserPresentation => 
-            item && typeof item === 'object' && 
-            'title' in item && 'content' in item && 'created_at' in item
+            item !== null && 
+            typeof item === 'object' && 
+            'id' in item &&
+            'title' in item && 
+            'content' in item && 
+            'created_at' in item
         );
         setPresentations(validPresentations);
       }
@@ -261,13 +265,15 @@ const Profile = () => {
                     <div className="flex items-center justify-between">
                       <div className="flex-1 text-right">
                         <h3 className="font-semibold text-gray-800 mb-2">
-                          {presentation.title}
+                          {presentation.title || 'ללא כותרת'}
                         </h3>
                         <p className="text-gray-600 text-sm mb-2">
-                          {JSON.stringify(presentation.content).substring(0, 100)}...
+                          {typeof presentation.content === 'object' 
+                            ? JSON.stringify(presentation.content).substring(0, 100)
+                            : String(presentation.content || '').substring(0, 100)}...
                         </p>
                         <p className="text-gray-500 text-xs">
-                          נוצר ב: {new Date(presentation.created_at).toLocaleDateString('he-IL')}
+                          נוצר ב: {presentation.created_at ? new Date(presentation.created_at).toLocaleDateString('he-IL') : 'תאריך לא זמין'}
                         </p>
                       </div>
                       <div className="flex items-center space-x-2 space-x-reverse">
