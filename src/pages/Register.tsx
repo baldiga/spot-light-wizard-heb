@@ -39,6 +39,67 @@ const Register = () => {
     return Math.floor(100000 + Math.random() * 900000).toString();
   };
 
+  const sendWebhook = async (userData: any) => {
+    try {
+      const response = await fetch('https://hooks.zapier.com/hooks/catch/8626026/2j89gqh/', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          firstName: userData.first_name,
+          lastName: userData.last_name,
+          email: userData.email,
+          phone: userData.phone || '',
+          registeredAt: new Date().toISOString(),
+          newsletterConsent: userData.newsletter_consent || false
+        })
+      });
+      
+      if (!response.ok) {
+        console.error('Webhook failed:', await response.text());
+      } else {
+        console.log('Webhook sent successfully');
+      }
+    } catch (error) {
+      console.error('Error sending webhook:', error);
+    }
+  };
+
+  const checkRateLimit = async (email: string): Promise<boolean> => {
+    try {
+      const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
+      
+      const { data: recentAttempts, error } = await supabase
+        .from('email_verifications')
+        .select('attempts')
+        .eq('email', email)
+        .gte('last_attempt_at', oneHourAgo);
+
+      if (error) throw error;
+
+      const totalAttempts = recentAttempts?.reduce((sum, record) => sum + record.attempts, 0) || 0;
+      return totalAttempts < 5;
+    } catch (error) {
+      console.error('Error checking rate limit:', error);
+      return true; // Allow if we can't check
+    }
+  };
+
+  const updateVerificationAttempts = async (email: string) => {
+    try {
+      const { error } = await supabase.rpc('increment_verification_attempts', {
+        verification_email: email
+      });
+
+      if (error) {
+        console.error('Error updating verification attempts:', error);
+      }
+    } catch (error) {
+      console.error('Error updating verification attempts:', error);
+    }
+  };
+
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -46,6 +107,17 @@ const Register = () => {
       toast({
         title: "שגיאה",
         description: "יש לאשר את תנאי השימוש",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    // Check rate limit
+    const canProceed = await checkRateLimit(formData.email);
+    if (!canProceed) {
+      toast({
+        title: "חריגה ממספר הניסיונות המותר",
+        description: "ניסית יותר מדי פעמים. נסה שוב בעוד שעה.",
         variant: "destructive"
       });
       return;
@@ -82,6 +154,8 @@ const Register = () => {
           email: formData.email,
           code: code,
           expires_at: expiresAt.toISOString(),
+          attempts: 0,
+          last_attempt_at: new Date().toISOString()
         });
 
       if (verificationError) throw verificationError;
@@ -117,6 +191,18 @@ const Register = () => {
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Check rate limit
+    const canProceed = await checkRateLimit(loginEmail);
+    if (!canProceed) {
+      toast({
+        title: "חריגה ממספר הניסיונות המותר",
+        description: "ניסית יותר מדי פעמים. נסה שוב בעוד שעה.",
+        variant: "destructive"
+      });
+      return;
+    }
+
     setIsLoading(true);
 
     try {
@@ -148,6 +234,8 @@ const Register = () => {
           email: loginEmail,
           code: code,
           expires_at: expiresAt.toISOString(),
+          attempts: 0,
+          last_attempt_at: new Date().toISOString()
         });
 
       if (verificationError) throw verificationError;
@@ -188,6 +276,21 @@ const Register = () => {
     const emailToVerify = mode === 'verify' ? loginEmail : formData.email;
 
     try {
+      // Check rate limit before verification
+      const canProceed = await checkRateLimit(emailToVerify);
+      if (!canProceed) {
+        toast({
+          title: "חריגה ממספר הניסיונות המותר",
+          description: "ניסית יותר מדי פעמים. נסה שוב בעוד שעה.",
+          variant: "destructive"
+        });
+        setIsLoading(false);
+        return;
+      }
+
+      // Update attempts counter
+      await updateVerificationAttempts(emailToVerify);
+
       // Verify the code
       const { data: verification, error: verificationError } = await supabase
         .from('email_verifications')
@@ -279,9 +382,22 @@ const Register = () => {
     setIsLoading(true);
     
     try {
+      const emailToSend = mode === 'verify' ? loginEmail : formData.email;
+      
+      // Check rate limit
+      const canProceed = await checkRateLimit(emailToSend);
+      if (!canProceed) {
+        toast({
+          title: "חריגה ממספר הניסיונות המותר",
+          description: "ניסית יותר מדי פעמים. נסה שוב בעוד שעה.",
+          variant: "destructive"
+        });
+        setIsLoading(false);
+        return;
+      }
+
       const code = generateVerificationCode();
       const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
-      const emailToSend = mode === 'verify' ? loginEmail : formData.email;
       const nameToSend = mode === 'verify' ? 'משתמש' : formData.firstName;
 
       await supabase
@@ -290,6 +406,8 @@ const Register = () => {
           email: emailToSend,
           code: code,
           expires_at: expiresAt.toISOString(),
+          attempts: 0,
+          last_attempt_at: new Date().toISOString()
         });
 
       await supabase.functions.invoke('send-verification-email', {
