@@ -10,16 +10,14 @@ import { PresentationFormData } from '@/types/presentation';
 import { useToast } from '@/hooks/use-toast';
 import { createEmptyPresentationFormData } from '@/utils/helpers';
 import { usePresentationStore } from '@/store/presentationStore';
+import { useAuth } from '@/hooks/useAuth';
 import SpotlightLogo from '@/components/SpotlightLogo';
 
 const CreatePresentation = () => {
   const navigate = useNavigate();
-  const {
-    toast
-  } = useToast();
-  const {
-    setFormData
-  } = usePresentationStore();
+  const { toast } = useToast();
+  const { user, loading: authLoading } = useAuth();
+  const { setFormData } = usePresentationStore();
   const [formData, setLocalFormData] = useState<PresentationFormData>(createEmptyPresentationFormData());
   const [currentStep, setCurrentStep] = useState(1);
   const totalSteps = 3;
@@ -144,8 +142,20 @@ const CreatePresentation = () => {
   };
 
   const handleSubmit = () => {
+    // Always save form data to store first
     setFormData(formData);
-    navigate('/outline-confirmation');
+    
+    // Store intended destination for after login
+    sessionStorage.setItem('post_auth_destination', '/outline-confirmation');
+    
+    // Check if user is authenticated
+    if (!authLoading && !user) {
+      // User is not authenticated, redirect to register
+      navigate('/register');
+    } else {
+      // User is authenticated, proceed to outline confirmation
+      navigate('/outline-confirmation');
+    }
   };
 
   return (
@@ -158,14 +168,14 @@ const CreatePresentation = () => {
 
         <div className="mb-8">
           <div className="flex justify-between items-center mb-2">
-            {Array.from({
-            length: totalSteps
-          }).map((_, index) => <React.Fragment key={index}>
+            {Array.from({ length: totalSteps }).map((_, index) => (
+              <React.Fragment key={index}>
                 <div className={`rounded-full w-8 h-8 flex items-center justify-center ${currentStep > index ? 'bg-whiskey text-white' : currentStep === index + 1 ? 'bg-whiskey-light text-white' : 'bg-gray-200 text-gray-500'}`}>
                   {index + 1}
                 </div>
                 {index < totalSteps - 1 && <div className={`flex-1 h-1 mx-2 ${currentStep > index + 1 ? 'bg-whiskey' : 'bg-gray-200'}`}></div>}
-              </React.Fragment>)}
+              </React.Fragment>
+            ))}
           </div>
           <div className="text-sm text-gray-500 text-center">
             {currentStep === 1 && 'פרטי ההרצאה והמרצה'}

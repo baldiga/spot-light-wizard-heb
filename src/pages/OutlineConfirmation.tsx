@@ -35,19 +35,28 @@ const OutlineConfirmation = () => {
       return;
     }
 
+    // If we have form data but no user and not currently loading auth
+    if (formData && !authLoading && !user) {
+      // Store the intended destination and redirect to register
+      sessionStorage.setItem('post_auth_destination', '/outline-confirmation');
+      navigate('/register');
+      return;
+    }
+
     const generateOutline = async () => {
       setApiAttempted(true);
       await generateOutlineFromAPI();
     };
 
-    if (!apiAttempted) {
+    if (!apiAttempted && formData && user) {
       generateOutline();
     }
-  }, [formData, navigate, toast, generateOutlineFromAPI, apiAttempted]);
+  }, [formData, navigate, toast, generateOutlineFromAPI, apiAttempted, user, authLoading]);
 
   const handleConfirm = () => {
     // Check if user is authenticated, if not go to register, otherwise go to summary
     if (!authLoading && !user) {
+      sessionStorage.setItem('post_auth_destination', '/presentation-summary');
       navigate('/register');
     } else {
       navigate('/presentation-summary');

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -28,10 +27,17 @@ const Register = () => {
   const [loginEmail, setLoginEmail] = useState('');
   const [verificationCode, setVerificationCode] = useState('');
 
-  // Check if user is already authenticated and redirect to summary
+  // Check if user is already authenticated and handle redirection
   useEffect(() => {
     if (!authLoading && user) {
-      navigate('/presentation-summary');
+      // Check if there's a post-auth destination
+      const postAuthDestination = sessionStorage.getItem('post_auth_destination');
+      if (postAuthDestination) {
+        sessionStorage.removeItem('post_auth_destination');
+        navigate(postAuthDestination);
+      } else {
+        navigate('/presentation-summary');
+      }
     }
   }, [user, authLoading, navigate]);
 
@@ -256,7 +262,14 @@ const Register = () => {
       // Create a temporary session by storing user info
       sessionStorage.setItem('verified_user_email', emailToVerify);
       
-      navigate('/presentation-summary');
+      // Check for post-auth destination and navigate accordingly
+      const postAuthDestination = sessionStorage.getItem('post_auth_destination');
+      if (postAuthDestination) {
+        sessionStorage.removeItem('post_auth_destination');
+        navigate(postAuthDestination);
+      } else {
+        navigate('/presentation-summary');
+      }
 
     } catch (error: any) {
       console.error('Verification error:', error);
