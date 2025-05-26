@@ -8,6 +8,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
+import { getUserProfile, getUserPresentations, upsertUserProfile } from '@/utils/supabaseHelpers';
 import SpotlightLogo from '@/components/SpotlightLogo';
 import { Loader2, Upload, Download, User, FileText } from 'lucide-react';
 
@@ -69,10 +70,8 @@ const Profile = () => {
       if (regError) throw regError;
       setUserRegistration(regData);
 
-      // Load user profile data using RPC or direct query with proper typing
-      const { data: profileData } = await supabase
-        .rpc('get_user_profile', { user_registration_id: regData.id });
-
+      // Load user profile data using helper function
+      const profileData = await getUserProfile(regData.id);
       if (profileData && profileData.length > 0) {
         setUserProfile(profileData[0]);
       }
@@ -94,11 +93,9 @@ const Profile = () => {
 
       if (!regData) return;
 
-      // Load presentations using RPC to bypass TypeScript limitations
-      const { data: presentations } = await supabase
-        .rpc('get_user_presentations', { user_registration_id: regData.id });
-
-      setPresentations(presentations || []);
+      // Load presentations using helper function
+      const presentationsData = await getUserPresentations(regData.id);
+      setPresentations(presentationsData || []);
 
     } catch (error: any) {
       console.error('Error loading presentations:', error);
@@ -125,11 +122,8 @@ const Profile = () => {
         .from('profile-pictures')
         .getPublicUrl(fileName);
 
-      // Update profile using RPC to bypass TypeScript limitations
-      await supabase.rpc('upsert_user_profile', {
-        user_registration_id: userRegistration.id,
-        new_avatar_url: publicUrl
-      });
+      // Update profile using helper function
+      await upsertUserProfile(userRegistration.id, publicUrl);
 
       setUserProfile(prev => prev ? { ...prev, avatar_url: publicUrl } : {
         id: '',

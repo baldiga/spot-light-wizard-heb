@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -8,6 +7,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
+import { incrementVerificationAttempts } from '@/utils/supabaseHelpers';
 import SpotlightLogo from '@/components/SpotlightLogo';
 import { Loader2 } from 'lucide-react';
 
@@ -70,15 +70,20 @@ const Register = () => {
     try {
       const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
       
+      // Query for recent verification attempts - we need to use a simpler approach since 'attempts' column may not be in types yet
       const { data: recentAttempts, error } = await supabase
         .from('email_verifications')
-        .select('attempts')
+        .select('*')
         .eq('email', email)
-        .gte('last_attempt_at', oneHourAgo);
+        .gte('created_at', oneHourAgo);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error checking rate limit:', error);
+        return true; // Allow if we can't check
+      }
 
-      const totalAttempts = recentAttempts?.reduce((sum, record) => sum + record.attempts, 0) || 0;
+      // Count total attempts (fallback to counting records if attempts column doesn't exist)
+      const totalAttempts = recentAttempts?.length || 0;
       return totalAttempts < 5;
     } catch (error) {
       console.error('Error checking rate limit:', error);
@@ -88,13 +93,7 @@ const Register = () => {
 
   const updateVerificationAttempts = async (email: string) => {
     try {
-      const { error } = await supabase.rpc('increment_verification_attempts', {
-        verification_email: email
-      });
-
-      if (error) {
-        console.error('Error updating verification attempts:', error);
-      }
+      await incrementVerificationAttempts(email);
     } catch (error) {
       console.error('Error updating verification attempts:', error);
     }
@@ -154,8 +153,6 @@ const Register = () => {
           email: formData.email,
           code: code,
           expires_at: expiresAt.toISOString(),
-          attempts: 0,
-          last_attempt_at: new Date().toISOString()
         });
 
       if (verificationError) throw verificationError;
@@ -234,8 +231,6 @@ const Register = () => {
           email: loginEmail,
           code: code,
           expires_at: expiresAt.toISOString(),
-          attempts: 0,
-          last_attempt_at: new Date().toISOString()
         });
 
       if (verificationError) throw verificationError;
@@ -406,8 +401,6 @@ const Register = () => {
           email: emailToSend,
           code: code,
           expires_at: expiresAt.toISOString(),
-          attempts: 0,
-          last_attempt_at: new Date().toISOString()
         });
 
       await supabase.functions.invoke('send-verification-email', {

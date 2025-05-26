@@ -2,6 +2,7 @@
 import { supabase } from '@/integrations/supabase/client';
 
 // Helper functions to work around TypeScript limitations with new tables
+// These use RPC functions to bypass type checking for newly created tables
 
 export const getUserProfile = async (userRegistrationId: string) => {
   const { data, error } = await supabase
