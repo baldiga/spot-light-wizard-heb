@@ -1,6 +1,8 @@
 
-// Simple email verification service for demo purposes
-// In production, this would be replaced with a proper backend service
+import { supabase } from "@/integrations/supabase/client";
+
+// Simple email verification service using Supabase edge function and Resend
+// This replaces the localStorage-based mock implementation
 
 interface VerificationCode {
   email: string;
@@ -16,30 +18,43 @@ export const generateVerificationCode = (): string => {
 };
 
 export const sendVerificationCode = async (email: string): Promise<string> => {
-  const code = generateVerificationCode();
-  
-  // Store the code locally (in production, this would be handled by backend)
-  const codes: VerificationCode[] = JSON.parse(localStorage.getItem(VERIFICATION_CODES_KEY) || '[]');
-  const newCode: VerificationCode = {
-    email,
-    code,
-    timestamp: Date.now()
-  };
-  
-  // Remove old codes for this email
-  const filteredCodes = codes.filter(c => c.email !== email);
-  filteredCodes.push(newCode);
-  
-  localStorage.setItem(VERIFICATION_CODES_KEY, JSON.stringify(filteredCodes));
-  
-  // In production, this would send an actual email
-  // For demo purposes, we'll show the code in console
-  console.log(`Verification code for ${email}: ${code}`);
-  
-  // Simulate email sending delay
-  await new Promise(resolve => setTimeout(resolve, 1000));
-  
-  return code;
+  try {
+    // Call the Supabase edge function to send the verification email
+    const { data, error } = await supabase.functions.invoke('send-verification-email', {
+      body: { email }
+    });
+
+    if (error) {
+      console.error('Error calling edge function:', error);
+      throw new Error('Failed to send verification email');
+    }
+
+    if (!data.success) {
+      throw new Error(data.error || 'Failed to send verification email');
+    }
+
+    // Store the code locally for verification (in production, this would be handled server-side)
+    const code = data.code;
+    const codes: VerificationCode[] = JSON.parse(localStorage.getItem(VERIFICATION_CODES_KEY) || '[]');
+    const newCode: VerificationCode = {
+      email,
+      code,
+      timestamp: Date.now()
+    };
+    
+    // Remove old codes for this email
+    const filteredCodes = codes.filter(c => c.email !== email);
+    filteredCodes.push(newCode);
+    
+    localStorage.setItem(VERIFICATION_CODES_KEY, JSON.stringify(filteredCodes));
+    
+    console.log(`Verification code sent to ${email} via Resend`);
+    
+    return code;
+  } catch (error) {
+    console.error('Error sending verification code:', error);
+    throw error;
+  }
 };
 
 export const verifyCode = (email: string, inputCode: string): boolean => {
