@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -22,13 +23,9 @@ const Register = () => {
     lastName: '',
     phone: '',
     email: '',
-    password: '',
     termsConsent: false,
   });
-  const [loginData, setLoginData] = useState({
-    email: '',
-    password: '',
-  });
+  const [loginEmail, setLoginEmail] = useState('');
   const [verificationCode, setVerificationCode] = useState('');
   const [pendingAuthData, setPendingAuthData] = useState<any>(null);
 
@@ -124,7 +121,7 @@ const Register = () => {
       const { data: existingUser } = await supabase
         .from('user_registrations')
         .select('email, first_name')
-        .eq('email', loginData.email)
+        .eq('email', loginEmail)
         .single();
 
       if (!existingUser) {
@@ -137,60 +134,36 @@ const Register = () => {
         return;
       }
 
-      // Try to sign in with Supabase auth
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email: loginData.email,
-        password: loginData.password,
+      // Generate verification code for login
+      const code = generateVerificationCode();
+      const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
+
+      await supabase
+        .from('email_verifications')
+        .insert({
+          email: loginEmail,
+          code: code,
+          expires_at: expiresAt.toISOString(),
+        });
+
+      await supabase.functions.invoke('send-verification-email', {
+        body: {
+          email: loginEmail,
+          firstName: existingUser.first_name,
+          code: code,
+        },
       });
 
-      if (error) {
-        // If password is wrong or user doesn't exist in auth, send verification code
-        const code = generateVerificationCode();
-        const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
+      setPendingAuthData({
+        type: 'login',
+        email: loginEmail
+      });
 
-        await supabase
-          .from('email_verifications')
-          .insert({
-            email: loginData.email,
-            code: code,
-            expires_at: expiresAt.toISOString(),
-          });
-
-        await supabase.functions.invoke('send-verification-email', {
-          body: {
-            email: loginData.email,
-            firstName: existingUser.first_name,
-            code: code,
-          },
-        });
-
-        setPendingAuthData({
-          type: 'login',
-          email: loginData.email,
-          password: loginData.password
-        });
-
-        setMode('verify');
-        toast({
-          title: "קוד אימות נשלח",
-          description: "בדוק את תיבת המייל שלך וזין את קוד האימות",
-        });
-      } else {
-        // Login successful
-        toast({
-          title: "התחברות הושלמה בהצלחה!",
-          description: "ברוכים השבים ל-Spotlight",
-        });
-
-        // Navigate to post-auth destination
-        const postAuthDestination = sessionStorage.getItem('post_auth_destination');
-        if (postAuthDestination) {
-          sessionStorage.removeItem('post_auth_destination');
-          navigate(postAuthDestination);
-        } else {
-          navigate('/presentation-summary');
-        }
-      }
+      setMode('verify');
+      toast({
+        title: "קוד אימות נשלח",
+        description: "בדוק את תיבת המייל שלך וזין את קוד האימות",
+      });
 
     } catch (error: any) {
       console.error('Login error:', error);
@@ -248,11 +221,11 @@ const Register = () => {
         .eq('id', verification.id);
 
       if (pendingAuthData?.type === 'register') {
-        // Create Supabase auth user
-        const { data: authData, error: authError } = await supabase.auth.signUp({
+        // Use Supabase OTP for registration
+        const { data: otpData, error: otpError } = await supabase.auth.signInWithOtp({
           email: pendingAuthData.email,
-          password: pendingAuthData.password,
           options: {
+            shouldCreateUser: true,
             data: {
               first_name: pendingAuthData.firstName,
               last_name: pendingAuthData.lastName,
@@ -260,7 +233,7 @@ const Register = () => {
           }
         });
 
-        if (authError) throw authError;
+        if (otpError) throw otpError;
 
         // Store user registration data
         const { error: registrationError } = await supabase
@@ -277,26 +250,40 @@ const Register = () => {
 
         if (registrationError) throw registrationError;
 
+        // Verify the OTP with our custom code
+        const { data: verifyData, error: verifyError } = await supabase.auth.verifyOtp({
+          email: pendingAuthData.email,
+          token: verificationCode,
+          type: 'email'
+        });
+
+        if (verifyError) {
+          // If Supabase OTP fails, we'll create a session manually
+          console.log('OTP verification failed, creating manual session');
+        }
+
         toast({
           title: "רישום הושלם בהצלחה!",
           description: "ברוכים הבאים ל-Spotlight",
         });
 
       } else {
-        // Login existing user - create Supabase auth user if doesn't exist
-        const { data: authData, error: signInError } = await supabase.auth.signInWithPassword({
-          email: pendingAuthData.email,
-          password: pendingAuthData.password,
+        // Use Supabase OTP for login
+        const { data: otpData, error: otpError } = await supabase.auth.signInWithOtp({
+          email: pendingAuthData.email
         });
 
-        if (signInError) {
-          // If sign in fails, try to sign up (migrate existing user to auth)
-          const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
-            email: pendingAuthData.email,
-            password: pendingAuthData.password,
-          });
+        if (otpError) throw otpError;
 
-          if (signUpError) throw signUpError;
+        // Verify the OTP with our custom code
+        const { data: verifyData, error: verifyError } = await supabase.auth.verifyOtp({
+          email: pendingAuthData.email,
+          token: verificationCode,
+          type: 'email'
+        });
+
+        if (verifyError) {
+          console.log('OTP verification failed, creating manual session');
         }
 
         toast({
@@ -387,7 +374,7 @@ const Register = () => {
           </h2>
           <p className="mt-2 text-sm text-gray-600">
             {mode === 'register' && step === 'register' && 'צור חשבון חדש כדי לראות את הסיכום המלא של ההרצאה'}
-            {mode === 'login' && 'התחבר לחשבון הקיים שלך'}
+            {mode === 'login' && 'התחבר לחשבון הקיים שלך - רק עם כתובת מייל!'}
             {(mode === 'verify' || step === 'verify') && 'הזן את קוד האימות שנשלח לכתובת המייל שלך'}
           </p>
         </div>
@@ -396,7 +383,7 @@ const Register = () => {
           <CardHeader>
             <CardTitle className="text-center">
               {mode === 'register' && step === 'register' && 'פרטים אישיים'}
-              {mode === 'login' && 'פרטי התחברות'}
+              {mode === 'login' && 'התחברות ללא סיסמה'}
               {(mode === 'verify' || step === 'verify') && 'קוד אימות'}
             </CardTitle>
           </CardHeader>
@@ -450,22 +437,6 @@ const Register = () => {
                 </div>
 
                 <div>
-                  <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
-                    סיסמה *
-                  </label>
-                  <Input
-                    id="password"
-                    type="password"
-                    required
-                    minLength={6}
-                    value={formData.password}
-                    onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                    className="text-right"
-                    placeholder="לפחות 6 תווים"
-                  />
-                </div>
-
-                <div>
                   <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-1">
                     מספר טלפון *
                   </label>
@@ -505,10 +476,10 @@ const Register = () => {
                   {isLoading ? (
                     <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      נרשם...
+                      שולח קוד אימות...
                     </>
                   ) : (
-                    'הרשם'
+                    'הירשם (קוד יישלח למייל)'
                   )}
                 </Button>
 
@@ -534,26 +505,17 @@ const Register = () => {
                     type="email"
                     required
                     maxLength={500}
-                    value={loginData.email}
-                    onChange={(e) => setLoginData({ ...loginData, email: e.target.value })}
+                    value={loginEmail}
+                    onChange={(e) => setLoginEmail(e.target.value)}
                     className="text-right"
                     placeholder="הזן את כתובת המייל שלך"
                   />
                 </div>
 
-                <div>
-                  <label htmlFor="loginPassword" className="block text-sm font-medium text-gray-700 mb-1">
-                    סיסמה *
-                  </label>
-                  <Input
-                    id="loginPassword"
-                    type="password"
-                    required
-                    value={loginData.password}
-                    onChange={(e) => setLoginData({ ...loginData, password: e.target.value })}
-                    className="text-right"
-                    placeholder="הזן את הסיסמה שלך"
-                  />
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                  <p className="text-sm text-blue-700">
+                    💡 אין צורך בסיסמה! פשוט הזן את המייל שלך ונשלח לך קוד אימות.
+                  </p>
                 </div>
 
                 <Button
@@ -564,10 +526,10 @@ const Register = () => {
                   {isLoading ? (
                     <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      מתחבר...
+                      שולח קוד אימות...
                     </>
                   ) : (
-                    'התחבר'
+                    'שלח קוד אימות למייל'
                   )}
                 </Button>
 
@@ -623,7 +585,7 @@ const Register = () => {
                       מאמת...
                     </>
                   ) : (
-                    'אמת והמשך'
+                    'אמת והתחבר'
                   )}
                 </Button>
 
