@@ -1,11 +1,12 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import SpotlightLogo from '@/components/SpotlightLogo';
 import { Loader2 } from 'lucide-react';
@@ -13,6 +14,7 @@ import { Loader2 } from 'lucide-react';
 const Register = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { user, loading: authLoading } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [step, setStep] = useState<'register' | 'verify'>('register');
   const [formData, setFormData] = useState({
@@ -20,10 +22,16 @@ const Register = () => {
     lastName: '',
     phone: '',
     email: '',
-    newsletterConsent: false,
     termsConsent: false,
   });
   const [verificationCode, setVerificationCode] = useState('');
+
+  // Check if user is already authenticated and redirect to summary
+  useEffect(() => {
+    if (!authLoading && user) {
+      navigate('/presentation-summary');
+    }
+  }, [user, authLoading, navigate]);
 
   const generateVerificationCode = () => {
     return Math.floor(100000 + Math.random() * 900000).toString();
@@ -154,7 +162,7 @@ const Register = () => {
           last_name: formData.lastName,
           phone: formData.phone,
           email: formData.email,
-          newsletter_consent: formData.newsletterConsent,
+          newsletter_consent: false,
           terms_consent: formData.termsConsent,
           verified: true,
         });
@@ -166,7 +174,7 @@ const Register = () => {
         description: "ברוכים הבאים ל-Spotlight",
       });
 
-      navigate('/');
+      navigate('/presentation-summary');
 
     } catch (error: any) {
       console.error('Verification error:', error);
@@ -219,6 +227,14 @@ const Register = () => {
     }
   };
 
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-whiskey" />
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 dir-rtl">
       <div className="max-w-md w-full space-y-8">
@@ -229,7 +245,7 @@ const Register = () => {
           </h2>
           <p className="mt-2 text-sm text-gray-600">
             {step === 'register' 
-              ? 'צור חשבון חדש כדי להתחיל ליצור מצגות מרשימות'
+              ? 'צור חשבון חדש כדי לראות את הסיכום המלא של ההרצאה'
               : 'הזן את קוד האימות שנשלח לכתובת המייל שלך'
             }
           </p>
@@ -305,19 +321,6 @@ const Register = () => {
                 <div className="space-y-3">
                   <div className="flex items-center space-x-2 space-x-reverse">
                     <Checkbox
-                      id="newsletter"
-                      checked={formData.newsletterConsent}
-                      onCheckedChange={(checked) => 
-                        setFormData({ ...formData, newsletterConsent: checked as boolean })
-                      }
-                    />
-                    <label htmlFor="newsletter" className="text-sm text-gray-700">
-                      אני מעוניין לקבל עדכונים על מוצרים ושירותים חדשים
-                    </label>
-                  </div>
-
-                  <div className="flex items-center space-x-2 space-x-reverse">
-                    <Checkbox
                       id="terms"
                       checked={formData.termsConsent}
                       onCheckedChange={(checked) => 
@@ -326,7 +329,7 @@ const Register = () => {
                       required
                     />
                     <label htmlFor="terms" className="text-sm text-gray-700">
-                      אני מסכים לתנאי השימוש ומדיניות הפרטיות *
+                      אני מסכים ל<a href="https://amirbaldiga.com/תקנון-אתר" target="_blank" rel="noopener noreferrer" className="text-whiskey hover:text-whiskey-dark underline">תנאי השימוש ומדיניות הפרטיות</a> *
                     </label>
                   </div>
                 </div>

@@ -4,17 +4,30 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { usePresentationStore } from '@/store/presentationStore';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/hooks/useAuth';
 import SpotlightLogo from '@/components/SpotlightLogo';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from '@/components/ui/separator';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Loader2 } from 'lucide-react';
 
 const PresentationSummary = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { user, loading: authLoading } = useAuth();
   const { formData, outline, chapters } = usePresentationStore();
 
   useEffect(() => {
+    if (!authLoading && !user) {
+      toast({
+        title: "נדרשת הרשמה",
+        description: "כדי לראות את הסיכום המלא, אנא הירשם תחילה",
+        variant: "destructive"
+      });
+      navigate('/register');
+      return;
+    }
+
     if (!formData || !outline) {
       toast({
         title: "מידע חסר",
@@ -23,9 +36,17 @@ const PresentationSummary = () => {
       });
       navigate('/create');
     }
-  }, [formData, outline, navigate, toast]);
+  }, [formData, outline, user, authLoading, navigate, toast]);
 
-  if (!formData || !outline) {
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-whiskey" />
+      </div>
+    );
+  }
+
+  if (!formData || !outline || !user) {
     return null;
   }
 
@@ -134,47 +155,6 @@ const PresentationSummary = () => {
 
   const slideshow = generateSlideshow();
 
-  const generateOrganizationEmail = () => {
-    const audienceType = formData.audienceProfile.includes('מנהל') ? 'מנהלים' : 
-                        formData.audienceProfile.includes('עובד') ? 'עובדים' : 
-                        formData.audienceProfile.includes('יזם') ? 'יזמים' : 'אנשי מקצוע';
-    
-    const expertise = formData.speakerBackground.includes('שנ') ? 'ותק של שנים רבות' :
-                     formData.speakerBackground.includes('מומח') ? 'מומחיות מוכחת' :
-                     formData.speakerBackground.includes('ניסיון') ? 'ניסיון עשיר' : 'רקע מקצועי מרשים';
-
-    return `נושא: ${formData.idea} - הזדמנות לחיזוק והעצמת הצוות שלכם
-
-שלום [שם איש קשר],
-
-לפני שלושה חודשים פגשתי מנכ"ל של חברת טכנולוגיה מובילה שסיפר לי על אתגר מעניין: הצוות שלו היה מלא בכישרונות, אבל משהו חסר. הם היו טכנית מעולים, אבל נאבקו בדיוק עם הנושא של ${formData.idea.substring(0, 30)}...
-
-אחרי הרצאה שנתתי לצוות שלהם, התוצאות היו מדהימות. תוך שבועיים, הם דיווחו על שיפור משמעותי בביצועים והתפוקה. למעשה, זה מה שהוביל אותי ליצור את ההרצאה הזו.
-
-ראיתי את הפעילות המרשימה של ${"{שם החברה}"} ב${"{תחום רלוונטי}"} והבנתי שיש לכם צוות של ${audienceType} איכותיים. עם ${expertise} שלי ב${formData.serviceOrProduct}, אני משוכנע שאוכל לתרום גם לארגון שלכם.
-
-ההרצאה "${formData.idea}" מיועדת במיוחד ל${formData.audienceProfile} ונבנתה על בסיס של ${formData.speakerBackground}. במהלך ${formData.duration} דקות, הצוות שלכם יקבל:
-
-• כלים מעשיים שניתן ליישם מיד
-• תובנות מעולם האמיתי שמבוססות על ניסיון
-• אסטרטגיות מוכחות לשיפור הביצועים
-• השראה ומוטיבציה לצמיחה אישית ומקצועית
-
-מה שמייחד את ההרצאה הזו הוא שהיא לא רק תיאורטית - היא מבוססת על מקרים אמיתיים, כולל הסיפור שסיפרתי לכם בתחילת המייל. המטרה היא שהצוות שלכם יצא עם ${formData.callToAction} ברור ומעשי.
-
-ההרצאה יכולה להתקיים במשרדיכם, באולם אירועים או אפילו בפורמט היברידי - כמו שנוח לכם. אני גם מציע מפגש מעקב קצר כדי לוודא שהתובנות מיושמות בפועל.
-
-האם תהיו פתוחים לשיחה קצרה של 15 דקות כדי שאוכל להציג את התוכנית המלאה ולהבין את הצרכים הספציפיים של הצוות שלכם? אני זמין [הציעו 2-3 אפשרויות זמן קונקרטיות].
-
-מצפה לשמוע מכם,
-
-[השם שלך]
-[תפקיד ותחום התמחות]
-[טלפון] | [אימייל] | [לינקדאין]
-
-P.S. - אשמח לשלוח לכם המלצות מחברות דומות שכבר חוו את ההרצאה. התוצאות מדברות בעד עצמן.`;
-  };
-
   const enhancedOpeningStyles = [
     {
       style: "פתיחה עם סיפור אישי מעורר השראה",
@@ -209,17 +189,6 @@ P.S. - אשמח לשלוח לכם המלצות מחברות דומות שכבר 
           <div className="flex items-center mb-4 sm:mb-0">
             <SpotlightLogo className="w-12 h-12 ml-3" />
             <h1 className="text-3xl font-bold text-gray-dark">סיכום ההרצאה</h1>
-          </div>
-          <div className="flex space-x-4 space-x-reverse">
-            <Button variant="outline" onClick={() => handleExport('PDF')} className="border-whiskey text-whiskey hover:bg-whiskey/10">
-              ייצוא ל-PDF
-            </Button>
-            <Button variant="outline" onClick={() => handleExport('Word')} className="border-whiskey text-whiskey hover:bg-whiskey/10">
-              ייצוא ל-Word
-            </Button>
-            <Button variant="outline" onClick={() => handleExport('Markdown')} className="border-whiskey text-whiskey hover:bg-whiskey/10">
-              ייצוא ל-Markdown
-            </Button>
           </div>
         </div>
 
@@ -400,41 +369,89 @@ P.S. - אשמח לשלוח לכם המלצות מחברות דומות שכבר 
                 <div className="space-y-4">
                   <div className="bg-gray-50 p-4 rounded-lg border border-gray-100">
                     <h4 className="font-semibold text-gray-800 mb-2">שבוע 1 - יצירת מודעות</h4>
-                    <ul className="space-y-1 text-gray-600">
-                      <li>• הכרזה ראשונית ברשתות החברתיות</li>
-                      <li>• יצירת תוכן איכותי סביב נושא ההרצאה</li>
-                      <li>• פוסטים אורגניים יומיים</li>
-                      <li>• שיתופי פעולה עם אישי מפתח</li>
+                    <ul className="space-y-1 text-gray-600 text-right">
+                      <li className="flex items-start justify-end">
+                        <span className="mr-2">הכרזה ראשונית ברשתות החברתיות</span>
+                        <span className="text-whiskey">•</span>
+                      </li>
+                      <li className="flex items-start justify-end">
+                        <span className="mr-2">יצירת תוכן איכותי סביב נושא ההרצאה</span>
+                        <span className="text-whiskey">•</span>
+                      </li>
+                      <li className="flex items-start justify-end">
+                        <span className="mr-2">פוסטים אורגניים יומיים</span>
+                        <span className="text-whiskey">•</span>
+                      </li>
+                      <li className="flex items-start justify-end">
+                        <span className="mr-2">שיתופי פעולה עם אישי מפתח</span>
+                        <span className="text-whiskey">•</span>
+                      </li>
                     </ul>
                   </div>
                   
                   <div className="bg-gray-50 p-4 rounded-lg border border-gray-100">
                     <h4 className="font-semibold text-gray-800 mb-2">שבוע 2 - בניית עניין</h4>
-                    <ul className="space-y-1 text-gray-600">
-                      <li>• השקת מודעות ממומנות ברשתות החברתיות</li>
-                      <li>• שליחת מייל ראשון לרשימת התפוצה</li>
-                      <li>• הצעת כרטיסי מוקדמים במחיר מוזל</li>
-                      <li>• תכנים חינמיים בנושא ההרצאה</li>
+                    <ul className="space-y-1 text-gray-600 text-right">
+                      <li className="flex items-start justify-end">
+                        <span className="mr-2">השקת מודעות ממומנות ברשתות החברתיות</span>
+                        <span className="text-whiskey">•</span>
+                      </li>
+                      <li className="flex items-start justify-end">
+                        <span className="mr-2">שליחת מייל ראשון לרשימת התפוצה</span>
+                        <span className="text-whiskey">•</span>
+                      </li>
+                      <li className="flex items-start justify-end">
+                        <span className="mr-2">הצעת כרטיסי מוקדמים במחיר מוזל</span>
+                        <span className="text-whiskey">•</span>
+                      </li>
+                      <li className="flex items-start justify-end">
+                        <span className="mr-2">תכנים חינמיים בנושא ההרצאה</span>
+                        <span className="text-whiskey">•</span>
+                      </li>
                     </ul>
                   </div>
                   
                   <div className="bg-gray-50 p-4 rounded-lg border border-gray-100">
                     <h4 className="font-semibold text-gray-800 mb-2">שבוע 3 - עידוד הרשמה</h4>
-                    <ul className="space-y-1 text-gray-600">
-                      <li>• הכרזה על כרטיסי VIP (מקומות מוגבלים, גישה למרצה, חומרים נוספים)</li>
-                      <li>• מחיר VIP: פי 2-3 ממחיר הכרטיס הרגיל</li>
-                      <li>• עדויות ממשתתפים קודמים</li>
-                      <li>• תוכן "מאחורי הקלעים"</li>
+                    <ul className="space-y-1 text-gray-600 text-right">
+                      <li className="flex items-start justify-end">
+                        <span className="mr-2">הכרזה על כרטיסי VIP (מקומות מוגבלים, גישה למרצה, חומרים נוספים)</span>
+                        <span className="text-whiskey">•</span>
+                      </li>
+                      <li className="flex items-start justify-end">
+                        <span className="mr-2">מחיר VIP: פי 2-3 ממחיר הכרטיס הרגיל</span>
+                        <span className="text-whiskey">•</span>
+                      </li>
+                      <li className="flex items-start justify-end">
+                        <span className="mr-2">עדויות ממשתתפים קודמים</span>
+                        <span className="text-whiskey">•</span>
+                      </li>
+                      <li className="flex items-start justify-end">
+                        <span className="mr-2">תוכן "מאחורי הקלעים"</span>
+                        <span className="text-whiskey">•</span>
+                      </li>
                     </ul>
                   </div>
                   
                   <div className="bg-gray-50 p-4 rounded-lg border border-gray-100">
                     <h4 className="font-semibold text-gray-800 mb-2">שבוע 4 - דחיפות ופעולה</h4>
-                    <ul className="space-y-1 text-gray-600">
-                      <li>• הדגשת מקומות מוגבלים</li>
-                      <li>• מיילים יומיים אישיים</li>
-                      <li>• סיפורי הצלחה קצרים</li>
-                      <li>• סדרת סרטונים קצרים עם תובנות</li>
+                    <ul className="space-y-1 text-gray-600 text-right">
+                      <li className="flex items-start justify-end">
+                        <span className="mr-2">הדגשת מקומות מוגבלים</span>
+                        <span className="text-whiskey">•</span>
+                      </li>
+                      <li className="flex items-start justify-end">
+                        <span className="mr-2">מיילים יומיים אישיים</span>
+                        <span className="text-whiskey">•</span>
+                      </li>
+                      <li className="flex items-start justify-end">
+                        <span className="mr-2">סיפורי הצלחה קצרים</span>
+                        <span className="text-whiskey">•</span>
+                      </li>
+                      <li className="flex items-start justify-end">
+                        <span className="mr-2">סדרת סרטונים קצרים עם תובנות</span>
+                        <span className="text-whiskey">•</span>
+                      </li>
                     </ul>
                   </div>
                 </div>
@@ -468,6 +485,15 @@ P.S. - אשמח לשלוח לכם המלצות מחברות דומות שכבר 
             </div>
           </TabsContent>
         </Tabs>
+
+        <div className="flex justify-center space-x-4 space-x-reverse mb-8">
+          <Button variant="outline" onClick={() => handleExport('PDF')} className="border-whiskey text-whiskey hover:bg-whiskey/10">
+            ייצוא ל-PDF
+          </Button>
+          <Button variant="outline" onClick={() => handleExport('Word')} className="border-whiskey text-whiskey hover:bg-whiskey/10">
+            ייצוא ל-Word
+          </Button>
+        </div>
 
         <div className="flex justify-between">
           <Button variant="outline" onClick={() => navigate('/outline-confirmation')} className="border-whiskey text-whiskey hover:bg-whiskey/10">

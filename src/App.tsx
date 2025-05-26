@@ -23,8 +23,8 @@ const App = () => (
           <Route path="/" element={<Index />} />
           <Route path="/create" element={<CreatePresentation />} />
           <Route path="/outline-confirmation" element={<OutlineConfirmation />} />
-          <Route path="/presentation-summary" element={<PresentationSummary />} />
           <Route path="/register" element={<Register />} />
+          <Route path="/presentation-summary" element={<PresentationSummary />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>

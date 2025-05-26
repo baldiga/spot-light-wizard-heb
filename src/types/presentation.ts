@@ -3,7 +3,7 @@ export interface PresentationFormData {
   idea: string;
   speakerBackground: string;
   audienceProfile: string;
-  duration: "30" | "45" | "60";
+  duration: "30" | "45" | "60" | "75" | "90" | "120";
   serviceOrProduct: string;
   callToAction: string;
 }
