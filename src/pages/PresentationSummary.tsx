@@ -1,5 +1,5 @@
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -9,11 +9,13 @@ import { useToast } from '@/hooks/use-toast';
 import SpotlightLogo from '@/components/SpotlightLogo';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from '@/components/ui/separator';
+import { Copy } from 'lucide-react';
 
 const PresentationSummary = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { formData, outline, chapters } = usePresentationStore();
+  const [copiedEmail, setCopiedEmail] = useState(false);
 
   useEffect(() => {
     if (!formData || !outline) {
@@ -67,16 +69,18 @@ const PresentationSummary = () => {
       { number: 4, headline: "מבנה ההרצאה", content: "סקירת הנושאים שיוצגו - 3 פרקים עיקריים", visual: "מפת דרכים ויזואלית", notes: "הכנת הקהל למסע הלמידה" },
       { number: 5, headline: chapters[0]?.title || "פרק ראשון", content: `${chapters[0]?.points[0]?.content || ''} - מושגי יסוד ויסודות`, visual: "אינפוגרפיקה/דיאגרמה", notes: "התחלת התוכן המרכזי" },
       { number: 6, headline: "המשך פרק ראשון", content: `${chapters[0]?.points[1]?.content || ''} - העמקה בנושא`, visual: "דוגמאות מעשיות", notes: "חיזוק ההבנה" },
-      { number: 7, headline: "סיכום פרק ראשון", content: `${chapters[0]?.points[2]?.content || ''} - סיכום נקודות מפתח`, visual: "רשימת סיכום", notes: "עיגון הלמידה" },
-      { number: 8, headline: chapters[1]?.title || "פרק שני", content: `${chapters[1]?.points[0]?.content || ''} - אסטרטגיות מתקדמות`, visual: "גרפים/טבלאות", notes: "העמקה בתוכן" },
-      { number: 9, headline: "כלים ושיטות", content: `${chapters[1]?.points[1]?.content || ''} - כלים מעשיים`, visual: "צילומי מסך/דגמים", notes: "מעבר לפרקטיקה" },
-      { number: 10, headline: "יישום בפועל", content: `${chapters[1]?.points[2]?.content || ''} - דוגמאות מהשטח`, visual: "מקרי מבחן", notes: "הוכחת יעילות" },
-      { number: 11, headline: chapters[2]?.title || "פרק שלישי", content: `${chapters[2]?.points[0]?.content || ''} - תוצאות ויישום`, visual: "גרפי הצלחה", notes: "הצגת תוצאות" },
-      { number: 12, headline: "מדידה ומעקב", content: `${chapters[2]?.points[1]?.content || ''} - איך למדוד הצלחה`, visual: "דשבורד/מדדים", notes: "כלים למעקב" },
-      { number: 13, headline: "אופטימיזציה", content: `${chapters[2]?.points[2]?.content || ''} - שיפור מתמיד`, visual: "מחזור שיפור", notes: "תהליך מתמשך" },
-      { number: 14, headline: "הצגת הפתרון", content: `כך ${formData.serviceOrProduct} יכול לעזור לכם`, visual: "תמונות המוצר/שירות", notes: "מעבר לחלק המכירתי" },
-      { number: 15, headline: "עדויות לקוחות", content: "סיפורי הצלחה ומקרי מבחן", visual: "תמונות/ציטוטים", notes: "בניית אמינות" },
-      { number: 16, headline: "קריאה לפעולה", content: formData.callToAction, visual: "פרטי התקשרות בולטים", notes: "סגירת המכירה" }
+      { number: 7, headline: "דוגמאות מעשיות", content: `דוגמאות קונקרטיות ומקרי מבחן ל${chapters[0]?.title}`, visual: "צילומי מסך/תרשימים", notes: "הפיכת התיאוריה לפרקטיקה" },
+      { number: 8, headline: "סיכום פרק ראשון", content: `${chapters[0]?.points[2]?.content || ''} - סיכום נקודות מפתח`, visual: "רשימת סיכום", notes: "עיגון הלמידה" },
+      { number: 9, headline: chapters[1]?.title || "פרק שני", content: `${chapters[1]?.points[0]?.content || ''} - אסטרטגיות מתקדמות`, visual: "גרפים/טבלאות", notes: "העמקה בתוכן" },
+      { number: 10, headline: "כלים ושיטות", content: `${chapters[1]?.points[1]?.content || ''} - כלים מעשיים`, visual: "צילומי מסך/דגמים", notes: "מעבר לפרקטיקה" },
+      { number: 11, headline: "הדגמה חיה", content: `הדגמה חיה של הכלים והשיטות מ${chapters[1]?.title}`, visual: "הדגמה בזמן אמת", notes: "למידה באמצעות תרגול" },
+      { number: 12, headline: "יישום בפועל", content: `${chapters[1]?.points[2]?.content || ''} - דוגמאות מהשטח`, visual: "מקרי מבחן", notes: "הוכחת יעילות" },
+      { number: 13, headline: chapters[2]?.title || "פרק שלישי", content: `${chapters[2]?.points[0]?.content || ''} - תוצאות ויישום`, visual: "גרפי הצלחה", notes: "הצגת תוצאות" },
+      { number: 14, headline: "מדידה ומעקב", content: `${chapters[2]?.points[1]?.content || ''} - איך למדוד הצלחה`, visual: "דשבורד/מדדים", notes: "כלים למעקב" },
+      { number: 15, headline: "אופטימיזציה", content: `${chapters[2]?.points[2]?.content || ''} - שיפור מתמיד`, visual: "מחזור שיפור", notes: "תהליך מתמשך" },
+      { number: 16, headline: "הצגת הפתרון", content: `כך ${formData.serviceOrProduct} יכול לעזור לכם`, visual: "תמונות המוצר/שירות", notes: "מעבר לחלק המכירתי" },
+      { number: 17, headline: "עדויות לקוחות", content: "סיפורי הצלחה ומקרי מבחן", visual: "תמונות/ציטוטים", notes: "בניית אמינות" },
+      { number: 18, headline: "קריאה לפעולה", content: formData.callToAction, visual: "פרטי התקשרות בולטים", notes: "סגירת המכירה" }
     ];
     return slides;
   };
@@ -114,6 +118,24 @@ ${formData.callToAction}
   };
 
   const b2bEmail = generateB2BEmail();
+
+  const copyEmailToClipboard = async () => {
+    try {
+      await navigator.clipboard.writeText(b2bEmail);
+      setCopiedEmail(true);
+      toast({
+        title: "הועתק בהצלחה",
+        description: "הטקסט הועתק ללוח"
+      });
+      setTimeout(() => setCopiedEmail(false), 2000);
+    } catch (err) {
+      toast({
+        title: "שגיאה בהעתקה",
+        description: "לא ניתן להעתיק את הטקסט",
+        variant: "destructive"
+      });
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8" dir="rtl">
@@ -179,7 +201,7 @@ ${formData.callToAction}
                       {idx + 1}
                     </div>
                   </div>
-                  <ul className="space-y-3 pl-14 text-right">
+                  <ul className="space-y-3 pr-14 text-right">
                     {chapter.points.map(point => (
                       <li key={point.id} className="flex items-start justify-end text-right">
                         <span className="text-gray-600 text-right">{point.content}</span>
@@ -195,10 +217,10 @@ ${formData.callToAction}
           <TabsContent value="opening" className="bg-white p-6 rounded-lg shadow border border-gray-200" dir="rtl">
             <div className="mb-8 text-right">
               <h2 className="text-2xl font-bold text-gray-800 mb-4 text-right">סגנונות פתיחה מוצלחים</h2>
-              <ul className="space-y-4 text-right">
+              <ul className="space-y-4 text-right pr-4">
                 {outline.openingStyles.map((style, idx) => (
                   <li key={idx} className="flex items-start justify-end text-right">
-                    <p className="text-gray-600 pt-1 text-right ml-3">{style}</p>
+                    <p className="text-gray-600 pt-1 text-right mr-3">{style}</p>
                     <div className="min-w-8 h-8 rounded-full bg-whiskey text-white flex items-center justify-center text-lg font-bold mt-1">
                       {idx + 1}
                     </div>
@@ -226,10 +248,10 @@ ${formData.callToAction}
           <TabsContent value="interactive" className="bg-white p-6 rounded-lg shadow border border-gray-200" dir="rtl">
             <div className="mb-8 text-right">
               <h2 className="text-2xl font-bold text-gray-800 mb-4 text-right">פעילויות אינטראקטיביות</h2>
-              <ul className="space-y-4 text-right">
+              <ul className="space-y-4 text-right pr-4">
                 {outline.interactiveActivities.map((activity, idx) => (
                   <li key={idx} className="flex items-start justify-end text-right">
-                    <p className="text-gray-600 pt-1 text-right ml-3">{activity}</p>
+                    <p className="text-gray-600 pt-1 text-right mr-3">{activity}</p>
                     <div className="min-w-8 h-8 rounded-full bg-whiskey text-white flex items-center justify-center text-lg font-bold mt-1">
                       {idx + 1}
                     </div>
@@ -248,8 +270,8 @@ ${formData.callToAction}
                   <ul className="space-y-2 pr-4 text-right">
                     {questions.map((question, qIdx) => (
                       <li key={qIdx} className="flex items-start justify-end text-right">
-                        <span className="text-gray-600 text-right">{question}</span>
-                        <span className="text-whiskey mr-2">•</span>
+                        <span className="text-gray-600 text-right mr-2">{question}</span>
+                        <span className="text-whiskey">•</span>
                       </li>
                     ))}
                   </ul>
@@ -294,52 +316,112 @@ ${formData.callToAction}
               <div className="space-y-6 text-right">
                 <div className="bg-gray-50 p-4 rounded-lg border border-gray-100">
                   <h4 className="font-semibold text-gray-800 mb-2 text-right">שבוע 1 - הכנה ובניית מודעות</h4>
-                  <ul className="space-y-1 text-right">
-                    <li className="text-gray-600 text-right">• יצירת דף נחיתה מקצועי עם פרטי ההרצאה</li>
-                    <li className="text-gray-600 text-right">• הפקת תוכן ויזואלי (פוסטרים, סרטונים קצרים)</li>
-                    <li className="text-gray-600 text-right">• פתיחת רשימת אימיילים למעוניינים</li>
-                    <li className="text-gray-600 text-right">• הכנת תוכן לרשתות חברתיות</li>
+                  <ul className="space-y-1 text-right pr-4">
+                    <li className="text-gray-600 text-right flex items-start justify-end">
+                      <span className="text-right mr-2">יצירת דף נחיתה מקצועי עם פרטי ההרצאה</span>
+                      <span className="text-whiskey">•</span>
+                    </li>
+                    <li className="text-gray-600 text-right flex items-start justify-end">
+                      <span className="text-right mr-2">הפקת תוכן ויזואלי (פוסטרים, סרטונים קצרים)</span>
+                      <span className="text-whiskey">•</span>
+                    </li>
+                    <li className="text-gray-600 text-right flex items-start justify-end">
+                      <span className="text-right mr-2">פתיחת רשימת אימיילים למעוניינים</span>
+                      <span className="text-whiskey">•</span>
+                    </li>
+                    <li className="text-gray-600 text-right flex items-start justify-end">
+                      <span className="text-right mr-2">הכנת תוכן לרשתות חברתיות</span>
+                      <span className="text-whiskey">•</span>
+                    </li>
                   </ul>
                 </div>
 
                 <div className="bg-gray-50 p-4 rounded-lg border border-gray-100">
                   <h4 className="font-semibold text-gray-800 mb-2 text-right">שבוע 2 - השקה ברשתות חברתיות</h4>
-                  <ul className="space-y-1 text-right">
-                    <li className="text-gray-600 text-right">• פרסום בפלטפורמות רלוונטיות (LinkedIn, Facebook, Instagram)</li>
-                    <li className="text-gray-600 text-right">• שיתופים עם משפיענים בתחום</li>
-                    <li className="text-gray-600 text-right">• פרסום בקבוצות מקצועיות רלוונטיות</li>
-                    <li className="text-gray-600 text-right">• תחילת קמפיין פרסום ממומן</li>
+                  <ul className="space-y-1 text-right pr-4">
+                    <li className="text-gray-600 text-right flex items-start justify-end">
+                      <span className="text-right mr-2">פרסום בפלטפורמות רלוונטיות (LinkedIn, Facebook, Instagram)</span>
+                      <span className="text-whiskey">•</span>
+                    </li>
+                    <li className="text-gray-600 text-right flex items-start justify-end">
+                      <span className="text-right mr-2">שיתופים עם משפיענים בתחום</span>
+                      <span className="text-whiskey">•</span>
+                    </li>
+                    <li className="text-gray-600 text-right flex items-start justify-end">
+                      <span className="text-right mr-2">פרסום בקבוצות מקצועיות רלוונטיות</span>
+                      <span className="text-whiskey">•</span>
+                    </li>
+                    <li className="text-gray-600 text-right flex items-start justify-end">
+                      <span className="text-right mr-2">תחילת קמפיין פרסום ממומן</span>
+                      <span className="text-whiskey">•</span>
+                    </li>
                   </ul>
                 </div>
 
                 <div className="bg-gray-50 p-4 rounded-lg border border-gray-100">
                   <h4 className="font-semibold text-gray-800 mb-2 text-right">שבוע 3 - הרחבת החשיפה</h4>
-                  <ul className="space-y-1 text-right">
-                    <li className="text-gray-600 text-right">• שליחת הודעות למנויי הרשימה</li>
-                    <li className="text-gray-600 text-right">• יצירת תוכן חינמי בנושא (מאמרים, סרטונים)</li>
-                    <li className="text-gray-600 text-right">• פנייה לעיתונות המקומית/מקצועית</li>
-                    <li className="text-gray-600 text-right">• הוספת מותג VIP עם הטבות מיוחדות</li>
+                  <ul className="space-y-1 text-right pr-4">
+                    <li className="text-gray-600 text-right flex items-start justify-end">
+                      <span className="text-right mr-2">שליחת הודעות למנויי הרשימה</span>
+                      <span className="text-whiskey">•</span>
+                    </li>
+                    <li className="text-gray-600 text-right flex items-start justify-end">
+                      <span className="text-right mr-2">יצירת תוכן חינמי בנושא (מאמרים, סרטונים)</span>
+                      <span className="text-whiskey">•</span>
+                    </li>
+                    <li className="text-gray-600 text-right flex items-start justify-end">
+                      <span className="text-right mr-2">פנייה לעיתונות המקומית/מקצועית</span>
+                      <span className="text-whiskey">•</span>
+                    </li>
+                    <li className="text-gray-600 text-right flex items-start justify-end">
+                      <span className="text-right mr-2">הוספת מותג VIP עם הטבות מיוחדות</span>
+                      <span className="text-whiskey">•</span>
+                    </li>
                   </ul>
                 </div>
 
                 <div className="bg-gray-50 p-4 rounded-lg border border-gray-100">
                   <h4 className="font-semibold text-gray-800 mb-2 text-right">שבוע 4 - דחיפה אחרונה</h4>
-                  <ul className="space-y-1 text-right">
-                    <li className="text-gray-600 text-right">• תזכורות אישיות ודחופות</li>
-                    <li className="text-gray-600 text-right">• הנחות מיוחדות לרכישה מהירה</li>
-                    <li className="text-gray-600 text-right">• יצירת תחושת דחיפות (מקומות מוגבלים)</li>
-                    <li className="text-gray-600 text-right">• אסטרטגיית FOMO (Fear of Missing Out)</li>
+                  <ul className="space-y-1 text-right pr-4">
+                    <li className="text-gray-600 text-right flex items-start justify-end">
+                      <span className="text-right mr-2">תזכורות אישיות ודחופות</span>
+                      <span className="text-whiskey">•</span>
+                    </li>
+                    <li className="text-gray-600 text-right flex items-start justify-end">
+                      <span className="text-right mr-2">הנחות מיוחדות לרכישה מהירה</span>
+                      <span className="text-whiskey">•</span>
+                    </li>
+                    <li className="text-gray-600 text-right flex items-start justify-end">
+                      <span className="text-right mr-2">יצירת תחושת דחיפות (מקומות מוגבלים)</span>
+                      <span className="text-whiskey">•</span>
+                    </li>
+                    <li className="text-gray-600 text-right flex items-start justify-end">
+                      <span className="text-right mr-2">אסטרטגיית FOMO (Fear of Missing Out)</span>
+                      <span className="text-whiskey">•</span>
+                    </li>
                   </ul>
                 </div>
               </div>
 
               <h3 className="text-xl font-bold text-gray-800 mb-4 mt-8 text-right">אסטרטגיית תמחור וכרטיסי VIP</h3>
               <div className="bg-gray-50 p-4 rounded-lg border border-gray-100 text-right">
-                <ul className="space-y-2 text-right">
-                  <li className="text-gray-600 text-right">• <strong>כרטיס רגיל:</strong> מחיר בסיסי להרצאה</li>
-                  <li className="text-gray-600 text-right">• <strong>כרטיס VIP:</strong> הרצאה + חומרי עזר + גישה לקהילה סגורה + פגישה אישית קצרה</li>
-                  <li className="text-gray-600 text-right">• <strong>כרטיס פרמיום:</strong> כל מה שלמעלה + הקלטת ההרצאה + הנחה על שירותים עתידיים</li>
-                  <li className="text-gray-600 text-right">• <strong>Early Bird:</strong> הנחה של 20% לרוכשים בשבועיים הראשונים</li>
+                <ul className="space-y-2 text-right pr-4">
+                  <li className="text-gray-600 text-right flex items-start justify-end">
+                    <span className="text-right mr-2"><strong>כרטיס רגיל:</strong> מחיר בסיסי להרצאה</span>
+                    <span className="text-whiskey">•</span>
+                  </li>
+                  <li className="text-gray-600 text-right flex items-start justify-end">
+                    <span className="text-right mr-2"><strong>כרטיס VIP:</strong> הרצאה + חומרי עזר + גישה לקהילה סגורה + פגישה אישית קצרה</span>
+                    <span className="text-whiskey">•</span>
+                  </li>
+                  <li className="text-gray-600 text-right flex items-start justify-end">
+                    <span className="text-right mr-2"><strong>כרטיס פרמיום:</strong> כל מה שלמעלה + הקלטת ההרצאה + הנחה על שירותים עתידיים</span>
+                    <span className="text-whiskey">•</span>
+                  </li>
+                  <li className="text-gray-600 text-right flex items-start justify-end">
+                    <span className="text-right mr-2"><strong>Early Bird:</strong> הנחה של 20% לרוכשים בשבועיים הראשונים</span>
+                    <span className="text-whiskey">•</span>
+                  </li>
                 </ul>
               </div>
             </div>
@@ -351,16 +433,42 @@ ${formData.callToAction}
               
               <h3 className="text-xl font-bold text-gray-800 mb-4 text-right">תחומים מומלצים לפנייה</h3>
               <div className="bg-gray-50 p-4 rounded-lg border border-gray-100 mb-6 text-right">
-                <ul className="space-y-1 text-right">
-                  <li className="text-gray-600 text-right">• חברות טכנולוגיה ופיתוח</li>
-                  <li className="text-gray-600 text-right">• מוסדות חינוך ומכללות</li>
-                  <li className="text-gray-600 text-right">• ארגונים מקצועיים ואיגודים</li>
-                  <li className="text-gray-600 text-right">• חברות בתחום השירותים העסקיים</li>
-                  <li className="text-gray-600 text-right">• עמותות ורשויות מקומיות</li>
+                <ul className="space-y-1 text-right pr-4">
+                  <li className="text-gray-600 text-right flex items-start justify-end">
+                    <span className="text-right mr-2">חברות טכנולוגיה ופיתוח</span>
+                    <span className="text-whiskey">•</span>
+                  </li>
+                  <li className="text-gray-600 text-right flex items-start justify-end">
+                    <span className="text-right mr-2">מוסדות חינוך ומכללות</span>
+                    <span className="text-whiskey">•</span>
+                  </li>
+                  <li className="text-gray-600 text-right flex items-start justify-end">
+                    <span className="text-right mr-2">ארגונים מקצועיים ואיגודים</span>
+                    <span className="text-whiskey">•</span>
+                  </li>
+                  <li className="text-gray-600 text-right flex items-start justify-end">
+                    <span className="text-right mr-2">חברות בתחום השירותים העסקיים</span>
+                    <span className="text-whiskey">•</span>
+                  </li>
+                  <li className="text-gray-600 text-right flex items-start justify-end">
+                    <span className="text-right mr-2">עמותות ורשויות מקומיות</span>
+                    <span className="text-whiskey">•</span>
+                  </li>
                 </ul>
               </div>
 
-              <h3 className="text-xl font-bold text-gray-800 mb-4 text-right">מייל פנייה לארגונים</h3>
+              <div className="flex items-center justify-between mb-4">
+                <Button
+                  onClick={copyEmailToClipboard}
+                  variant="outline"
+                  size="sm"
+                  className="flex items-center gap-2"
+                >
+                  <Copy className="h-4 w-4" />
+                  {copiedEmail ? "הועתק!" : "העתק"}
+                </Button>
+                <h3 className="text-xl font-bold text-gray-800 text-right">מייל פנייה לארגונים</h3>
+              </div>
               <div className="bg-gray-50 p-4 rounded-lg border border-gray-100 text-right">
                 <pre className="text-sm text-gray-700 whitespace-pre-wrap text-right" style={{fontFamily: 'inherit', direction: 'rtl'}}>
                   {b2bEmail}
