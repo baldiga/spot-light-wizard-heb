@@ -1,4 +1,3 @@
-
 import { PresentationFormData, PresentationOutline, Chapter } from '@/types/presentation';
 import { generateId } from '@/utils/helpers';
 
@@ -6,8 +5,8 @@ import { generateId } from '@/utils/helpers';
 const OPENAI_API_KEY = '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';
 const OPENAI_ORG_ID = 'org-fdnj54f725C7rUNxPVyt8jEA';
 
-// Use gpt-3.5-turbo for cost efficiency
-const MODEL = 'gpt-3.5-turbo';
+// Use o3-mini for cost efficiency and new capabilities
+const MODEL = 'o3-mini';
 const TEMPERATURE = 0.7; // Balanced approach
 
 /**

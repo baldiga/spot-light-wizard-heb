@@ -167,7 +167,7 @@ const OutlineConfirmation = () => {
             onClick={handleConfirm} 
             className="bg-whiskey hover:bg-whiskey-dark text-white"
           >
-            {!authLoading && !user ? 'המשך להרשמה' : 'אישור התוכן והמשך לסיכום המלא'}
+            המשך לסיכום המלא
           </Button>
         </div>
       </div>
