@@ -1,16 +1,18 @@
-
 import { create } from 'zustand';
-import { PresentationFormData, PresentationOutline, Chapter } from '@/types/presentation';
+import { PresentationFormData, PresentationOutline, Chapter, UserRegistrationData } from '@/types/presentation';
 import { generateId } from '@/utils/helpers';
 import { generatePresentationOutline } from '@/services/openaiService';
+import { sendToZapierWebhook } from '@/services/webhookService';
 
 interface PresentationState {
   formData: PresentationFormData | null;
+  userRegistration: UserRegistrationData | null;
   outline: PresentationOutline | null;
   chapters: Chapter[];
   isLoading: boolean;
   error: string | null;
   setFormData: (data: PresentationFormData) => void;
+  setUserRegistration: (data: UserRegistrationData) => void;
   setOutline: (outline: PresentationOutline) => void;
   setChapters: (chapters: Chapter[]) => void;
   updateChapter: (chapterId: string, title: string) => void;
@@ -21,12 +23,14 @@ interface PresentationState {
 
 export const usePresentationStore = create<PresentationState>((set, get) => ({
   formData: null,
+  userRegistration: null,
   outline: null,
   chapters: [],
   isLoading: false,
   error: null,
   
   setFormData: (data) => set({ formData: data }),
+  setUserRegistration: (data) => set({ userRegistration: data }),
   setOutline: (outline) => set({ outline }),
   setChapters: (chapters) => set({ chapters }),
   
@@ -50,7 +54,7 @@ export const usePresentationStore = create<PresentationState>((set, get) => ({
   })),
 
   generateOutlineFromAPI: async () => {
-    const { formData } = get();
+    const { formData, userRegistration } = get();
     
     if (!formData) {
       set({ error: "אין מידע זמין ליצירת מבנה הרצאה" });
@@ -67,6 +71,20 @@ export const usePresentationStore = create<PresentationState>((set, get) => ({
         chapters: outlineData.chapters,
         isLoading: false 
       });
+
+      // Send data to Zapier webhook after successful outline generation
+      if (userRegistration) {
+        try {
+          await sendToZapierWebhook({
+            presentationData: formData,
+            userRegistration,
+            outline: outlineData
+          });
+        } catch (webhookError) {
+          console.error("Failed to send data to webhook:", webhookError);
+          // Don't fail the whole process if webhook fails
+        }
+      }
     } catch (error) {
       console.error("Failed to generate outline:", error);
       set({ 

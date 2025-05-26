@@ -8,6 +8,14 @@ export interface PresentationFormData {
   callToAction: string;
 }
 
+export interface UserRegistrationData {
+  fullName: string;
+  email: string;
+  phone: string;
+  emailConsent: boolean;
+  emailVerified: boolean;
+}
+
 export interface ChapterPoint {
   id: string;
   content: string;
