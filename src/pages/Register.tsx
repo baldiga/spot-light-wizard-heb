@@ -224,8 +224,9 @@ const Register = () => {
         .update({ used: true })
         .eq('id', verification.id);
 
-      // If it's a new registration, create user registration
-      if (step === 'verify') {
+      // Handle new registration vs existing user login
+      if (mode === 'register' && step === 'verify') {
+        // This is a new registration
         const { error: registrationError } = await supabase
           .from('user_registrations')
           .insert({
@@ -245,12 +246,16 @@ const Register = () => {
           description: "ברוכים הבאים ל-Spotlight",
         });
       } else {
+        // This is an existing user login
         toast({
           title: "התחברות הושלמה בהצלחה!",
           description: "ברוכים השבים ל-Spotlight",
         });
       }
 
+      // Create a temporary session by storing user info
+      sessionStorage.setItem('verified_user_email', emailToVerify);
+      
       navigate('/presentation-summary');
 
     } catch (error: any) {
@@ -351,6 +356,7 @@ const Register = () => {
                       id="firstName"
                       type="text"
                       required
+                      maxLength={500}
                       value={formData.firstName}
                       onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
                       className="text-right"
@@ -364,6 +370,7 @@ const Register = () => {
                       id="lastName"
                       type="text"
                       required
+                      maxLength={500}
                       value={formData.lastName}
                       onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
                       className="text-right"
@@ -379,6 +386,7 @@ const Register = () => {
                     id="email"
                     type="email"
                     required
+                    maxLength={500}
                     value={formData.email}
                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                     className="text-right"
@@ -393,6 +401,7 @@ const Register = () => {
                     id="phone"
                     type="tel"
                     required
+                    maxLength={500}
                     value={formData.phone}
                     onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                     className="text-right"
@@ -452,6 +461,7 @@ const Register = () => {
                     id="loginEmail"
                     type="email"
                     required
+                    maxLength={500}
                     value={loginEmail}
                     onChange={(e) => setLoginEmail(e.target.value)}
                     className="text-right"
