@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -60,68 +59,91 @@ const PresentationSummary = () => {
 
   const timeDistribution = calculateTimeDistribution();
 
-  // Generate slide-by-slide presentation structure
+  // Generate enhanced slide-by-slide presentation structure
   const generateSlideStructure = () => {
     const slides = [
       { number: 1, headline: "שקף פתיחה", content: "כותרת ההרצאה, שם המרצה ותפקידו", visual: "לוגו/תמונה מייצגת", notes: "התחלה חזקה ומושכת תשומת לב" },
       { number: 2, headline: "מי אני", content: `הצגה עצמית מקצועית - ${formData.speakerBackground}`, visual: "תמונה אישית/מקצועית", notes: "בניית אמינות ורלוונטיות" },
       { number: 3, headline: "למה אתם כאן?", content: `זיהוי הקהל - ${formData.audienceProfile}`, visual: "תמונות של קהל היעד", notes: "יצירת חיבור עם הקהל" },
       { number: 4, headline: "מבנה ההרצאה", content: "סקירת הנושאים שיוצגו - 3 פרקים עיקריים", visual: "מפת דרכים ויזואלית", notes: "הכנת הקהל למסע הלמידה" },
-      { number: 5, headline: chapters[0]?.title || "פרק ראשון", content: `${chapters[0]?.points[0]?.content || ''} - מושגי יסוד ויסודות`, visual: "אינפוגרפיקה/דיאגרמה", notes: "התחלת התוכן המרכזי" },
-      { number: 6, headline: "המשך פרק ראשון", content: `${chapters[0]?.points[1]?.content || ''} - העמקה בנושא`, visual: "דוגמאות מעשיות", notes: "חיזוק ההבנה" },
-      { number: 7, headline: "דוגמאות מעשיות", content: `דוגמאות קונקרטיות ומקרי מבחן ל${chapters[0]?.title}`, visual: "צילומי מסך/תרשימים", notes: "הפיכת התיאוריה לפרקטיקה" },
-      { number: 8, headline: "סיכום פרק ראשון", content: `${chapters[0]?.points[2]?.content || ''} - סיכום נקודות מפתח`, visual: "רשימת סיכום", notes: "עיגון הלמידה" },
-      { number: 9, headline: chapters[1]?.title || "פרק שני", content: `${chapters[1]?.points[0]?.content || ''} - אסטרטגיות מתקדמות`, visual: "גרפים/טבלאות", notes: "העמקה בתוכן" },
-      { number: 10, headline: "כלים ושיטות", content: `${chapters[1]?.points[1]?.content || ''} - כלים מעשיים`, visual: "צילומי מסך/דגמים", notes: "מעבר לפרקטיקה" },
-      { number: 11, headline: "הדגמה חיה", content: `הדגמה חיה של הכלים והשיטות מ${chapters[1]?.title}`, visual: "הדגמה בזמן אמת", notes: "למידה באמצעות תרגול" },
-      { number: 12, headline: "יישום בפועל", content: `${chapters[1]?.points[2]?.content || ''} - דוגמאות מהשטח`, visual: "מקרי מבחן", notes: "הוכחת יעילות" },
-      { number: 13, headline: chapters[2]?.title || "פרק שלישי", content: `${chapters[2]?.points[0]?.content || ''} - תוצאות ויישום`, visual: "גרפי הצלחה", notes: "הצגת תוצאות" },
-      { number: 14, headline: "מדידה ומעקב", content: `${chapters[2]?.points[1]?.content || ''} - איך למדוד הצלחה`, visual: "דשבורד/מדדים", notes: "כלים למעקב" },
-      { number: 15, headline: "אופטימיזציה", content: `${chapters[2]?.points[2]?.content || ''} - שיפור מתמיד`, visual: "מחזור שיפור", notes: "תהליך מתמשך" },
-      { number: 16, headline: "הצגת הפתרון", content: `כך ${formData.serviceOrProduct} יכול לעזור לכם`, visual: "תמונות המוצר/שירות", notes: "מעבר לחלק המכירתי" },
-      { number: 17, headline: "עדויות לקוחות", content: "סיפורי הצלחה ומקרי מבחן", visual: "תמונות/ציטוטים", notes: "בניית אמינות" },
-      { number: 18, headline: "קריאה לפעולה", content: formData.callToAction, visual: "פרטי התקשרות בולטים", notes: "סגירת המכירה" }
+      
+      // פרק ראשון - מורחב
+      { number: 5, headline: `פתיחת ${chapters[0]?.title || "פרק ראשון"}`, content: "הצגת נושא הפרק והשאלות המרכזיות", visual: "כותרת מרכזית עם איקונים", notes: "מעבר לתוכן המרכזי הראשון" },
+      { number: 6, headline: "מושגי יסוד", content: `${chapters[0]?.points[0]?.content || ''} - הגדרות ומושגים בסיסיים`, visual: "אינפוגרפיקה/דיאגרמה", notes: "הנחת יסודות ההבנה" },
+      { number: 7, headline: "חשיבות הנושא", content: `${chapters[0]?.points[1]?.content || ''} - למה זה חשוב עכשיו?`, visual: "גרפים וסטטיסטיקות", notes: "הוכחת הרלוונטיות" },
+      { number: 8, headline: "יסודות מעשיים", content: `${chapters[0]?.points[2]?.content || ''} - כלים בסיסיים ליישום`, visual: "דוגמאות ויזואליות", notes: "מעבר מתיאוריה לפרקטיקה" },
+      { number: 9, headline: "דוגמאות מהשטח", content: `מקרי מבחן פשוטים מתחום ${chapters[0]?.title}`, visual: "צילומי מסך/תרשימים", notes: "הדגמת יישום בסיסי" },
+      
+      // פרק שני - מורחב
+      { number: 10, headline: `מעבר ל${chapters[1]?.title || "פרק שני"}`, content: "סיכום הפרק הראשון ומעבר לשלב הבא", visual: "מפת מסע המשתמש", notes: "חיבור בין הפרקים" },
+      { number: 11, headline: "אסטרטגיות מתקדמות", content: `${chapters[1]?.points[0]?.content || ''} - שיטות עבודה מוכחות`, visual: "תרשימי זרימה", notes: "העמקה ברמה גבוהה יותר" },
+      { number: 12, headline: "כלים וטכנולוגיות", content: `${chapters[1]?.points[1]?.content || ''} - כלים מעשיים וחדשניים`, visual: "ממשקי משתמש/דגמים", notes: "הצגת פתרונות טכנולוגיים" },
+      { number: 13, headline: "הדגמה חיה - חלק א'", content: "הדגמה של הכלים בזמן אמת - שלב ראשון", visual: "הדגמה בזמן אמת", notes: "למידה באמצעות תרגול" },
+      { number: 14, headline: "הדגמה חיה - חלק ב'", content: "המשך ההדגמה - תרחישים מתקדמים", visual: "הדגמה בזמן אמת", notes: "העמקה בתרגול" },
+      { number: 15, headline: "יישום בפועל", content: `${chapters[1]?.points[2]?.content || ''} - דוגמאות מורכבות מהשטח`, visual: "מקרי מבחן מפורטים", notes: "הוכחת יעילות בסביבה אמיתית" },
+      
+      // פרק שלישי - מורחב
+      { number: 16, headline: `התחלת ${chapters[2]?.title || "פרק שלישי"}`, content: "מעבר לשלב התוצאות והמדידה", visual: "גרפי מגמות", notes: "הצגת הערך העסקי" },
+      { number: 17, headline: "תוצאות ומדידה", content: `${chapters[2]?.points[0]?.content || ''} - איך למדוד הצלחה`, visual: "דשבורד ומדדי KPI", notes: "כלים למעקב וביקורת" },
+      { number: 18, headline: "אופטימיזציה מתמשכת", content: `${chapters[2]?.points[1]?.content || ''} - שיפור מתמיד`, visual: "מחזור שיפור", notes: "תהליך מתמשך לשיפור" },
+      { number: 19, headline: "מקרי הצלחה", content: `${chapters[2]?.points[2]?.content || ''} - דוגמאות מוצלחות וחדשניות`, visual: "גרפי הצלחה ועדויות", notes: "הצגת תוצאות מוחשיות" },
+      
+      // מעבר למכירה
+      { number: 20, headline: "הצגת הפתרון", content: `כך ${formData.serviceOrProduct} יכול לעזור לכם להשיג תוצאות דומות`, visual: "תמונות המוצר/שירות", notes: "מעבר לחלק המכירתי" },
+      { number: 21, headline: "עדויות לקוחות", content: "סיפורי הצלחה אמיתיים ומקרי מבחן מפורטים", visual: "תמונות לקוחות וציטוטים", notes: "בניית אמינות ורלוונטיות" },
+      { number: 22, headline: "קריאה לפעולה", content: formData.callToAction, visual: "פרטי התקשרות בולטים", notes: "סגירת המכירה והשלבים הבאים" }
     ];
     return slides;
   };
 
   const slides = generateSlideStructure();
 
-  // Generate B2B email template based on user data
-  const generateB2BEmail = () => {
-    return `נושא: הזמנה מיוחדת להרצאה בנושא ${formData.idea}
+  // Generate Hebrew B2B email template
+  const generateHebrewB2BEmail = () => {
+    return `נושא: הזמנה מיוחדת להרצאה שתשנה את הדרך שבה אתם עובדים
 
 שלום [שם איש הקשר],
 
 אני [השם שלך], ${formData.speakerBackground}.
 
-במהלך השנים שעבדתי עם ${formData.audienceProfile}, גיליתי דבר מעניין - רוב הארגונים נתקלים באותם אתגרים כשמדובר ב${formData.idea}. 
+לפני כמה חודשים פגשתי מנהל בחברה מובילה שאמר לי משהו שהפתיע אותי: "אנחנו משקיעים המון משאבים ב${formData.idea}, אבל התוצאות לא מגיעות". 
 
-לאחרונה פגשתי מנכ"ל של חברה מובילה בתחום [תחום רלוונטי לקהל היעד] שסיפר לי כיצד הצליחו להגדיל את התוצאות שלהם ב-40% תוך 6 חודשים, רק על ידי יישום הגישה שאני מציג בהרצאה שלי.
+אחרי שיחה של שעה, הבנתי שהבעיה לא בכישורים או בתקציב - הבעיה הייתה בגישה.
 
-ההרצאה "${formData.idea}" מיועדת במיוחד עבור ${formData.audienceProfile} ומתמקדת בפתרונות מעשיים שניתן ליישם מיד לאחר ההרצאה.
+היום, 6 חודשים אחרי שהחברה שלו יישמה את השיטות שאני מציג בהרצאה שלי, הם מדווחים על שיפור של 40% בתוצאות ועל חיסכון משמעותי בזמן ובמשאבים.
 
-במהלך ${formData.duration} דקות, המשתתפים ילמדו:
-${chapters.map((chapter, idx) => `${idx + 1}. ${chapter.title} - ${chapter.points[0]?.content}`).join('\n')}
+ההרצאה "${formData.idea}" נבנתה במיוחד עבור ${formData.audienceProfile} שמחפשים דרכים חכמות יותר להשיג תוצאות מרשימות.
 
-ההרצאה כוללת כלים מעשיים, דוגמאות מהשטח ומתודולוגיה מוכחת שכבר עזרה למאות ארגונים להשיג תוצאות מרשימות.
+במהלך ${formData.duration} דקות, המשתתפים יגלו:
 
-${formData.callToAction}
+✓ ${chapters[0]?.title || 'יסודות החשיבה החדשה'} - הגישה שמשנה את כל המשחק
+✓ ${chapters[1]?.title || 'כלים מעשיים'} - טכניקות שניתן ליישם כבר מחר בבוקר  
+✓ ${chapters[2]?.title || 'תוצאות מוכחות'} - איך למדוד הצלחה ולהמשיך להשתפר
 
-אשמח לשלוח לך תקציר מפורט של ההרצאה ולקבוע שיחת היכרות קצרה.
+זו לא עוד הרצאה תיאורטית. כל משתתף יקבל:
+• כלים מעשיים לשימוש מיידי
+• גישה לחומרי עזר בלעדיים
+• אפשרות לייעוץ אישי קצר לאחר ההרצאה
+
+המטרה? ${formData.callToAction}
+
+אשמח לשלוח לך את המצגת המקוצרת ולקבוע שיחת היכרות של 15 דקות בלבד.
+
+מה דעתך שנקבע זמן לשיחה קצרה השבוע?
 
 בברכה,
 [השם שלך]
-[פרטי התקשרות]
+[טלפון]
+[אימייל]
 
-נ.ב. אם תזמינו את ההרצאה השבוע, אוכל לכלול גם סדנה קצרה ללא עלות נוספת.`;
+נ.ב. החברות הראשונות שיזמינו את ההרצאה החודש יקבלו גם סדנת המשך קצרה ללא עלות נוספת.`;
   };
 
-  const b2bEmail = generateB2BEmail();
+  const hebrewB2bEmail = generateHebrewB2BEmail();
 
   const copyEmailToClipboard = async () => {
     try {
-      await navigator.clipboard.writeText(b2bEmail);
+      await navigator.clipboard.writeText(hebrewB2bEmail);
       setCopiedEmail(true);
       toast({
         title: "הועתק בהצלחה",
@@ -217,13 +239,13 @@ ${formData.callToAction}
           <TabsContent value="opening" className="bg-white p-6 rounded-lg shadow border border-gray-200" dir="rtl">
             <div className="mb-8 text-right">
               <h2 className="text-2xl font-bold text-gray-800 mb-4 text-right">סגנונות פתיחה מוצלחים</h2>
-              <ul className="space-y-4 text-right pr-4">
+              <ul className="space-y-4 text-right" dir="rtl">
                 {outline.openingStyles.map((style, idx) => (
-                  <li key={idx} className="flex items-start justify-end text-right">
-                    <p className="text-gray-600 pt-1 text-right mr-3">{style}</p>
-                    <div className="min-w-8 h-8 rounded-full bg-whiskey text-white flex items-center justify-center text-lg font-bold mt-1">
+                  <li key={idx} className="flex items-start text-right" dir="rtl">
+                    <div className="min-w-8 h-8 rounded-full bg-whiskey text-white flex items-center justify-center text-lg font-bold mt-1 ml-3">
                       {idx + 1}
                     </div>
+                    <p className="text-gray-600 pt-1 text-right">{style}</p>
                   </li>
                 ))}
               </ul>
@@ -246,15 +268,15 @@ ${formData.callToAction}
           </TabsContent>
 
           <TabsContent value="interactive" className="bg-white p-6 rounded-lg shadow border border-gray-200" dir="rtl">
-            <div className="mb-8 text-right">
+            <div className="mb-8 text-right" dir="rtl">
               <h2 className="text-2xl font-bold text-gray-800 mb-4 text-right">פעילויות אינטראקטיביות</h2>
-              <ul className="space-y-4 text-right pr-4">
+              <ul className="space-y-4 text-right" dir="rtl">
                 {outline.interactiveActivities.map((activity, idx) => (
-                  <li key={idx} className="flex items-start justify-end text-right">
-                    <p className="text-gray-600 pt-1 text-right mr-3">{activity}</p>
-                    <div className="min-w-8 h-8 rounded-full bg-whiskey text-white flex items-center justify-center text-lg font-bold mt-1">
+                  <li key={idx} className="flex items-start text-right" dir="rtl">
+                    <div className="min-w-8 h-8 rounded-full bg-whiskey text-white flex items-center justify-center text-lg font-bold mt-1 ml-3">
                       {idx + 1}
                     </div>
+                    <p className="text-gray-600 pt-1 text-right">{activity}</p>
                   </li>
                 ))}
               </ul>
@@ -262,16 +284,16 @@ ${formData.callToAction}
 
             <Separator className="my-6" />
 
-            <div className="text-right">
+            <div className="text-right" dir="rtl">
               <h2 className="text-2xl font-bold text-gray-800 mb-4 text-right">שאלות לדיון</h2>
               {Object.entries(outline.discussionQuestions).map(([section, questions], idx) => (
                 <div key={idx} className="mb-4 text-right">
                   <h3 className="font-semibold text-gray-800 mb-2 text-right">{section}</h3>
-                  <ul className="space-y-2 pr-4 text-right">
+                  <ul className="space-y-2 text-right" dir="rtl">
                     {questions.map((question, qIdx) => (
-                      <li key={qIdx} className="flex items-start justify-end text-right">
-                        <span className="text-gray-600 text-right mr-2">{question}</span>
-                        <span className="text-whiskey">•</span>
+                      <li key={qIdx} className="flex items-start text-right" dir="rtl">
+                        <span className="text-whiskey ml-2">•</span>
+                        <span className="text-gray-600 text-right">{question}</span>
                       </li>
                     ))}
                   </ul>
@@ -405,22 +427,22 @@ ${formData.callToAction}
 
               <h3 className="text-xl font-bold text-gray-800 mb-4 mt-8 text-right">אסטרטגיית תמחור וכרטיסי VIP</h3>
               <div className="bg-gray-50 p-4 rounded-lg border border-gray-100 text-right">
-                <ul className="space-y-2 text-right pr-4">
-                  <li className="text-gray-600 text-right flex items-start justify-end">
-                    <span className="text-right mr-2"><strong>כרטיס רגיל:</strong> מחיר בסיסי להרצאה</span>
-                    <span className="text-whiskey">•</span>
+                <ul className="space-y-2 text-right" dir="rtl">
+                  <li className="text-gray-600 text-right flex items-start" dir="rtl">
+                    <span className="text-whiskey ml-2">•</span>
+                    <span className="text-right"><strong>כרטיס רגיל:</strong> מחיר בסיסי להרצאה</span>
                   </li>
-                  <li className="text-gray-600 text-right flex items-start justify-end">
-                    <span className="text-right mr-2"><strong>כרטיס VIP:</strong> הרצאה + חומרי עזר + גישה לקהילה סגורה + פגישה אישית קצרה</span>
-                    <span className="text-whiskey">•</span>
+                  <li className="text-gray-600 text-right flex items-start" dir="rtl">
+                    <span className="text-whiskey ml-2">•</span>
+                    <span className="text-right"><strong>כרטיס VIP:</strong> הרצאה + חומרי עזר + גישה לקהילה סגורה + פגישה אישית קצרה</span>
                   </li>
-                  <li className="text-gray-600 text-right flex items-start justify-end">
-                    <span className="text-right mr-2"><strong>כרטיס פרמיום:</strong> כל מה שלמעלה + הקלטת ההרצאה + הנחה על שירותים עתידיים</span>
-                    <span className="text-whiskey">•</span>
+                  <li className="text-gray-600 text-right flex items-start" dir="rtl">
+                    <span className="text-whiskey ml-2">•</span>
+                    <span className="text-right"><strong>כרטיס פרמיום:</strong> כל מה שלמעלה + הקלטת ההרצאה + הנחה על שירותים עתידיים</span>
                   </li>
-                  <li className="text-gray-600 text-right flex items-start justify-end">
-                    <span className="text-right mr-2"><strong>Early Bird:</strong> הנחה של 20% לרוכשים בשבועיים הראשונים</span>
-                    <span className="text-whiskey">•</span>
+                  <li className="text-gray-600 text-right flex items-start" dir="rtl">
+                    <span className="text-whiskey ml-2">•</span>
+                    <span className="text-right"><strong>Early Bird:</strong> הנחה של 20% לרוכשים בשבועיים הראשונים</span>
                   </li>
                 </ul>
               </div>
@@ -433,26 +455,26 @@ ${formData.callToAction}
               
               <h3 className="text-xl font-bold text-gray-800 mb-4 text-right">תחומים מומלצים לפנייה</h3>
               <div className="bg-gray-50 p-4 rounded-lg border border-gray-100 mb-6 text-right">
-                <ul className="space-y-1 text-right pr-4">
-                  <li className="text-gray-600 text-right flex items-start justify-end">
-                    <span className="text-right mr-2">חברות טכנולוגיה ופיתוח</span>
-                    <span className="text-whiskey">•</span>
+                <ul className="space-y-1 text-right" dir="rtl">
+                  <li className="text-gray-600 text-right flex items-start" dir="rtl">
+                    <span className="text-whiskey ml-2">•</span>
+                    <span className="text-right">חברות טכנולוגיה ופיתוח</span>
                   </li>
-                  <li className="text-gray-600 text-right flex items-start justify-end">
-                    <span className="text-right mr-2">מוסדות חינוך ומכללות</span>
-                    <span className="text-whiskey">•</span>
+                  <li className="text-gray-600 text-right flex items-start" dir="rtl">
+                    <span className="text-whiskey ml-2">•</span>
+                    <span className="text-right">מוסדות חינוך ומכללות</span>
                   </li>
-                  <li className="text-gray-600 text-right flex items-start justify-end">
-                    <span className="text-right mr-2">ארגונים מקצועיים ואיגודים</span>
-                    <span className="text-whiskey">•</span>
+                  <li className="text-gray-600 text-right flex items-start" dir="rtl">
+                    <span className="text-whiskey ml-2">•</span>
+                    <span className="text-right">ארגונים מקצועיים ואיגודים</span>
                   </li>
-                  <li className="text-gray-600 text-right flex items-start justify-end">
-                    <span className="text-right mr-2">חברות בתחום השירותים העסקיים</span>
-                    <span className="text-whiskey">•</span>
+                  <li className="text-gray-600 text-right flex items-start" dir="rtl">
+                    <span className="text-whiskey ml-2">•</span>
+                    <span className="text-right">חברות בתחום השירותים העסקיים</span>
                   </li>
-                  <li className="text-gray-600 text-right flex items-start justify-end">
-                    <span className="text-right mr-2">עמותות ורשויות מקומיות</span>
-                    <span className="text-whiskey">•</span>
+                  <li className="text-gray-600 text-right flex items-start" dir="rtl">
+                    <span className="text-whiskey ml-2">•</span>
+                    <span className="text-right">עמותות ורשויות מקומיות</span>
                   </li>
                 </ul>
               </div>
@@ -471,7 +493,7 @@ ${formData.callToAction}
               </div>
               <div className="bg-gray-50 p-4 rounded-lg border border-gray-100 text-right">
                 <pre className="text-sm text-gray-700 whitespace-pre-wrap text-right" style={{fontFamily: 'inherit', direction: 'rtl'}}>
-                  {b2bEmail}
+                  {hebrewB2bEmail}
                 </pre>
               </div>
             </div>
