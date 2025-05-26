@@ -100,16 +100,29 @@ const Profile = () => {
       // Load presentations using helper function
       const presentationsData = await getUserPresentations(regData.id);
       if (Array.isArray(presentationsData)) {
-        // Filter and validate the data structure
-        const validPresentations = presentationsData.filter(
-          (item): item is UserPresentation => 
-            item !== null && 
-            typeof item === 'object' && 
-            'id' in item &&
-            'title' in item && 
-            'content' in item && 
-            'created_at' in item
-        );
+        // Filter and validate the data structure properly
+        const validPresentations: UserPresentation[] = [];
+        
+        for (const item of presentationsData) {
+          if (item && 
+              typeof item === 'object' && 
+              'id' in item &&
+              'title' in item && 
+              'content' in item && 
+              'created_at' in item &&
+              item.id &&
+              item.title !== undefined &&
+              item.content !== undefined &&
+              item.created_at) {
+            validPresentations.push({
+              id: item.id,
+              title: item.title,
+              content: item.content,
+              created_at: item.created_at
+            });
+          }
+        }
+        
         setPresentations(validPresentations);
       }
 

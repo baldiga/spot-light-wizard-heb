@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -182,10 +183,10 @@ const Register = () => {
 
       if (verificationError) throw verificationError;
 
-      // Send verification email via Supabase Edge Function
+      // Send verification email via Supabase Edge Function with proper email format
       const { error: emailError } = await supabase.functions.invoke('send-verification-email', {
         body: {
-          to: loginEmail,
+          email: loginEmail, // Pass as string
           code: code,
           firstName: existingUser.first_name
         }
@@ -294,10 +295,10 @@ const Register = () => {
 
       if (verificationError) throw verificationError;
 
-      // Send verification email via Supabase Edge Function
+      // Send verification email via Supabase Edge Function with proper email format
       const { error: emailError } = await supabase.functions.invoke('send-verification-email', {
         body: {
-          to: formData.email,
+          email: formData.email, // Pass as string
           code: code,
           firstName: formData.firstName
         }
@@ -445,7 +446,7 @@ const Register = () => {
 
       const { error: emailError } = await supabase.functions.invoke('send-verification-email', {
         body: {
-          to: emailToResend,
+          email: emailToResend, // Pass as string
           code: code,
           firstName: mode === 'login' ? 'משתמש' : formData.firstName
         }
@@ -627,6 +628,7 @@ const Register = () => {
                       id="firstName"
                       value={formData.firstName}
                       onChange={(e) => setFormData({...formData, firstName: e.target.value})}
+                      maxLength={500}
                       required
                       disabled={isLoading || isBlocked}
                     />
@@ -637,6 +639,7 @@ const Register = () => {
                       id="lastName"
                       value={formData.lastName}
                       onChange={(e) => setFormData({...formData, lastName: e.target.value})}
+                      maxLength={500}
                       required
                       disabled={isLoading || isBlocked}
                     />
@@ -650,6 +653,7 @@ const Register = () => {
                     type="email"
                     value={formData.email}
                     onChange={(e) => setFormData({...formData, email: e.target.value})}
+                    maxLength={500}
                     required
                     disabled={isLoading || isBlocked}
                   />
@@ -662,6 +666,7 @@ const Register = () => {
                     type="tel"
                     value={formData.phone}
                     onChange={(e) => setFormData({...formData, phone: e.target.value})}
+                    maxLength={500}
                     required
                     disabled={isLoading || isBlocked}
                   />
@@ -707,6 +712,7 @@ const Register = () => {
                   value={loginEmail}
                   onChange={(e) => setLoginEmail(e.target.value)}
                   placeholder="your@email.com"
+                  maxLength={500}
                   required
                   disabled={isLoading || isBlocked}
                 />
