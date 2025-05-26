@@ -115,10 +115,10 @@ const Profile = () => {
               item.content !== undefined &&
               item.created_at) {
             validPresentations.push({
-              id: item.id,
-              title: item.title,
+              id: String(item.id),
+              title: String(item.title),
               content: item.content,
-              created_at: item.created_at
+              created_at: String(item.created_at)
             });
           }
         }
