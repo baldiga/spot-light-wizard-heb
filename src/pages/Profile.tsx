@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -72,7 +73,11 @@ const Profile = () => {
       // Load user profile data using helper function
       const profileData = await getUserProfile(regData.id);
       if (profileData && Array.isArray(profileData) && profileData.length > 0) {
-        setUserProfile(profileData[0] as UserProfile);
+        // Safely check if the data has the expected structure
+        const profile = profileData[0];
+        if (profile && typeof profile === 'object' && 'user_id' in profile) {
+          setUserProfile(profile as UserProfile);
+        }
       }
 
     } catch (error: any) {
@@ -95,7 +100,13 @@ const Profile = () => {
       // Load presentations using helper function
       const presentationsData = await getUserPresentations(regData.id);
       if (Array.isArray(presentationsData)) {
-        setPresentations(presentationsData as UserPresentation[]);
+        // Filter and validate the data structure
+        const validPresentations = presentationsData.filter(
+          (item): item is UserPresentation => 
+            item && typeof item === 'object' && 
+            'title' in item && 'content' in item && 'created_at' in item
+        );
+        setPresentations(validPresentations);
       }
 
     } catch (error: any) {
