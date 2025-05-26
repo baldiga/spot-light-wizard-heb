@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -31,7 +30,7 @@ interface VerificationData {
 // Add webhook function
 const sendWebhook = async (userData: any) => {
   try {
-    const webhookUrl = 'https://hook.eu2.make.com/your-webhook-url'; // Replace with actual URL
+    const webhookUrl = 'https://hooks.zapier.com/hooks/catch/8626026/2j89gqh/'; // Replace with actual URL
     const response = await fetch(webhookUrl, {
       method: 'POST',
       headers: {
@@ -95,7 +94,7 @@ const Register = () => {
         .select('*')
         .eq('email', email)
         .order('created_at', { ascending: false })
-        .limit(5);
+        .limit(15);
 
       if (error) throw error;
 
@@ -183,10 +182,10 @@ const Register = () => {
 
       if (verificationError) throw verificationError;
 
-      // Send verification email via Supabase Edge Function with proper email format
+      // Send verification email via Supabase Edge Function
       const { error: emailError } = await supabase.functions.invoke('send-verification-email', {
         body: {
-          email: loginEmail, // Pass as string
+          to: loginEmail,
           code: code,
           firstName: existingUser.first_name
         }
@@ -295,10 +294,10 @@ const Register = () => {
 
       if (verificationError) throw verificationError;
 
-      // Send verification email via Supabase Edge Function with proper email format
+      // Send verification email via Supabase Edge Function
       const { error: emailError } = await supabase.functions.invoke('send-verification-email', {
         body: {
-          email: formData.email, // Pass as string
+          to: formData.email,
           code: code,
           firstName: formData.firstName
         }
@@ -446,7 +445,7 @@ const Register = () => {
 
       const { error: emailError } = await supabase.functions.invoke('send-verification-email', {
         body: {
-          email: emailToResend, // Pass as string
+          to: emailToResend,
           code: code,
           firstName: mode === 'login' ? 'משתמש' : formData.firstName
         }
@@ -628,7 +627,6 @@ const Register = () => {
                       id="firstName"
                       value={formData.firstName}
                       onChange={(e) => setFormData({...formData, firstName: e.target.value})}
-                      maxLength={500}
                       required
                       disabled={isLoading || isBlocked}
                     />
@@ -639,7 +637,6 @@ const Register = () => {
                       id="lastName"
                       value={formData.lastName}
                       onChange={(e) => setFormData({...formData, lastName: e.target.value})}
-                      maxLength={500}
                       required
                       disabled={isLoading || isBlocked}
                     />
@@ -653,7 +650,6 @@ const Register = () => {
                     type="email"
                     value={formData.email}
                     onChange={(e) => setFormData({...formData, email: e.target.value})}
-                    maxLength={500}
                     required
                     disabled={isLoading || isBlocked}
                   />
@@ -666,7 +662,6 @@ const Register = () => {
                     type="tel"
                     value={formData.phone}
                     onChange={(e) => setFormData({...formData, phone: e.target.value})}
-                    maxLength={500}
                     required
                     disabled={isLoading || isBlocked}
                   />
@@ -712,7 +707,6 @@ const Register = () => {
                   value={loginEmail}
                   onChange={(e) => setLoginEmail(e.target.value)}
                   placeholder="your@email.com"
-                  maxLength={500}
                   required
                   disabled={isLoading || isBlocked}
                 />
