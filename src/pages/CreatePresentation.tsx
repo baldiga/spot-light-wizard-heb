@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -10,23 +11,19 @@ import { PresentationFormData } from '@/types/presentation';
 import { useToast } from '@/hooks/use-toast';
 import { createEmptyPresentationFormData } from '@/utils/helpers';
 import { usePresentationStore } from '@/store/presentationStore';
-import { useAuth } from '@/hooks/useAuth';
 import SpotlightLogo from '@/components/SpotlightLogo';
 
 const CreatePresentation = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { user, loading: authLoading } = useAuth();
   const { setFormData } = usePresentationStore();
+
   const [formData, setLocalFormData] = useState<PresentationFormData>(createEmptyPresentationFormData());
   const [currentStep, setCurrentStep] = useState(1);
   const totalSteps = 3;
 
   const updateFormField = (field: keyof PresentationFormData, value: string) => {
-    setLocalFormData(prev => ({
-      ...prev,
-      [field]: value
-    }));
+    setLocalFormData(prev => ({ ...prev, [field]: value }));
   };
 
   const validateStep = () => {
@@ -35,15 +32,7 @@ const CreatePresentation = () => {
         toast({
           title: "שדה חסר",
           description: "אנא הזן את הרעיון הכללי של ההרצאה",
-          variant: "destructive"
-        });
-        return false;
-      }
-      if (formData.idea.length < 50) {
-        toast({
-          title: "תיאור קצר מדי",
-          description: "אנא הזן לפחות 50 תווים עבור הרעיון הכללי",
-          variant: "destructive"
+          variant: "destructive",
         });
         return false;
       }
@@ -51,15 +40,7 @@ const CreatePresentation = () => {
         toast({
           title: "שדה חסר",
           description: "אנא הזן את הרקע המקצועי שלך",
-          variant: "destructive"
-        });
-        return false;
-      }
-      if (formData.speakerBackground.length < 50) {
-        toast({
-          title: "תיאור קצר מדי",
-          description: "אנא הזן לפחות 50 תווים עבור הרקע המקצועי",
-          variant: "destructive"
+          variant: "destructive",
         });
         return false;
       }
@@ -68,15 +49,7 @@ const CreatePresentation = () => {
         toast({
           title: "שדה חסר",
           description: "אנא הזן מידע על פרופיל הקהל",
-          variant: "destructive"
-        });
-        return false;
-      }
-      if (formData.audienceProfile.length < 50) {
-        toast({
-          title: "תיאור קצר מדי",
-          description: "אנא הזן לפחות 50 תווים עבור פרופיל הקהל",
-          variant: "destructive"
+          variant: "destructive",
         });
         return false;
       }
@@ -84,7 +57,7 @@ const CreatePresentation = () => {
         toast({
           title: "שדה חסר",
           description: "אנא בחר את משך ההרצאה",
-          variant: "destructive"
+          variant: "destructive",
         });
         return false;
       }
@@ -93,15 +66,7 @@ const CreatePresentation = () => {
         toast({
           title: "שדה חסר",
           description: "אנא הזן את השירות או המוצר שברצונך לקדם",
-          variant: "destructive"
-        });
-        return false;
-      }
-      if (formData.serviceOrProduct.length < 50) {
-        toast({
-          title: "תיאור קצר מדי",
-          description: "אנא הזן לפחות 50 תווים עבור השירות/מוצר",
-          variant: "destructive"
+          variant: "destructive",
         });
         return false;
       }
@@ -109,15 +74,7 @@ const CreatePresentation = () => {
         toast({
           title: "שדה חסר",
           description: "אנא הזן את הקריאה לפעולה בסיום ההרצאה",
-          variant: "destructive"
-        });
-        return false;
-      }
-      if (formData.callToAction.length < 50) {
-        toast({
-          title: "תיאור קצר מדי",
-          description: "אנא הזן לפחות 50 תווים עבור הקריאה לפעולה",
-          variant: "destructive"
+          variant: "destructive",
         });
         return false;
       }
@@ -142,17 +99,8 @@ const CreatePresentation = () => {
   };
 
   const handleSubmit = () => {
-    // Always save form data to store first
     setFormData(formData);
-    
-    // Check if user is authenticated
-    if (!authLoading && user) {
-      // User is authenticated, go directly to processing
-      navigate('/processing-outline');
-    } else {
-      // User is not authenticated, redirect to register
-      navigate('/register');
-    }
+    navigate('/outline-confirmation');
   };
 
   return (
@@ -167,10 +115,20 @@ const CreatePresentation = () => {
           <div className="flex justify-between items-center mb-2">
             {Array.from({ length: totalSteps }).map((_, index) => (
               <React.Fragment key={index}>
-                <div className={`rounded-full w-8 h-8 flex items-center justify-center ${currentStep > index ? 'bg-whiskey text-white' : currentStep === index + 1 ? 'bg-whiskey-light text-white' : 'bg-gray-200 text-gray-500'}`}>
+                <div className={`rounded-full w-8 h-8 flex items-center justify-center ${
+                  currentStep > index 
+                    ? 'bg-whiskey text-white' 
+                    : currentStep === index + 1
+                    ? 'bg-whiskey-light text-white'
+                    : 'bg-gray-200 text-gray-500'
+                }`}>
                   {index + 1}
                 </div>
-                {index < totalSteps - 1 && <div className={`flex-1 h-1 mx-2 ${currentStep > index + 1 ? 'bg-whiskey' : 'bg-gray-200'}`}></div>}
+                {index < totalSteps - 1 && (
+                  <div className={`flex-1 h-1 mx-2 ${
+                    currentStep > index + 1 ? 'bg-whiskey' : 'bg-gray-200'
+                  }`}></div>
+                )}
               </React.Fragment>
             ))}
           </div>
@@ -193,7 +151,7 @@ const CreatePresentation = () => {
             {currentStep === 1 && (
               <>
                 <div className="space-y-2">
-                  <Label htmlFor="idea">רעיון כללי של ההרצאה (לפחות 50 תווים)</Label>
+                  <Label htmlFor="idea">רעיון כללי של ההרצאה</Label>
                   <Textarea
                     id="idea"
                     placeholder="מהו הנושא העיקרי של ההרצאה שלך? מה המסר המרכזי?"
@@ -202,12 +160,9 @@ const CreatePresentation = () => {
                     onChange={(e) => updateFormField('idea', e.target.value)}
                     className="resize-none rtl-form"
                   />
-                  <div className="text-sm text-gray-500 text-right">
-                    {formData.idea.length}/50 תווים מינימום
-                  </div>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="speakerBackground">רקע המרצה – ניסיון מקצועי וסגנון (לפחות 50 תווים)</Label>
+                  <Label htmlFor="speakerBackground">רקע המרצה – ניסיון מקצועי וסגנון</Label>
                   <Textarea
                     id="speakerBackground"
                     placeholder="מה הניסיון שלך בתחום? מהו סגנון ההרצאה המועדף עליך?"
@@ -216,9 +171,6 @@ const CreatePresentation = () => {
                     onChange={(e) => updateFormField('speakerBackground', e.target.value)}
                     className="resize-none rtl-form"
                   />
-                  <div className="text-sm text-gray-500 text-right">
-                    {formData.speakerBackground.length}/50 תווים מינימום
-                  </div>
                 </div>
               </>
             )}
@@ -226,7 +178,7 @@ const CreatePresentation = () => {
             {currentStep === 2 && (
               <>
                 <div className="space-y-2">
-                  <Label htmlFor="audienceProfile">פרופיל הקהל – גיל, תפקיד, רקע, רמת ידע (לפחות 50 תווים)</Label>
+                  <Label htmlFor="audienceProfile">פרופיל הקהל – גיל, תפקיד, רקע, רמת ידע</Label>
                   <Textarea
                     id="audienceProfile"
                     placeholder="מיהו קהל היעד שלך? מה הגיל, התפקיד, הרקע ורמת הידע שלהם?"
@@ -235,40 +187,25 @@ const CreatePresentation = () => {
                     onChange={(e) => updateFormField('audienceProfile', e.target.value)}
                     className="resize-none rtl-form"
                   />
-                  <div className="text-sm text-gray-500 text-right">
-                    {formData.audienceProfile.length}/50 תווים מינימום
-                  </div>
                 </div>
                 <div className="space-y-2">
                   <Label>משך הרצאה</Label>
-                  <RadioGroup
-                    value={formData.duration}
-                    onValueChange={(value) => updateFormField('duration', value as "30" | "45" | "60" | "75" | "90" | "120")}
-                    className="flex flex-wrap gap-4 justify-end text-right dir-rtl"
+                  <RadioGroup 
+                    value={formData.duration} 
+                    onValueChange={(value) => updateFormField('duration', value as "30" | "45" | "60")}
+                    className="flex space-x-4 space-x-reverse"
                   >
                     <div className="flex items-center space-x-2 space-x-reverse">
-                      <Label htmlFor="duration-30">30 דקות</Label>
                       <RadioGroupItem value="30" id="duration-30" />
+                      <Label htmlFor="duration-30">30 דקות</Label>
                     </div>
                     <div className="flex items-center space-x-2 space-x-reverse">
-                      <Label htmlFor="duration-45">45 דקות</Label>
                       <RadioGroupItem value="45" id="duration-45" />
+                      <Label htmlFor="duration-45">45 דקות</Label>
                     </div>
                     <div className="flex items-center space-x-2 space-x-reverse">
-                      <Label htmlFor="duration-60">60 דקות</Label>
                       <RadioGroupItem value="60" id="duration-60" />
-                    </div>
-                    <div className="flex items-center space-x-2 space-x-reverse">
-                      <Label htmlFor="duration-75">75 דקות</Label>
-                      <RadioGroupItem value="75" id="duration-75" />
-                    </div>
-                    <div className="flex items-center space-x-2 space-x-reverse">
-                      <Label htmlFor="duration-90">90 דקות</Label>
-                      <RadioGroupItem value="90" id="duration-90" />
-                    </div>
-                    <div className="flex items-center space-x-2 space-x-reverse">
-                      <Label htmlFor="duration-120">120 דקות</Label>
-                      <RadioGroupItem value="120" id="duration-120" />
+                      <Label htmlFor="duration-60">60 דקות</Label>
                     </div>
                   </RadioGroup>
                 </div>
@@ -278,7 +215,7 @@ const CreatePresentation = () => {
             {currentStep === 3 && (
               <>
                 <div className="space-y-2">
-                  <Label htmlFor="serviceOrProduct">השירות/מוצר לקידום במהלך ההרצאה (לפחות 50 תווים)</Label>
+                  <Label htmlFor="serviceOrProduct">השירות/מוצר לקידום במהלך ההרצאה</Label>
                   <Textarea
                     id="serviceOrProduct"
                     placeholder="מהו השירות או המוצר שברצונך לקדם במהלך ההרצאה?"
@@ -287,12 +224,9 @@ const CreatePresentation = () => {
                     onChange={(e) => updateFormField('serviceOrProduct', e.target.value)}
                     className="resize-none rtl-form"
                   />
-                  <div className="text-sm text-gray-500 text-right">
-                    {formData.serviceOrProduct.length}/50 תווים מינימום
-                  </div>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="callToAction">הנעה לפעולה (CTA) בסיום (לפחות 50 תווים)</Label>
+                  <Label htmlFor="callToAction">הנעה לפעולה (CTA) בסיום</Label>
                   <Textarea
                     id="callToAction"
                     placeholder="מהי הפעולה שתרצה שהקהל יבצע בסוף ההרצאה?"
@@ -301,26 +235,29 @@ const CreatePresentation = () => {
                     onChange={(e) => updateFormField('callToAction', e.target.value)}
                     className="resize-none rtl-form"
                   />
-                  <div className="text-sm text-gray-500 text-right">
-                    {formData.callToAction.length}/50 תווים מינימום
-                  </div>
                 </div>
               </>
             )}
 
             <div className="flex justify-between pt-4">
               {currentStep > 1 ? (
-                <Button
-                  variant="outline"
+                <Button 
+                  variant="outline" 
                   onClick={handlePrevious}
                   className="border-whiskey text-whiskey hover:bg-whiskey/10"
                 >
                   הקודם
                 </Button>
               ) : (
-                <div></div>
+                <Button 
+                  variant="outline" 
+                  onClick={() => navigate('/')}
+                  className="border-gray-300 text-gray-500 hover:bg-gray-100"
+                >
+                  ביטול
+                </Button>
               )}
-              <Button
+              <Button 
                 onClick={handleNext}
                 className="bg-whiskey hover:bg-whiskey-dark text-white"
               >
