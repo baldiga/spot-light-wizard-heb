@@ -94,7 +94,7 @@ const Register = () => {
         .select('*')
         .eq('email', email)
         .order('created_at', { ascending: false })
-        .limit(15);
+        .limit(5);
 
       if (error) throw error;
 
@@ -105,7 +105,7 @@ const Register = () => {
           return attemptTime > oneHourAgo;
         });
 
-        if (recentAttempts.length >= 3) {
+        if (recentAttempts.length >= 10) {
           const lastAttempt = new Date(recentAttempts[0].created_at).getTime();
           const blockedUntil = lastAttempt + (60 * 60 * 1000);
           const now = Date.now();
