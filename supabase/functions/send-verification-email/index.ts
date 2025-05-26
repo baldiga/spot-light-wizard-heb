@@ -24,16 +24,9 @@ const handler = async (req: Request): Promise<Response> => {
   try {
     const { email, firstName, code }: VerificationEmailRequest = await req.json();
 
-    // Ensure email is a string and not an array
-    const emailAddress = Array.isArray(email) ? email[0] : email;
-    
-    if (!emailAddress || typeof emailAddress !== 'string') {
-      throw new Error('Invalid email address provided');
-    }
-
     const emailResponse = await resend.emails.send({
       from: "Spotlight <onboarding@resend.dev>",
-      to: emailAddress, // Pass as string, not array
+      to: [email],
       subject: "אימות כתובת המייל שלך - Spotlight",
       html: `
         <div dir="rtl" style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
