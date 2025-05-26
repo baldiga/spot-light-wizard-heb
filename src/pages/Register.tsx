@@ -1,262 +1,237 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { incrementVerificationAttempts } from '@/utils/supabaseHelpers';
 import SpotlightLogo from '@/components/SpotlightLogo';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Shield, Clock, AlertTriangle, CheckCircle2 } from 'lucide-react';
+
+interface FormData {
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone: string;
+  termsConsent: boolean;
+  newsletterConsent: boolean;
+}
+
+interface VerificationData {
+  email: string;
+  code: string;
+  expires_at: string;
+  created_at: string;
+}
+
+// Add webhook function
+const sendWebhook = async (userData: any) => {
+  try {
+    const webhookUrl = 'https://hook.eu2.make.com/your-webhook-url'; // Replace with actual URL
+    const response = await fetch(webhookUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(userData),
+    });
+    
+    if (!response.ok) {
+      console.error('Webhook failed:', response.statusText);
+    }
+  } catch (error) {
+    console.error('Error sending webhook:', error);
+  }
+};
 
 const Register = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { user, loading: authLoading } = useAuth();
+  const [currentStep, setCurrentStep] = useState<'form' | 'verification' | 'success'>('form');
   const [isLoading, setIsLoading] = useState(false);
-  const [mode, setMode] = useState<'register' | 'login' | 'verify'>('register');
-  const [step, setStep] = useState<'register' | 'verify'>('register');
-  const [formData, setFormData] = useState({
+  const [verificationCode, setVerificationCode] = useState('');
+  const [verificationData, setVerificationData] = useState<VerificationData | null>(null);
+  const [attemptsCount, setAttemptsCount] = useState(0);
+  const [timeRemaining, setTimeRemaining] = useState(0);
+  const [isBlocked, setIsBlocked] = useState(false);
+
+  const [formData, setFormData] = useState<FormData>({
     firstName: '',
     lastName: '',
-    phone: '',
     email: '',
+    phone: '',
     termsConsent: false,
+    newsletterConsent: false,
   });
-  const [loginEmail, setLoginEmail] = useState('');
-  const [verificationCode, setVerificationCode] = useState('');
 
-  // Check if user is already authenticated and redirect to summary
-  useEffect(() => {
-    if (!authLoading && user) {
-      navigate('/presentation-summary');
+  React.useEffect(() => {
+    let interval: NodeJS.Timeout;
+    if (timeRemaining > 0) {
+      interval = setInterval(() => {
+        setTimeRemaining((prev) => {
+          if (prev <= 1) {
+            setIsBlocked(false);
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
     }
-  }, [user, authLoading, navigate]);
+    return () => clearInterval(interval);
+  }, [timeRemaining]);
 
-  const generateVerificationCode = () => {
-    return Math.floor(100000 + Math.random() * 900000).toString();
-  };
-
-  const sendWebhook = async (userData: any) => {
+  const checkRateLimit = async (email: string) => {
     try {
-      const response = await fetch('https://hooks.zapier.com/hooks/catch/8626026/2j89gqh/', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          firstName: userData.first_name,
-          lastName: userData.last_name,
-          email: userData.email,
-          phone: userData.phone || '',
-          registeredAt: new Date().toISOString(),
-          newsletterConsent: userData.newsletter_consent || false
-        })
-      });
-      
-      if (!response.ok) {
-        console.error('Webhook failed:', await response.text());
-      } else {
-        console.log('Webhook sent successfully');
-      }
-    } catch (error) {
-      console.error('Error sending webhook:', error);
-    }
-  };
-
-  const checkRateLimit = async (email: string): Promise<boolean> => {
-    try {
-      const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
-      
-      // Query for recent verification attempts - we need to use a simpler approach since 'attempts' column may not be in types yet
-      const { data: recentAttempts, error } = await supabase
+      const { data, error } = await supabase
         .from('email_verifications')
         .select('*')
         .eq('email', email)
-        .gte('created_at', oneHourAgo);
+        .order('created_at', { ascending: false })
+        .limit(5);
 
-      if (error) {
-        console.error('Error checking rate limit:', error);
-        return true; // Allow if we can't check
+      if (error) throw error;
+
+      if (data && data.length >= 3) {
+        const recentAttempts = data.filter(attempt => {
+          const attemptTime = new Date(attempt.created_at).getTime();
+          const oneHourAgo = Date.now() - (60 * 60 * 1000);
+          return attemptTime > oneHourAgo;
+        });
+
+        if (recentAttempts.length >= 3) {
+          const lastAttempt = new Date(recentAttempts[0].created_at).getTime();
+          const blockedUntil = lastAttempt + (60 * 60 * 1000);
+          const now = Date.now();
+          
+          if (now < blockedUntil) {
+            setIsBlocked(true);
+            setTimeRemaining(Math.ceil((blockedUntil - now) / 1000));
+            return false;
+          }
+        }
       }
 
-      // Count total attempts (fallback to counting records if attempts column doesn't exist)
-      const totalAttempts = recentAttempts?.length || 0;
-      return totalAttempts < 5;
+      await incrementVerificationAttempts(email);
+      return true;
     } catch (error) {
       console.error('Error checking rate limit:', error);
-      return true; // Allow if we can't check
+      return true;
     }
   };
 
-  const updateVerificationAttempts = async (email: string) => {
-    try {
-      await incrementVerificationAttempts(email);
-    } catch (error) {
-      console.error('Error updating verification attempts:', error);
-    }
-  };
-
-  const handleRegister = async (e: React.FormEvent) => {
+  const handleFormSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (!formData.termsConsent) {
-      toast({
-        title: "שגיאה",
-        description: "יש לאשר את תנאי השימוש",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    // Check rate limit
-    const canProceed = await checkRateLimit(formData.email);
-    if (!canProceed) {
-      toast({
-        title: "חריגה ממספר הניסיונות המותר",
-        description: "ניסית יותר מדי פעמים. נסה שוב בעוד שעה.",
-        variant: "destructive"
-      });
-      return;
-    }
-
     setIsLoading(true);
 
     try {
-      // Check if email already exists
+      if (!formData.termsConsent) {
+        toast({
+          title: "שגיאה",
+          description: "יש לאשר את התנאים וההגבלות",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      const canProceed = await checkRateLimit(formData.email);
+      if (!canProceed) {
+        toast({
+          title: "נחסמת זמנית",
+          description: `יותר מדי ניסיונות. נסה שוב בעוד ${Math.ceil(timeRemaining / 60)} דקות`,
+          variant: "destructive"
+        });
+        return;
+      }
+
+      // Check if user already exists
       const { data: existingUser } = await supabase
         .from('user_registrations')
-        .select('email')
+        .select('*')
         .eq('email', formData.email)
         .single();
 
       if (existingUser) {
         toast({
-          title: "שגיאה",
-          description: "כתובת המייל כבר רשומה במערכת",
+          title: "משתמש כבר קיים",
+          description: "האימייל הזה כבר רשום במערכת",
           variant: "destructive"
         });
-        setIsLoading(false);
         return;
       }
 
+      // Create user registration
+      const { data: newUser, error: userError } = await supabase
+        .from('user_registrations')
+        .insert([{
+          first_name: formData.firstName,
+          last_name: formData.lastName,
+          email: formData.email,
+          phone: formData.phone,
+          terms_consent: formData.termsConsent,
+          newsletter_consent: formData.newsletterConsent,
+          verified: false
+        }])
+        .select()
+        .single();
+
+      if (userError) throw userError;
+
       // Generate verification code
-      const code = generateVerificationCode();
-      const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes from now
+      const code = Math.floor(100000 + Math.random() * 900000).toString();
+      const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
 
       // Store verification code
       const { error: verificationError } = await supabase
         .from('email_verifications')
-        .insert({
+        .insert([{
           email: formData.email,
           code: code,
           expires_at: expiresAt.toISOString(),
-        });
+          used: false
+        }]);
 
       if (verificationError) throw verificationError;
 
-      // Send verification email
+      // Send verification email via Supabase Edge Function
       const { error: emailError } = await supabase.functions.invoke('send-verification-email', {
         body: {
-          email: formData.email,
-          firstName: formData.firstName,
+          to: formData.email,
           code: code,
-        },
+          firstName: formData.firstName
+        }
       });
 
-      if (emailError) throw emailError;
+      if (emailError) {
+        console.error('Error sending email:', emailError);
+        toast({
+          title: "שגיאה בשליחת האימייל",
+          description: "קוד האימות נוצר אך לא נשלח. נסה שוב מאוחר יותר",
+          variant: "destructive"
+        });
+      }
 
-      setStep('verify');
+      setVerificationData({
+        email: formData.email,
+        code: code,
+        expires_at: expiresAt.toISOString(),
+        created_at: new Date().toISOString()
+      });
+
+      setCurrentStep('verification');
+
       toast({
         title: "קוד אימות נשלח",
-        description: "בדוק את תיבת המייל שלך וזין את קוד האימות",
+        description: "בדוק את תיבת המייל שלך",
       });
 
     } catch (error: any) {
       console.error('Registration error:', error);
       toast({
         title: "שגיאה ברישום",
-        description: "אירעה שגיאה בתהליך הרישום. נסה שנית.",
-        variant: "destructive"
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    // Check rate limit
-    const canProceed = await checkRateLimit(loginEmail);
-    if (!canProceed) {
-      toast({
-        title: "חריגה ממספר הניסיונות המותר",
-        description: "ניסית יותר מדי פעמים. נסה שוב בעוד שעה.",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    setIsLoading(true);
-
-    try {
-      // Check if user exists in our database
-      const { data: existingUser } = await supabase
-        .from('user_registrations')
-        .select('email, first_name')
-        .eq('email', loginEmail)
-        .single();
-
-      if (!existingUser) {
-        toast({
-          title: "שגיאה",
-          description: "כתובת המייל לא נמצאה במערכת",
-          variant: "destructive"
-        });
-        setIsLoading(false);
-        return;
-      }
-
-      // Generate verification code
-      const code = generateVerificationCode();
-      const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
-
-      // Store verification code
-      const { error: verificationError } = await supabase
-        .from('email_verifications')
-        .insert({
-          email: loginEmail,
-          code: code,
-          expires_at: expiresAt.toISOString(),
-        });
-
-      if (verificationError) throw verificationError;
-
-      // Send verification email
-      const { error: emailError } = await supabase.functions.invoke('send-verification-email', {
-        body: {
-          email: loginEmail,
-          firstName: existingUser.first_name,
-          code: code,
-        },
-      });
-
-      if (emailError) throw emailError;
-
-      setMode('verify');
-      toast({
-        title: "קוד אימות נשלח",
-        description: "בדוק את תיבת המייל שלך וזין את קוד האימות",
-      });
-
-    } catch (error: any) {
-      console.error('Login error:', error);
-      toast({
-        title: "שגיאה בהתחברות",
-        description: "אירעה שגיאה בתהליך ההתחברות. נסה שנית.",
+        description: error.message || "אירעה שגיאה לא צפויה",
         variant: "destructive"
       });
     } finally {
@@ -268,104 +243,71 @@ const Register = () => {
     e.preventDefault();
     setIsLoading(true);
 
-    const emailToVerify = mode === 'verify' ? loginEmail : formData.email;
-
     try {
-      // Check rate limit before verification
-      const canProceed = await checkRateLimit(emailToVerify);
-      if (!canProceed) {
-        toast({
-          title: "חריגה ממספר הניסיונות המותר",
-          description: "ניסית יותר מדי פעמים. נסה שוב בעוד שעה.",
-          variant: "destructive"
-        });
-        setIsLoading(false);
-        return;
-      }
-
-      // Update attempts counter
-      await updateVerificationAttempts(emailToVerify);
-
       // Verify the code
-      const { data: verification, error: verificationError } = await supabase
+      const { data: verification, error: verifyError } = await supabase
         .from('email_verifications')
         .select('*')
-        .eq('email', emailToVerify)
+        .eq('email', formData.email)
         .eq('code', verificationCode)
         .eq('used', false)
         .single();
 
-      if (verificationError || !verification) {
+      if (verifyError || !verification) {
         toast({
           title: "קוד שגוי",
-          description: "קוד האימות שהוזן אינו תקין",
+          description: "הקוד שהזנת אינו נכון",
           variant: "destructive"
         });
-        setIsLoading(false);
         return;
       }
 
-      // Check if code is expired
-      if (new Date(verification.expires_at) < new Date()) {
+      // Check if code expired
+      if (new Date() > new Date(verification.expires_at)) {
         toast({
           title: "קוד פג תוקף",
-          description: "קוד האימות פג תוקף. נסה להתחבר שנית.",
+          description: "הקוד פג תוקף. בקש קוד חדש",
           variant: "destructive"
         });
-        setIsLoading(false);
         return;
       }
 
-      // Mark verification as used
+      // Mark code as used
       await supabase
         .from('email_verifications')
         .update({ used: true })
         .eq('id', verification.id);
 
-      // Set verified email in localStorage for mock auth
-      localStorage.setItem('verified_email', emailToVerify);
+      // Mark user as verified
+      await supabase
+        .from('user_registrations')
+        .update({ verified: true })
+        .eq('email', formData.email);
 
-      // If it's a new registration, create user registration
-      if (step === 'verify') {
-        const { data: newUser, error: registrationError } = await supabase
-          .from('user_registrations')
-          .insert({
-            first_name: formData.firstName,
-            last_name: formData.lastName,
-            phone: formData.phone,
-            email: formData.email,
-            newsletter_consent: false,
-            terms_consent: formData.termsConsent,
-            verified: true,
-          })
-          .select()
-          .single();
+      // Store verified email for mock auth
+      localStorage.setItem('verified_email', formData.email);
 
-        if (registrationError) throw registrationError;
+      // Send webhook notification
+      await sendWebhook({
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        email: formData.email,
+        phone: formData.phone,
+        registrationDate: new Date().toISOString()
+      });
 
-        // Send webhook for new registration
-        if (newUser) {
-          await sendWebhook(newUser);
-        }
+      setCurrentStep('success');
 
-        toast({
-          title: "רישום הושלם בהצלחה!",
-          description: "ברוכים הבאים ל-Spotlight",
-        });
-      } else {
-        toast({
-          title: "התחברות הושלמה בהצלחה!",
-          description: "ברוכים השבים ל-Spotlight",
-        });
-      }
-
-      navigate('/presentation-summary');
+      toast({
+        title: "רישום הושלם בהצלחה!",
+        description: "ברוך הבא למערכת",
+      });
 
     } catch (error: any) {
       console.error('Verification error:', error);
       toast({
         title: "שגיאה באימות",
-        description: "אירעה שגיאה בתהליך האימות. נסה שנית.",
+        description: error.message || "אירעה שגיאה לא צפויה",
         variant: "destructive"
       });
     } finally {
@@ -375,51 +317,51 @@ const Register = () => {
 
   const resendCode = async () => {
     setIsLoading(true);
-    
     try {
-      const emailToSend = mode === 'verify' ? loginEmail : formData.email;
-      
-      // Check rate limit
-      const canProceed = await checkRateLimit(emailToSend);
+      const canProceed = await checkRateLimit(formData.email);
       if (!canProceed) {
         toast({
-          title: "חריגה ממספר הניסיונות המותר",
-          description: "ניסית יותר מדי פעמים. נסה שוב בעוד שעה.",
+          title: "נחסמת זמנית",
+          description: `יותר מדי ניסיונות. נסה שוב בעוד ${Math.ceil(timeRemaining / 60)} דקות`,
           variant: "destructive"
         });
-        setIsLoading(false);
         return;
       }
 
-      const code = generateVerificationCode();
+      const code = Math.floor(100000 + Math.random() * 900000).toString();
       const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
-      const nameToSend = mode === 'verify' ? 'משתמש' : formData.firstName;
 
       await supabase
         .from('email_verifications')
-        .insert({
-          email: emailToSend,
+        .insert([{
+          email: formData.email,
           code: code,
           expires_at: expiresAt.toISOString(),
-        });
+          used: false
+        }]);
 
-      await supabase.functions.invoke('send-verification-email', {
+      const { error: emailError } = await supabase.functions.invoke('send-verification-email', {
         body: {
-          email: emailToSend,
-          firstName: nameToSend,
+          to: formData.email,
           code: code,
-        },
+          firstName: formData.firstName
+        }
       });
+
+      if (emailError) {
+        console.error('Error sending email:', emailError);
+      }
 
       toast({
         title: "קוד חדש נשלח",
-        description: "קוד אימות חדש נשלח לכתובת המייל שלך",
+        description: "בדוק את תיבת המייל שלך",
       });
 
-    } catch (error) {
+    } catch (error: any) {
+      console.error('Resend error:', error);
       toast({
-        title: "שגיאה",
-        description: "לא ניתן לשלוח קוד חדש. נסה שנית.",
+        title: "שגיאה בשליחה מחדש",
+        description: error.message || "אירעה שגיאה לא צפויה",
         variant: "destructive"
       });
     } finally {
@@ -427,260 +369,250 @@ const Register = () => {
     }
   };
 
-  if (authLoading) {
+  const formatTime = (seconds: number) => {
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = seconds % 60;
+    return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
+  };
+
+  if (currentStep === 'success') {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-whiskey" />
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 dir-rtl">
+        <Card className="w-full max-w-md">
+          <CardContent className="pt-6">
+            <div className="text-center">
+              <CheckCircle2 className="mx-auto h-16 w-16 text-green-500 mb-4" />
+              <h2 className="text-2xl font-bold text-gray-900 mb-2">רישום הושלם בהצלחה!</h2>
+              <p className="text-gray-600 mb-6">ברוך הבא למערכת. כעת תוכל להתחיל ליצור הרצאות מרתקות.</p>
+              <Button 
+                onClick={() => navigate('/profile')}
+                className="w-full bg-whiskey hover:bg-whiskey-dark text-white"
+              >
+                המשך לפרופיל
+              </Button>
+              <Button 
+                variant="outline"
+                onClick={() => navigate('/')}
+                className="w-full mt-2 border-whiskey text-whiskey hover:bg-whiskey/10"
+              >
+                חזרה לעמוד הבית
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  if (currentStep === 'verification') {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 dir-rtl">
+        <Card className="w-full max-w-md">
+          <CardHeader>
+            <div className="flex items-center justify-center mb-4">
+              <SpotlightLogo className="w-8 h-8 ml-2" />
+              <CardTitle className="text-2xl font-bold text-center">אימות המייל</CardTitle>
+            </div>
+          </CardHeader>
+          <CardContent>
+            {isBlocked && (
+              <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg">
+                <div className="flex items-center">
+                  <AlertTriangle className="w-5 h-5 text-red-500 ml-2" />
+                  <div>
+                    <p className="text-red-800 font-medium">חשבון זמנית חסום</p>
+                    <p className="text-red-600 text-sm">
+                      זמן נותר: {formatTime(timeRemaining)}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+            
+            <form onSubmit={handleVerification} className="space-y-4">
+              <div>
+                <Label htmlFor="verification-code">קוד אימות (6 ספרות)</Label>
+                <Input
+                  id="verification-code"
+                  type="text"
+                  value={verificationCode}
+                  onChange={(e) => setVerificationCode(e.target.value)}
+                  placeholder="הזן קוד אימות"
+                  maxLength={6}
+                  className="text-center text-2xl tracking-widest"
+                  disabled={isLoading || isBlocked}
+                  required
+                />
+              </div>
+              
+              <Button 
+                type="submit" 
+                className="w-full bg-whiskey hover:bg-whiskey-dark text-white"
+                disabled={isLoading || verificationCode.length !== 6 || isBlocked}
+              >
+                {isLoading ? (
+                  <>
+                    <Loader2 className="ml-2 h-4 w-4 animate-spin" />
+                    מאמת...
+                  </>
+                ) : (
+                  'אמת קוד'
+                )}
+              </Button>
+              
+              <div className="text-center">
+                <p className="text-sm text-gray-600 mb-2">
+                  לא קיבלת קוד? 
+                </p>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={resendCode}
+                  disabled={isLoading || isBlocked}
+                  className="border-whiskey text-whiskey hover:bg-whiskey/10"
+                >
+                  שלח קוד חדש
+                </Button>
+              </div>
+            </form>
+          </CardContent>
+        </Card>
       </div>
     );
   }
 
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 dir-rtl">
-      <div className="max-w-md w-full space-y-8">
-        <div className="text-center">
-          <SpotlightLogo className="mx-auto h-12 w-12" />
-          <h2 className="mt-6 text-3xl font-bold text-gray-900">
-            {mode === 'register' && step === 'register' && 'הרשמה ל-Spotlight'}
-            {mode === 'login' && 'התחברות ל-Spotlight'}
-            {(mode === 'verify' || step === 'verify') && 'אימות כתובת מייל'}
-          </h2>
-          <p className="mt-2 text-sm text-gray-600">
-            {mode === 'register' && step === 'register' && 'צור חשבון חדש כדי לראות את הסיכום המלא של ההרצאה'}
-            {mode === 'login' && 'התחבר לחשבון הקיים שלך'}
-            {(mode === 'verify' || step === 'verify') && 'הזן את קוד האימות שנשלח לכתובת המייל שלך'}
-          </p>
-        </div>
-
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-center">
-              {mode === 'register' && step === 'register' && 'פרטים אישיים'}
-              {mode === 'login' && 'כתובת מייל'}
-              {(mode === 'verify' || step === 'verify') && 'קוד אימות'}
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {mode === 'register' && step === 'register' ? (
-              <form onSubmit={handleRegister} className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label htmlFor="firstName" className="block text-sm font-medium text-gray-700 mb-1">
-                      שם פרטי *
-                    </label>
-                    <Input
-                      id="firstName"
-                      type="text"
-                      required
-                      value={formData.firstName}
-                      onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
-                      className="text-right"
-                    />
-                  </div>
-                  <div>
-                    <label htmlFor="lastName" className="block text-sm font-medium text-gray-700 mb-1">
-                      שם משפחה *
-                    </label>
-                    <Input
-                      id="lastName"
-                      type="text"
-                      required
-                      value={formData.lastName}
-                      onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
-                      className="text-right"
-                    />
-                  </div>
-                </div>
-
+      <Card className="w-full max-w-md">
+        <CardHeader>
+          <div className="flex items-center justify-center mb-4">
+            <SpotlightLogo className="w-8 h-8 ml-2" />
+            <CardTitle className="text-2xl font-bold text-center">הרשמה למערכת</CardTitle>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {isBlocked && (
+            <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg">
+              <div className="flex items-center">
+                <AlertTriangle className="w-5 h-5 text-red-500 ml-2" />
                 <div>
-                  <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
-                    כתובת מייל *
-                  </label>
-                  <Input
-                    id="email"
-                    type="email"
-                    required
-                    value={formData.email}
-                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                    className="text-right"
-                  />
+                  <p className="text-red-800 font-medium">חשבון זמנית חסום</p>
+                  <p className="text-red-600 text-sm">
+                    יותר מדי ניסיונות רישום. זמן נותר: {formatTime(timeRemaining)}
+                  </p>
                 </div>
+              </div>
+            </div>
+          )}
 
-                <div>
-                  <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-1">
-                    מספר טלפון *
-                  </label>
-                  <Input
-                    id="phone"
-                    type="tel"
-                    required
-                    value={formData.phone}
-                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                    className="text-right"
-                    placeholder="050-1234567"
-                  />
-                </div>
+          <form onSubmit={handleFormSubmit} className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="firstName">שם פרטי</Label>
+                <Input
+                  id="firstName"
+                  value={formData.firstName}
+                  onChange={(e) => setFormData({...formData, firstName: e.target.value})}
+                  required
+                  disabled={isLoading || isBlocked}
+                />
+              </div>
+              <div>
+                <Label htmlFor="lastName">שם משפחה</Label>
+                <Input
+                  id="lastName"
+                  value={formData.lastName}
+                  onChange={(e) => setFormData({...formData, lastName: e.target.value})}
+                  required
+                  disabled={isLoading || isBlocked}
+                />
+              </div>
+            </div>
 
-                <div className="space-y-3">
-                  <div className="flex items-center space-x-2 space-x-reverse">
-                    <Checkbox
-                      id="terms"
-                      checked={formData.termsConsent}
-                      onCheckedChange={(checked) => 
-                        setFormData({ ...formData, termsConsent: checked as boolean })
-                      }
-                      required
-                    />
-                    <label htmlFor="terms" className="text-sm text-gray-700">
-                      אני מסכים ל<a href="https://amirbaldiga.com/תקנון-אתר" target="_blank" rel="noopener noreferrer" className="text-whiskey hover:text-whiskey-dark underline">תנאי השימוש ומדיניות הפרטיות</a> *
-                    </label>
-                  </div>
-                </div>
+            <div>
+              <Label htmlFor="email">כתובת מייל</Label>
+              <Input
+                id="email"
+                type="email"
+                value={formData.email}
+                onChange={(e) => setFormData({...formData, email: e.target.value})}
+                required
+                disabled={isLoading || isBlocked}
+              />
+            </div>
 
-                <Button
-                  type="submit"
-                  disabled={isLoading}
-                  className="w-full bg-whiskey hover:bg-whiskey-dark text-white"
-                >
-                  {isLoading ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      נרשם...
-                    </>
-                  ) : (
-                    'הרשם'
-                  )}
-                </Button>
+            <div>
+              <Label htmlFor="phone">טלפון</Label>
+              <Input
+                id="phone"
+                type="tel"
+                value={formData.phone}
+                onChange={(e) => setFormData({...formData, phone: e.target.value})}
+                required
+                disabled={isLoading || isBlocked}
+              />
+            </div>
 
-                <div className="text-center">
-                  <Button
-                    type="button"
-                    variant="link"
-                    onClick={() => setMode('login')}
-                    className="text-whiskey hover:text-whiskey-dark"
-                  >
-                    כבר יש לך חשבון? התחבר כאן
-                  </Button>
-                </div>
-              </form>
-            ) : mode === 'login' ? (
-              <form onSubmit={handleLogin} className="space-y-4">
-                <div>
-                  <label htmlFor="loginEmail" className="block text-sm font-medium text-gray-700 mb-1">
-                    כתובת מייל *
-                  </label>
-                  <Input
-                    id="loginEmail"
-                    type="email"
-                    required
-                    value={loginEmail}
-                    onChange={(e) => setLoginEmail(e.target.value)}
-                    className="text-right"
-                    placeholder="הזן את כתובת המייל שלך"
-                  />
-                </div>
+            <div className="space-y-3">
+              <div className="flex items-start space-x-2 space-x-reverse">
+                <Checkbox
+                  id="terms"
+                  checked={formData.termsConsent}
+                  onCheckedChange={(checked) => 
+                    setFormData({...formData, termsConsent: checked as boolean})
+                  }
+                  disabled={isLoading || isBlocked}
+                />
+                <Label htmlFor="terms" className="text-sm leading-5">
+                  אני מסכים/ה לתנאים וההגבלות ולמדיניות הפרטיות
+                  <span className="text-red-500">*</span>
+                </Label>
+              </div>
 
-                <Button
-                  type="submit"
-                  disabled={isLoading}
-                  className="w-full bg-whiskey hover:bg-whiskey-dark text-white"
-                >
-                  {isLoading ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      שולח קוד...
-                    </>
-                  ) : (
-                    'שלח קוד אימות'
-                  )}
-                </Button>
+              <div className="flex items-start space-x-2 space-x-reverse">
+                <Checkbox
+                  id="newsletter"
+                  checked={formData.newsletterConsent}
+                  onCheckedChange={(checked) => 
+                    setFormData({...formData, newsletterConsent: checked as boolean})
+                  }
+                  disabled={isLoading || isBlocked}
+                />
+                <Label htmlFor="newsletter" className="text-sm">
+                  אני מעוניין/ת לקבל עדכונים ותכנים בנושא הרצאות
+                </Label>
+              </div>
+            </div>
 
-                <div className="text-center">
-                  <Button
-                    type="button"
-                    variant="link"
-                    onClick={() => setMode('register')}
-                    className="text-whiskey hover:text-whiskey-dark"
-                  >
-                    אין לך חשבון? הירשם כאן
-                  </Button>
-                </div>
-              </form>
-            ) : (
-              <form onSubmit={handleVerification} className="space-y-4">
-                <div>
-                  <label htmlFor="code" className="block text-sm font-medium text-gray-700 mb-1">
-                    קוד אימות (6 ספרות)
-                  </label>
-                  <Input
-                    id="code"
-                    type="text"
-                    required
-                    maxLength={6}
-                    value={verificationCode}
-                    onChange={(e) => setVerificationCode(e.target.value.replace(/\D/g, ''))}
-                    className="text-center text-lg font-mono letter-spacing-2"
-                    placeholder="123456"
-                  />
-                </div>
+            <Button 
+              type="submit" 
+              className="w-full bg-whiskey hover:bg-whiskey-dark text-white"
+              disabled={isLoading || !formData.termsConsent || isBlocked}
+            >
+              {isLoading ? (
+                <>
+                  <Loader2 className="ml-2 h-4 w-4 animate-spin" />
+                  רושם...
+                </>
+              ) : (
+                'הרשם למערכת'
+              )}
+            </Button>
 
-                <div className="text-center text-sm text-gray-600">
-                  <p>נשלח קוד אימות לכתובת: {mode === 'verify' ? loginEmail : formData.email}</p>
-                  <button
-                    type="button"
-                    onClick={resendCode}
-                    disabled={isLoading}
-                    className="text-whiskey hover:text-whiskey-dark underline mt-2"
-                  >
-                    שלח קוד חדש
-                  </button>
-                </div>
-
-                <Button
-                  type="submit"
-                  disabled={isLoading || verificationCode.length !== 6}
-                  className="w-full bg-whiskey hover:bg-whiskey-dark text-white"
-                >
-                  {isLoading ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      מאמת...
-                    </>
-                  ) : (
-                    'אמת והמשך'
-                  )}
-                </Button>
-
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => {
-                    if (mode === 'verify') {
-                      setMode('login');
-                    } else {
-                      setStep('register');
-                    }
-                    setVerificationCode('');
-                  }}
-                  className="w-full"
-                >
-                  {mode === 'verify' ? 'חזרה להתחברות' : 'חזרה לטופס הרישום'}
-                </Button>
-              </form>
-            )}
-          </CardContent>
-        </Card>
-
-        <div className="text-center">
-          <Button
-            variant="link"
-            onClick={() => navigate('/')}
-            className="text-whiskey hover:text-whiskey-dark"
-          >
-            חזרה לעמוד הבית
-          </Button>
-        </div>
-      </div>
+            <div className="text-center">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => navigate('/')}
+                className="border-whiskey text-whiskey hover:bg-whiskey/10"
+                disabled={isLoading}
+              >
+                חזרה לעמוד הבית
+              </Button>
+            </div>
+          </form>
+        </CardContent>
+      </Card>
     </div>
   );
 };

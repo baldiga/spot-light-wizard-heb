@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -72,8 +71,8 @@ const Profile = () => {
 
       // Load user profile data using helper function
       const profileData = await getUserProfile(regData.id);
-      if (profileData && profileData.length > 0) {
-        setUserProfile(profileData[0]);
+      if (profileData && Array.isArray(profileData) && profileData.length > 0) {
+        setUserProfile(profileData[0] as UserProfile);
       }
 
     } catch (error: any) {
@@ -95,7 +94,9 @@ const Profile = () => {
 
       // Load presentations using helper function
       const presentationsData = await getUserPresentations(regData.id);
-      setPresentations(presentationsData || []);
+      if (Array.isArray(presentationsData)) {
+        setPresentations(presentationsData as UserPresentation[]);
+      }
 
     } catch (error: any) {
       console.error('Error loading presentations:', error);
@@ -113,13 +114,13 @@ const Profile = () => {
       const fileName = `${userRegistration.id}/avatar.${fileExt}`;
 
       const { error: uploadError } = await supabase.storage
-        .from('profile-pictures')
+        .from('profile-pictures' as any)
         .upload(fileName, file, { upsert: true });
 
       if (uploadError) throw uploadError;
 
       const { data: { publicUrl } } = supabase.storage
-        .from('profile-pictures')
+        .from('profile-pictures' as any)
         .getPublicUrl(fileName);
 
       // Update profile using helper function
