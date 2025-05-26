@@ -7,7 +7,7 @@ const OPENAI_API_KEY = 'sk-proj-2PwlKaoaL8l-yY7QEse_-w8r35h5alMNpobpqyi694fGOoVU
 const OPENAI_ORG_ID = 'org-fdnj54f725C7rUNxPVyt8jEA';
 
 // Use gpt-3.5-turbo for cost efficiency
-const MODEL = 'gpt-3.5-turbo';
+const MODEL = 'o3-mini';
 const TEMPERATURE = 0.7; // Balanced approach
 
 /**
