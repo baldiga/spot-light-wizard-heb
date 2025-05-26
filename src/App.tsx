@@ -4,11 +4,11 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import Index from "./pages/Index";
 import CreatePresentation from "./pages/CreatePresentation";
 import OutlineConfirmation from "./pages/OutlineConfirmation";
 import PresentationSummary from "./pages/PresentationSummary";
 import Register from "./pages/Register";
+import ProcessingOutline from "./pages/ProcessingOutline";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -20,10 +20,10 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <Routes>
-          <Route path="/" element={<Index />} />
-          <Route path="/create" element={<CreatePresentation />} />
-          <Route path="/outline-confirmation" element={<OutlineConfirmation />} />
+          <Route path="/" element={<CreatePresentation />} />
           <Route path="/register" element={<Register />} />
+          <Route path="/processing-outline" element={<ProcessingOutline />} />
+          <Route path="/outline-confirmation" element={<OutlineConfirmation />} />
           <Route path="/presentation-summary" element={<PresentationSummary />} />
           <Route path="*" element={<NotFound />} />
         </Routes>

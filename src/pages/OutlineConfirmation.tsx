@@ -1,28 +1,17 @@
-import React, { useEffect, useState } from 'react';
+
+import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { usePresentationStore } from '@/store/presentationStore';
 import { useToast } from '@/hooks/use-toast';
-import { useAuth } from '@/hooks/useAuth';
 import SpotlightLogo from '@/components/SpotlightLogo';
 import ChapterEditor from '@/components/ChapterEditor';
-import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
-import { AlertTriangle, Loader2 } from 'lucide-react';
 
 const OutlineConfirmation = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { user, loading: authLoading } = useAuth();
-  const {
-    formData,
-    chapters,
-    isLoading,
-    error,
-    generateOutlineFromAPI,
-    generateDummyOutline
-  } = usePresentationStore();
-  const [apiAttempted, setApiAttempted] = useState(false);
+  const { formData, chapters } = usePresentationStore();
 
   useEffect(() => {
     if (!formData) {
@@ -31,44 +20,23 @@ const OutlineConfirmation = () => {
         description: "אנא מלא את טופס פרטי ההרצאה תחילה",
         variant: "destructive"
       });
-      navigate('/create');
+      navigate('/');
       return;
     }
 
-    // If we have form data but no user and not currently loading auth
-    if (formData && !authLoading && !user) {
-      // Store the intended destination and redirect to register
-      sessionStorage.setItem('post_auth_destination', '/outline-confirmation');
-      navigate('/register');
+    if (chapters.length === 0) {
+      toast({
+        title: "מבנה ההרצאה לא נוצר",
+        description: "חוזרים לעמוד הקודם",
+        variant: "destructive"
+      });
+      navigate('/');
       return;
     }
-
-    const generateOutline = async () => {
-      setApiAttempted(true);
-      await generateOutlineFromAPI();
-    };
-
-    if (!apiAttempted && formData && user) {
-      generateOutline();
-    }
-  }, [formData, navigate, toast, generateOutlineFromAPI, apiAttempted, user, authLoading]);
+  }, [formData, chapters, navigate, toast]);
 
   const handleConfirm = () => {
-    // Check if user is authenticated, if not go to register, otherwise go to summary
-    if (!authLoading && !user) {
-      sessionStorage.setItem('post_auth_destination', '/presentation-summary');
-      navigate('/register');
-    } else {
-      navigate('/presentation-summary');
-    }
-  };
-
-  const handleRetry = async () => {
-    await generateOutlineFromAPI();
-  };
-
-  const handleFallbackToDummy = () => {
-    generateDummyOutline();
+    navigate('/presentation-summary');
   };
 
   const salesSteps = [
@@ -86,20 +54,6 @@ const OutlineConfirmation = () => {
     }
   ];
 
-  if (isLoading) {
-    return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 dir-rtl">
-        <SpotlightLogo className="w-16 h-16 mb-6" />
-        <h2 className="text-2xl font-bold text-gray-800 mb-4">יוצרים את מבנה ההרצאה...</h2>
-        <p className="text-gray-600 mb-6">אנו מעבדים את המידע שהזנת כדי ליצור מבנה מותאם אישית</p>
-        <div className="flex items-center gap-2">
-          <Loader2 className="h-8 w-8 animate-spin text-whiskey" />
-          <span className="text-whiskey font-medium">אנא המתן...</span>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8 dir-rtl">
       <div className="max-w-4xl mx-auto">
@@ -107,22 +61,6 @@ const OutlineConfirmation = () => {
           <SpotlightLogo className="w-12 h-12 ml-3" />
           <h1 className="text-3xl font-bold text-gray-dark">אישור מבנה ההרצאה</h1>
         </div>
-
-        {error && (
-          <Alert variant="destructive" className="mb-6 text-right">
-            <AlertTriangle className="h-4 w-4" />
-            <AlertTitle>שגיאה ביצירת מבנה ההרצאה</AlertTitle>
-            <AlertDescription>{error}</AlertDescription>
-            <div className="mt-4 flex gap-4 justify-start">
-              <Button variant="outline" onClick={handleRetry}>
-                נסה שנית
-              </Button>
-              <Button variant="default" onClick={handleFallbackToDummy}>
-                השתמש במבנה לדוגמה
-              </Button>
-            </div>
-          </Alert>
-        )}
 
         <div className="mb-6 bg-white p-6 rounded-lg shadow border border-gray-200 text-right">
           <h2 className="text-xl font-semibold text-gray-800 mb-4">אנחנו יצרנו עבורך מבנה הרצאה. אנא בדוק ועדכן במידת הצורך:</h2>
@@ -167,7 +105,7 @@ const OutlineConfirmation = () => {
         <div className="flex justify-between">
           <Button 
             variant="outline" 
-            onClick={() => navigate('/create')} 
+            onClick={() => navigate('/')} 
             className="border-whiskey text-whiskey hover:bg-whiskey/10"
           >
             חזרה לעריכה

@@ -145,16 +145,13 @@ const CreatePresentation = () => {
     // Always save form data to store first
     setFormData(formData);
     
-    // Store intended destination for after login
-    sessionStorage.setItem('post_auth_destination', '/outline-confirmation');
-    
     // Check if user is authenticated
-    if (!authLoading && !user) {
+    if (!authLoading && user) {
+      // User is authenticated, go directly to processing
+      navigate('/processing-outline');
+    } else {
       // User is not authenticated, redirect to register
       navigate('/register');
-    } else {
-      // User is authenticated, proceed to outline confirmation
-      navigate('/outline-confirmation');
     }
   };
 
@@ -321,13 +318,7 @@ const CreatePresentation = () => {
                   הקודם
                 </Button>
               ) : (
-                <Button
-                  variant="outline"
-                  onClick={() => navigate('/')}
-                  className="border-gray-300 text-gray-500 hover:bg-gray-100"
-                >
-                  ביטול
-                </Button>
+                <div></div>
               )}
               <Button
                 onClick={handleNext}

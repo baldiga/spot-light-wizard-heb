@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -7,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
+import { usePresentationStore } from '@/store/presentationStore';
 import { supabase } from '@/integrations/supabase/client';
 import SpotlightLogo from '@/components/SpotlightLogo';
 import { Loader2 } from 'lucide-react';
@@ -15,10 +15,11 @@ const Register = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { user, loading: authLoading } = useAuth();
+  const { formData } = usePresentationStore();
   const [isLoading, setIsLoading] = useState(false);
   const [mode, setMode] = useState<'register' | 'login' | 'verify'>('register');
   const [step, setStep] = useState<'register' | 'verify'>('register');
-  const [formData, setFormData] = useState({
+  const [registrationData, setRegistrationData] = useState({
     firstName: '',
     lastName: '',
     phone: '',
@@ -32,16 +33,14 @@ const Register = () => {
   // Check if user is already authenticated and handle redirection
   useEffect(() => {
     if (!authLoading && user) {
-      // Check if there's a post-auth destination
-      const postAuthDestination = sessionStorage.getItem('post_auth_destination');
-      if (postAuthDestination) {
-        sessionStorage.removeItem('post_auth_destination');
-        navigate(postAuthDestination);
+      // User is authenticated, check if we have form data to process
+      if (formData) {
+        navigate('/processing-outline');
       } else {
-        navigate('/presentation-summary');
+        navigate('/');
       }
     }
-  }, [user, authLoading, navigate]);
+  }, [user, authLoading, navigate, formData]);
 
   const generateVerificationCode = () => {
     return Math.floor(100000 + Math.random() * 900000).toString();
@@ -50,7 +49,7 @@ const Register = () => {
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!formData.termsConsent) {
+    if (!registrationData.termsConsent) {
       toast({
         title: "שגיאה",
         description: "יש לאשר את תנאי השימוש",
@@ -70,7 +69,7 @@ const Register = () => {
       const { error: verificationError } = await supabase
         .from('email_verifications')
         .insert({
-          email: formData.email,
+          email: registrationData.email,
           code: code,
           expires_at: expiresAt.toISOString(),
         });
@@ -80,8 +79,8 @@ const Register = () => {
       // Send verification email
       const { error: emailError } = await supabase.functions.invoke('send-verification-email', {
         body: {
-          email: formData.email,
-          firstName: formData.firstName,
+          email: registrationData.email,
+          firstName: registrationData.firstName,
           code: code,
         },
       });
@@ -91,7 +90,7 @@ const Register = () => {
       // Store registration data for after verification
       setPendingAuthData({
         type: 'register',
-        ...formData
+        ...registrationData
       });
 
       setStep('verify');
@@ -181,7 +180,7 @@ const Register = () => {
     e.preventDefault();
     setIsLoading(true);
 
-    const emailToVerify = pendingAuthData?.email || formData.email;
+    const emailToVerify = pendingAuthData?.email || registrationData.email;
 
     try {
       // Verify the code
@@ -222,7 +221,7 @@ const Register = () => {
 
       if (pendingAuthData?.type === 'register') {
         // Use Supabase OTP for registration
-        const { data: otpData, error: otpError } = await supabase.auth.signInWithOtp({
+        const { error: otpError } = await supabase.auth.signInWithOtp({
           email: pendingAuthData.email,
           options: {
             shouldCreateUser: true,
@@ -251,14 +250,13 @@ const Register = () => {
         if (registrationError) throw registrationError;
 
         // Verify the OTP with our custom code
-        const { data: verifyData, error: verifyError } = await supabase.auth.verifyOtp({
+        const { error: verifyError } = await supabase.auth.verifyOtp({
           email: pendingAuthData.email,
           token: verificationCode,
           type: 'email'
         });
 
         if (verifyError) {
-          // If Supabase OTP fails, we'll create a session manually
           console.log('OTP verification failed, creating manual session');
         }
 
@@ -269,14 +267,14 @@ const Register = () => {
 
       } else {
         // Use Supabase OTP for login
-        const { data: otpData, error: otpError } = await supabase.auth.signInWithOtp({
+        const { error: otpError } = await supabase.auth.signInWithOtp({
           email: pendingAuthData.email
         });
 
         if (otpError) throw otpError;
 
         // Verify the OTP with our custom code
-        const { data: verifyData, error: verifyError } = await supabase.auth.verifyOtp({
+        const { error: verifyError } = await supabase.auth.verifyOtp({
           email: pendingAuthData.email,
           token: verificationCode,
           type: 'email'
@@ -292,13 +290,11 @@ const Register = () => {
         });
       }
 
-      // Navigate to post-auth destination
-      const postAuthDestination = sessionStorage.getItem('post_auth_destination');
-      if (postAuthDestination) {
-        sessionStorage.removeItem('post_auth_destination');
-        navigate(postAuthDestination);
+      // Navigate based on whether we have form data
+      if (formData) {
+        navigate('/processing-outline');
       } else {
-        navigate('/presentation-summary');
+        navigate('/');
       }
 
     } catch (error: any) {
@@ -319,7 +315,7 @@ const Register = () => {
     try {
       const code = generateVerificationCode();
       const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
-      const emailToSend = pendingAuthData?.email || formData.email;
+      const emailToSend = pendingAuthData?.email || registrationData.email;
       const nameToSend = pendingAuthData?.firstName || 'משתמש';
 
       await supabase
@@ -400,8 +396,8 @@ const Register = () => {
                       type="text"
                       required
                       maxLength={500}
-                      value={formData.firstName}
-                      onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
+                      value={registrationData.firstName}
+                      onChange={(e) => setRegistrationData({ ...registrationData, firstName: e.target.value })}
                       className="text-right"
                     />
                   </div>
@@ -414,8 +410,8 @@ const Register = () => {
                       type="text"
                       required
                       maxLength={500}
-                      value={formData.lastName}
-                      onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
+                      value={registrationData.lastName}
+                      onChange={(e) => setRegistrationData({ ...registrationData, lastName: e.target.value })}
                       className="text-right"
                     />
                   </div>
@@ -430,8 +426,8 @@ const Register = () => {
                     type="email"
                     required
                     maxLength={500}
-                    value={formData.email}
-                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                    value={registrationData.email}
+                    onChange={(e) => setRegistrationData({ ...registrationData, email: e.target.value })}
                     className="text-right"
                   />
                 </div>
@@ -445,8 +441,8 @@ const Register = () => {
                     type="tel"
                     required
                     maxLength={500}
-                    value={formData.phone}
-                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                    value={registrationData.phone}
+                    onChange={(e) => setRegistrationData({ ...registrationData, phone: e.target.value })}
                     className="text-right"
                     placeholder="050-1234567"
                   />
@@ -456,9 +452,9 @@ const Register = () => {
                   <div className="flex items-center space-x-2 space-x-reverse">
                     <Checkbox
                       id="terms"
-                      checked={formData.termsConsent}
+                      checked={registrationData.termsConsent}
                       onCheckedChange={(checked) => 
-                        setFormData({ ...formData, termsConsent: checked as boolean })
+                        setRegistrationData({ ...registrationData, termsConsent: checked as boolean })
                       }
                       required
                     />
@@ -563,7 +559,7 @@ const Register = () => {
                 </div>
 
                 <div className="text-center text-sm text-gray-600">
-                  <p>נשלח קוד אימות לכתובת: {pendingAuthData?.email || formData.email}</p>
+                  <p>נשלח קוד אימות לכתובת: {pendingAuthData?.email || registrationData.email}</p>
                   <button
                     type="button"
                     onClick={resendCode}
