@@ -9,6 +9,7 @@ import CreatePresentation from "./pages/CreatePresentation";
 import OutlineConfirmation from "./pages/OutlineConfirmation";
 import PresentationSummary from "./pages/PresentationSummary";
 import Register from "./pages/Register";
+import Profile from "./pages/Profile";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -24,6 +25,7 @@ const App = () => (
           <Route path="/create" element={<CreatePresentation />} />
           <Route path="/outline-confirmation" element={<OutlineConfirmation />} />
           <Route path="/register" element={<Register />} />
+          <Route path="/profile" element={<Profile />} />
           <Route path="/presentation-summary" element={<PresentationSummary />} />
           <Route path="*" element={<NotFound />} />
         </Routes>

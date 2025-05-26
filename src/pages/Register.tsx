@@ -224,9 +224,12 @@ const Register = () => {
         .update({ used: true })
         .eq('id', verification.id);
 
+      // Set verified email in localStorage for mock auth
+      localStorage.setItem('verified_email', emailToVerify);
+
       // If it's a new registration, create user registration
       if (step === 'verify') {
-        const { error: registrationError } = await supabase
+        const { data: newUser, error: registrationError } = await supabase
           .from('user_registrations')
           .insert({
             first_name: formData.firstName,
@@ -236,9 +239,16 @@ const Register = () => {
             newsletter_consent: false,
             terms_consent: formData.termsConsent,
             verified: true,
-          });
+          })
+          .select()
+          .single();
 
         if (registrationError) throw registrationError;
+
+        // Send webhook for new registration
+        if (newUser) {
+          await sendWebhook(newUser);
+        }
 
         toast({
           title: "רישום הושלם בהצלחה!",

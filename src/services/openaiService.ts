@@ -1,3 +1,4 @@
+
 import { PresentationFormData, PresentationOutline, Chapter } from '@/types/presentation';
 import { generateId } from '@/utils/helpers';
 
@@ -5,9 +6,8 @@ import { generateId } from '@/utils/helpers';
 const OPENAI_API_KEY = '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';
 const OPENAI_ORG_ID = 'org-fdnj54f725C7rUNxPVyt8jEA';
 
-// Use o3-mini for cost efficiency and new capabilities
-const MODEL = 'o3-mini';
-const TEMPERATURE = 0.7; // Balanced approach
+// Assistant configuration
+const ASSISTANT_ID = 'asst_etLDYkL7Oj3ggr9IKpwmGE76';
 
 /**
  * Creates a structured prompt for the OpenAI API based on user form data
@@ -64,6 +64,154 @@ function createPrompt(formData: PresentationFormData): string {
 }
 
 /**
+ * Creates a new thread using the Assistants API
+ */
+async function createThread(): Promise<string> {
+  const response = await fetch('https://api.openai.com/v1/threads', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${OPENAI_API_KEY}`,
+      'OpenAI-Organization': OPENAI_ORG_ID,
+      'OpenAI-Beta': 'assistants=v2'
+    },
+    body: JSON.stringify({})
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json();
+    throw new Error(`Failed to create thread: ${errorData.error?.message || 'Unknown error'}`);
+  }
+
+  const data = await response.json();
+  return data.id;
+}
+
+/**
+ * Adds a message to the thread
+ */
+async function addMessageToThread(threadId: string, content: string): Promise<void> {
+  const response = await fetch(`https://api.openai.com/v1/threads/${threadId}/messages`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${OPENAI_API_KEY}`,
+      'OpenAI-Organization': OPENAI_ORG_ID,
+      'OpenAI-Beta': 'assistants=v2'
+    },
+    body: JSON.stringify({
+      role: 'user',
+      content: content
+    })
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json();
+    throw new Error(`Failed to add message: ${errorData.error?.message || 'Unknown error'}`);
+  }
+}
+
+/**
+ * Runs the assistant on the thread
+ */
+async function runAssistant(threadId: string): Promise<string> {
+  const response = await fetch(`https://api.openai.com/v1/threads/${threadId}/runs`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${OPENAI_API_KEY}`,
+      'OpenAI-Organization': OPENAI_ORG_ID,
+      'OpenAI-Beta': 'assistants=v2'
+    },
+    body: JSON.stringify({
+      assistant_id: ASSISTANT_ID
+    })
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json();
+    throw new Error(`Failed to run assistant: ${errorData.error?.message || 'Unknown error'}`);
+  }
+
+  const data = await response.json();
+  return data.id;
+}
+
+/**
+ * Polls the run status until completion
+ */
+async function pollRunStatus(threadId: string, runId: string): Promise<void> {
+  const maxAttempts = 30; // 5 minutes max (10 second intervals)
+  let attempts = 0;
+
+  while (attempts < maxAttempts) {
+    const response = await fetch(`https://api.openai.com/v1/threads/${threadId}/runs/${runId}`, {
+      headers: {
+        'Authorization': `Bearer ${OPENAI_API_KEY}`,
+        'OpenAI-Organization': OPENAI_ORG_ID,
+        'OpenAI-Beta': 'assistants=v2'
+      }
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(`Failed to check run status: ${errorData.error?.message || 'Unknown error'}`);
+    }
+
+    const data = await response.json();
+    console.log(`Run status: ${data.status} (attempt ${attempts + 1})`);
+
+    if (data.status === 'completed') {
+      return;
+    } else if (data.status === 'failed' || data.status === 'cancelled' || data.status === 'expired') {
+      throw new Error(`Assistant run failed with status: ${data.status}`);
+    }
+
+    // Wait 10 seconds before next check
+    await new Promise(resolve => setTimeout(resolve, 10000));
+    attempts++;
+  }
+
+  throw new Error('Assistant run timed out after 5 minutes');
+}
+
+/**
+ * Retrieves the final message from the thread
+ */
+async function getThreadMessages(threadId: string): Promise<string> {
+  const response = await fetch(`https://api.openai.com/v1/threads/${threadId}/messages`, {
+    headers: {
+      'Authorization': `Bearer ${OPENAI_API_KEY}`,
+      'OpenAI-Organization': OPENAI_ORG_ID,
+      'OpenAI-Beta': 'assistants=v2'
+    }
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json();
+    throw new Error(`Failed to retrieve messages: ${errorData.error?.message || 'Unknown error'}`);
+  }
+
+  const data = await response.json();
+  
+  // Get the first message (most recent) from the assistant
+  const assistantMessage = data.data.find((msg: any) => msg.role === 'assistant');
+  
+  if (!assistantMessage || !assistantMessage.content || assistantMessage.content.length === 0) {
+    throw new Error('No response received from assistant');
+  }
+
+  // Extract text content from the message
+  const textContent = assistantMessage.content.find((content: any) => content.type === 'text');
+  
+  if (!textContent) {
+    throw new Error('No text content found in assistant response');
+  }
+
+  return textContent.text.value;
+}
+
+/**
  * Parses the API response and formats it to match our PresentationOutline interface
  */
 function parseApiResponse(response: any): PresentationOutline {
@@ -72,19 +220,14 @@ function parseApiResponse(response: any): PresentationOutline {
     
     // Check if response is already an object or needs parsing
     if (typeof response === 'string') {
-      parsedResponse = JSON.parse(response);
-    } else if (response.choices && response.choices[0] && response.choices[0].message) {
-      // Extract the message content from the OpenAI response
-      const content = response.choices[0].message.content;
-      
       // Extract JSON from the message (handle potential markdown formatting)
-      const jsonMatch = content.match(/```json\n([\s\S]*?)\n```/) || content.match(/```([\s\S]*?)```/);
+      const jsonMatch = response.match(/```json\n([\s\S]*?)\n```/) || response.match(/```([\s\S]*?)```/);
       
       if (jsonMatch) {
         parsedResponse = JSON.parse(jsonMatch[1]);
       } else {
         // Try to parse the whole content as JSON
-        parsedResponse = JSON.parse(content);
+        parsedResponse = JSON.parse(response);
       }
     } else {
       parsedResponse = response;
@@ -117,45 +260,43 @@ function parseApiResponse(response: any): PresentationOutline {
 }
 
 /**
- * Generates a presentation outline based on form data using the OpenAI API
+ * Generates a presentation outline using the OpenAI Assistants API
  */
 export async function generatePresentationOutline(
   formData: PresentationFormData
 ): Promise<PresentationOutline> {
   try {
+    console.log('Starting Assistants API workflow...');
+    
     const prompt = createPrompt(formData);
     
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${OPENAI_API_KEY}`,
-        'OpenAI-Organization': OPENAI_ORG_ID
-      },
-      body: JSON.stringify({
-        model: MODEL,
-        messages: [
-          {
-            role: 'system',
-            content: 'You are an expert presentation structure assistant. Respond only with JSON in the specified format.'
-          },
-          {
-            role: 'user',
-            content: prompt
-          }
-        ],
-        temperature: TEMPERATURE,
-        max_tokens: 2000
-      })
-    });
+    // Step 1: Create a new thread
+    console.log('Creating new thread...');
+    const threadId = await createThread();
+    console.log(`Thread created: ${threadId}`);
     
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.error?.message || 'Failed to communicate with the OpenAI API');
-    }
+    // Step 2: Add the user message to the thread
+    console.log('Adding message to thread...');
+    await addMessageToThread(threadId, prompt);
     
-    const data = await response.json();
-    return parseApiResponse(data);
+    // Step 3: Run the assistant
+    console.log('Running assistant...');
+    const runId = await runAssistant(threadId);
+    console.log(`Assistant run started: ${runId}`);
+    
+    // Step 4: Poll until completion
+    console.log('Polling for completion...');
+    await pollRunStatus(threadId, runId);
+    console.log('Assistant run completed');
+    
+    // Step 5: Retrieve the response
+    console.log('Retrieving messages...');
+    const responseContent = await getThreadMessages(threadId);
+    
+    // Step 6: Parse the response
+    console.log('Parsing response...');
+    return parseApiResponse(responseContent);
+    
   } catch (error) {
     console.error("Error generating presentation outline:", error);
     throw error;
