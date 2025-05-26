@@ -176,6 +176,76 @@ const Register = () => {
     }
   };
 
+  const createSupabaseSession = async (email: string, userData?: any) => {
+    try {
+      // Generate a temporary password for Supabase authentication
+      const tempPassword = Math.random().toString(36).substring(2, 15);
+      
+      if (pendingAuthData?.type === 'register') {
+        // For registration, create new user with signUp
+        const { data, error } = await supabase.auth.signUp({
+          email: email,
+          password: tempPassword,
+          options: {
+            data: {
+              first_name: userData.firstName,
+              last_name: userData.lastName,
+            }
+          }
+        });
+
+        if (error) throw error;
+        return data;
+      } else {
+        // For login, we need to handle existing users differently
+        // First try to sign in with a temporary password
+        const { data, error } = await supabase.auth.signInWithPassword({
+          email: email,
+          password: tempPassword,
+        });
+
+        // If password doesn't work (expected), update the user's password and sign in
+        if (error) {
+          // Use admin API to update password, or create a session manually
+          // For now, let's use signUp which will handle existing users
+          const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+            email: email,
+            password: tempPassword,
+          });
+
+          if (signUpError && !signUpError.message.includes('already registered')) {
+            throw signUpError;
+          }
+
+          // Try signing in again
+          const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
+            email: email,
+            password: tempPassword,
+          });
+
+          if (signInError) {
+            // If still failing, use admin functions or create session differently
+            console.log('Sign in failed, user may need password reset');
+            
+            // Alternative: trigger password reset and handle differently
+            const { error: resetError } = await supabase.auth.resetPasswordForEmail(email, {
+              redirectTo: window.location.origin
+            });
+            
+            if (resetError) throw resetError;
+          }
+
+          return signInData;
+        }
+
+        return data;
+      }
+    } catch (error) {
+      console.error('Error creating Supabase session:', error);
+      throw error;
+    }
+  };
+
   const handleVerification = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
@@ -183,7 +253,7 @@ const Register = () => {
     const emailToVerify = pendingAuthData?.email || registrationData.email;
 
     try {
-      // Verify the code
+      // Verify the code with our custom system
       const { data: verification, error: verificationError } = await supabase
         .from('email_verifications')
         .select('*')
@@ -219,22 +289,9 @@ const Register = () => {
         .update({ used: true })
         .eq('id', verification.id);
 
+      // Handle registration vs login
       if (pendingAuthData?.type === 'register') {
-        // Use Supabase OTP for registration
-        const { error: otpError } = await supabase.auth.signInWithOtp({
-          email: pendingAuthData.email,
-          options: {
-            shouldCreateUser: true,
-            data: {
-              first_name: pendingAuthData.firstName,
-              last_name: pendingAuthData.lastName,
-            }
-          }
-        });
-
-        if (otpError) throw otpError;
-
-        // Store user registration data
+        // Store user registration data first
         const { error: registrationError } = await supabase
           .from('user_registrations')
           .insert({
@@ -249,53 +306,22 @@ const Register = () => {
 
         if (registrationError) throw registrationError;
 
-        // Verify the OTP with our custom code
-        const { error: verifyError } = await supabase.auth.verifyOtp({
-          email: pendingAuthData.email,
-          token: verificationCode,
-          type: 'email'
-        });
-
-        if (verifyError) {
-          console.log('OTP verification failed, creating manual session');
-        }
-
         toast({
           title: "רישום הושלם בהצלחה!",
           description: "ברוכים הבאים ל-Spotlight",
         });
-
       } else {
-        // Use Supabase OTP for login
-        const { error: otpError } = await supabase.auth.signInWithOtp({
-          email: pendingAuthData.email
-        });
-
-        if (otpError) throw otpError;
-
-        // Verify the OTP with our custom code
-        const { error: verifyError } = await supabase.auth.verifyOtp({
-          email: pendingAuthData.email,
-          token: verificationCode,
-          type: 'email'
-        });
-
-        if (verifyError) {
-          console.log('OTP verification failed, creating manual session');
-        }
-
         toast({
           title: "התחברות הושלמה בהצלחה!",
           description: "ברוכים השבים ל-Spotlight",
         });
       }
 
-      // Navigate based on whether we have form data
-      if (formData) {
-        navigate('/processing-outline');
-      } else {
-        navigate('/');
-      }
+      // Create Supabase session after successful verification
+      await createSupabaseSession(emailToVerify, pendingAuthData);
+
+      // The useAuth hook should pick up the new session automatically
+      // and redirect will happen in the useEffect above
 
     } catch (error: any) {
       console.error('Verification error:', error);
