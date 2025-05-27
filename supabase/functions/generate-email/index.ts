@@ -1,3 +1,4 @@
+
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
@@ -63,7 +64,7 @@ async function callOpenAI(prompt: string): Promise<any> {
     throw new Error('OpenAI API key not configured');
   }
 
-  console.log('Making OpenAI API call...');
+  console.log('Making OpenAI API call with o1-mini...');
   
   const response = await fetch('https://api.openai.com/v1/chat/completions', {
     method: 'POST',
@@ -72,19 +73,14 @@ async function callOpenAI(prompt: string): Promise<any> {
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      model: 'gpt-4o-mini',
+      model: 'o1-mini',
       messages: [
-        {
-          role: 'system',
-          content: 'אתה מומחה שיווק B2B ויצירת תוכן מקצועי. תמיד החזר JSON תקין וספציפי לנושא המבוקש.'
-        },
         {
           role: 'user',
           content: prompt
         }
       ],
-      temperature: 0.7,
-      max_tokens: 2000
+      max_completion_tokens: 2000
     }),
   });
 

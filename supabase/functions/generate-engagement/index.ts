@@ -70,94 +70,45 @@ function cleanAndParseJSON(response: string): any {
   }
 }
 
-async function callOpenAIAssistant(prompt: string): Promise<any> {
+async function callOpenAI(prompt: string): Promise<any> {
   const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
   
   if (!openAIApiKey) {
     throw new Error('OpenAI API key not configured');
   }
 
-  console.log('Using OpenAI Assistant API...');
+  console.log('Making OpenAI API call with o1-mini...');
   
-  try {
-    // Create a thread
-    const threadResponse = await fetch('https://api.openai.com/v1/threads', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${openAIApiKey}`,
-        'Content-Type': 'application/json',
-        'OpenAI-Beta': 'assistants=v2'
-      },
-      body: JSON.stringify({})
-    });
-
-    const thread = await threadResponse.json();
-
-    // Add message to thread
-    await fetch(`https://api.openai.com/v1/threads/${thread.id}/messages`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${openAIApiKey}`,
-        'Content-Type': 'application/json',
-        'OpenAI-Beta': 'assistants=v2'
-      },
-      body: JSON.stringify({
-        role: 'user',
-        content: prompt
-      })
-    });
-
-    // Run the assistant
-    const runResponse = await fetch(`https://api.openai.com/v1/threads/${thread.id}/runs`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${openAIApiKey}`,
-        'Content-Type': 'application/json',
-        'OpenAI-Beta': 'assistants=v2'
-      },
-      body: JSON.stringify({
-        assistant_id: 'asst_etLDYkL7Oj3ggr9IKpwmGE76'
-      })
-    });
-
-    const run = await runResponse.json();
-
-    // Poll for completion
-    let runStatus = run;
-    while (runStatus.status === 'queued' || runStatus.status === 'in_progress') {
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      const statusResponse = await fetch(`https://api.openai.com/v1/threads/${thread.id}/runs/${run.id}`, {
-        headers: {
-          'Authorization': `Bearer ${openAIApiKey}`,
-          'OpenAI-Beta': 'assistants=v2'
+  const response = await fetch('https://api.openai.com/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${openAIApiKey}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      model: 'o1-mini',
+      messages: [
+        {
+          role: 'user',
+          content: prompt
         }
-      });
-      
-      if (statusResponse.ok) {
-        runStatus = await statusResponse.json();
-      }
-    }
+      ],
+      max_completion_tokens: 4000
+    }),
+  });
 
-    // Get messages
-    const messagesResponse = await fetch(`https://api.openai.com/v1/threads/${thread.id}/messages`, {
-      headers: {
-        'Authorization': `Bearer ${openAIApiKey}`,
-        'OpenAI-Beta': 'assistants=v2'
-      }
-    });
+  console.log('OpenAI API response status:', response.status);
 
-    const messages = await messagesResponse.json();
-    const assistantMessage = messages.data.find((msg: any) => msg.role === 'assistant');
-    
-    const content = assistantMessage?.content[0]?.text?.value || '';
-    console.log('Assistant response received for engagement');
-    
-    return cleanAndParseJSON(content);
-  } catch (error) {
-    console.error('Assistant API error:', error);
-    throw error;
+  if (!response.ok) {
+    const errorText = await response.text();
+    console.error('OpenAI API error:', errorText);
+    throw new Error(`OpenAI API error: ${response.status} - ${errorText}`);
   }
+
+  const data = await response.json();
+  console.log('OpenAI API call successful');
+  
+  return cleanAndParseJSON(data.choices[0].message.content);
 }
 
 async function generateEngagementContent(formData: any, outline: any): Promise<any> {
@@ -185,7 +136,7 @@ async function generateEngagementContent(formData: any, outline: any): Promise<a
 התמקד ביצירת מעורבות גבוהה ורלוונטית לנושא "${formData.idea}" עבור קהל "${formData.audienceProfile}".
 `;
 
-  return await callOpenAIAssistant(prompt);
+  return await callOpenAI(prompt);
 }
 
 serve(async (req) => {

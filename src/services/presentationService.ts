@@ -98,6 +98,50 @@ export async function generateEngagementContent(formData: PresentationFormData, 
 }
 
 /**
+ * Generates email content using Supabase Edge Function
+ */
+export async function generateEmailContent(formData: PresentationFormData, outline: any): Promise<string> {
+  try {
+    console.log('Generating email content...');
+    
+    const { data, error } = await supabase.functions.invoke('generate-email', {
+      body: { formData: formData, outline: outline }
+    });
+
+    if (error) {
+      throw new Error(`Failed to generate email: ${error.message}`);
+    }
+
+    return data || '';
+  } catch (error) {
+    console.error("Error generating email content:", error);
+    throw error;
+  }
+}
+
+/**
+ * Generates presentation tools using Supabase Edge Function
+ */
+export async function generatePresentationTools(formData: PresentationFormData, outline: any): Promise<any> {
+  try {
+    console.log('Generating presentation tools...');
+    
+    const { data, error } = await supabase.functions.invoke('generate-tools', {
+      body: { formData: formData, outline: outline }
+    });
+
+    if (error) {
+      throw new Error(`Failed to generate tools: ${error.message}`);
+    }
+
+    return data || null;
+  } catch (error) {
+    console.error("Error generating presentation tools:", error);
+    throw error;
+  }
+}
+
+/**
  * Parses the API response and formats it to match our PresentationOutline interface
  */
 function parseApiResponse(response: any): PresentationOutline {
