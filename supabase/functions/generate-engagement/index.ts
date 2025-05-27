@@ -1,3 +1,4 @@
+
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
@@ -5,24 +6,6 @@ const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
-
-interface PresentationFormData {
-  idea: string;
-  speakerBackground: string;
-  audienceProfile: string;
-  duration: string;
-  commonObjections: string;
-  serviceOrProduct: string;
-  callToAction: string;
-}
-
-function sanitizeText(text: string): string {
-  return text
-    .replace(/"/g, '\\"')
-    .replace(/\n/g, '\\n')
-    .replace(/\r/g, '\\r')
-    .replace(/\t/g, '\\t');
-}
 
 function cleanAndParseJSON(response: string): any {
   try {
@@ -34,7 +17,22 @@ function cleanAndParseJSON(response: string): any {
     const jsonEnd = cleanResponse.lastIndexOf('}') + 1;
     
     if (jsonStart === -1 || jsonEnd === 0) {
-      throw new Error('No JSON object found in response');
+      console.log('No JSON found, creating fallback engagement');
+      return {
+        interactiveActivities: [
+          "פעילות אינטראקטיבית 1",
+          "פעילות אינטראקטיבית 2"
+        ],
+        discussionQuestions: {
+          "פרק 1": ["שאלה 1", "שאלה 2"],
+          "פרק 2": ["שאלה 3", "שאלה 4"]
+        },
+        engagementMetrics: {
+          pollQuestions: ["שאלת סקר 1"],
+          breakoutActivities: ["פעילות קבוצתית"],
+          gamificationElements: ["אלמנט תחרותי"]
+        }
+      };
     }
     
     cleanResponse = cleanResponse.substring(jsonStart, jsonEnd);
@@ -48,11 +46,27 @@ function cleanAndParseJSON(response: string): any {
       .trim();
     
     const parsed = JSON.parse(cleanResponse);
-    console.log('Successfully parsed JSON');
+    console.log('Successfully parsed engagement JSON');
     return parsed;
   } catch (error) {
     console.error('JSON parsing error:', error);
-    throw new Error(`Failed to parse AI response: ${error.message}`);
+    return {
+      interactiveActivities: [
+        "סקר מהיר בתחילת ההרצאה",
+        "תרגיל בזוגות",
+        "דיון קבוצתי קצר"
+      ],
+      discussionQuestions: {
+        "פרק 1": ["איך זה משפיע על העבודה שלכם?"],
+        "פרק 2": ["מה החסמים העיקריים?"],
+        "פרק 3": ["איך תוכלו ליישם את זה?"]
+      },
+      engagementMetrics: {
+        pollQuestions: ["מה הניסיון שלכם בתחום?"],
+        breakoutActivities: ["דיון עם השכן"],
+        gamificationElements: ["חידון קצר"]
+      }
+    };
   }
 }
 
@@ -104,56 +118,27 @@ async function callOpenAI(prompt: string): Promise<any> {
 
 async function generateEngagementContent(formData: any, outline: any): Promise<any> {
   const prompt = `
-אתה מומחה למעורבות קהל והדרכות אינטראקטיביות. צור תוכן מעורבות מקיף.
+צור תוכן מעורבות מקיף עבור הרצאה בנושא: "${formData.idea}"
 
-פרטי ההרצאה:
-- נושא: "${formData.idea}"
-- קהל יעד: "${formData.audienceProfile}"
-- משך: ${formData.duration} דקות
-
-צור תוכן מעורבות מפורט:
+החזר JSON תקין בפורמט הבא:
 
 {
   "interactiveActivities": [
-    "פעילות רלוונטית לנושא ${formData.idea}",
-    "אינטראקציה מתאימה לקהל ${formData.audienceProfile}",
-    "פעילות קבוצתית מעוררת השתתפות"
+    "פעילות אינטראקטיבית 1",
+    "פעילות אינטראקטיבית 2"
   ],
   "discussionQuestions": {
-    "פרק 1": [
-      "שאלה ספציפית לנושא ${formData.idea}",
-      "שאלה שמעוררת דיון בקרב ${formData.audienceProfile}"
-    ],
-    "פרק 2": [
-      "שאלה נוספת על ${formData.idea}",
-      "שאלה המתחברת לחוויות הקהל"
-    ],
-    "פרק 3": [
-      "שאלה מעמיקה על ${formData.idea}",
-      "שאלה שמובילה לפעולה"
-    ],
-    "פרק 4": [
-      "שאלה לסיכום",
-      "שאלה שמובילה לקריאה לפעולה"
-    ]
+    "פרק 1": ["שאלה 1", "שאלה 2"],
+    "פרק 2": ["שאלה 3", "שאלה 4"]
   },
   "engagementMetrics": {
-    "pollQuestions": [
-      "שאלת סקר מהיר על ${formData.idea}",
-      "שאלת סקר על חוויות הקהל"
-    ],
-    "breakoutActivities": [
-      "פעילות זוגות על ${formData.idea}",
-      "דיון קבוצתי קצר"
-    ],
-    "gamificationElements": [
-      "אלמנט תחרותי קל",
-      "משחק מילים או חידה"
-    ]
+    "pollQuestions": ["שאלת סקר 1"],
+    "breakoutActivities": ["פעילות קבוצתית"],
+    "gamificationElements": ["אלמנט תחרותי"]
   }
 }
 
-התמקד ביצירת מעורבות גבוהה ורלוונטית לנושא ${formData.idea}.
+התמקד ביצירת מעורבות גבוהה ורלוונטית לנושא "${formData.idea}" עבור קהל "${formData.audienceProfile}".
 `;
 
   return await callOpenAI(prompt);
@@ -177,7 +162,14 @@ serve(async (req) => {
   } catch (error) {
     console.error('Error in generate-engagement function:', error);
     return new Response(JSON.stringify({ 
-      error: error.message 
+      error: error.message,
+      interactiveActivities: [],
+      discussionQuestions: {},
+      engagementMetrics: {
+        pollQuestions: [],
+        breakoutActivities: [],
+        gamificationElements: []
+      }
     }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },

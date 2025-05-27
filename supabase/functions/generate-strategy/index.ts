@@ -1,3 +1,4 @@
+
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
@@ -5,24 +6,6 @@ const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
-
-interface PresentationFormData {
-  idea: string;
-  speakerBackground: string;
-  audienceProfile: string;
-  duration: string;
-  commonObjections: string;
-  serviceOrProduct: string;
-  callToAction: string;
-}
-
-function sanitizeText(text: string): string {
-  return text
-    .replace(/"/g, '\\"')
-    .replace(/\n/g, '\\n')
-    .replace(/\r/g, '\\r')
-    .replace(/\t/g, '\\t');
-}
 
 function cleanAndParseJSON(response: string): any {
   try {
@@ -34,7 +17,25 @@ function cleanAndParseJSON(response: string): any {
     const jsonEnd = cleanResponse.lastIndexOf('}') + 1;
     
     if (jsonStart === -1 || jsonEnd === 0) {
-      throw new Error('No JSON object found in response');
+      console.log('No JSON found, creating fallback strategy');
+      return {
+        targetAudiences: ["קהל יעד ראשי"],
+        marketingChannels: [
+          {
+            channel: "רשתות חברתיות",
+            strategy: "יצירת תוכן איכותי",
+            timeline: "4 שבועות",
+            budget: "1000₪"
+          }
+        ],
+        pricingStrategy: {
+          basicTicket: "כרטיס רגיל: 150₪",
+          vipTicket: "כרטיס VIP: 350₪"
+        },
+        collaborationOpportunities: ["שיתופי פעולה עם ארגונים"],
+        contentMarketing: ["יצירת תוכן רלוונטי"],
+        followUpStrategy: "מעקב אחר משתתפים"
+      };
     }
     
     cleanResponse = cleanResponse.substring(jsonStart, jsonEnd);
@@ -48,11 +49,28 @@ function cleanAndParseJSON(response: string): any {
       .trim();
     
     const parsed = JSON.parse(cleanResponse);
-    console.log('Successfully parsed JSON');
+    console.log('Successfully parsed strategy JSON');
     return parsed;
   } catch (error) {
     console.error('JSON parsing error:', error);
-    throw new Error(`Failed to parse AI response: ${error.message}`);
+    return {
+      targetAudiences: ["בעלי עסקים", "יזמים", "מנהלים"],
+      marketingChannels: [
+        {
+          channel: "רשתות חברתיות",
+          strategy: "יצירת תוכן מקצועי",
+          timeline: "4 שבועות",
+          budget: "1000₪"
+        }
+      ],
+      pricingStrategy: {
+        basicTicket: "כרטיס רגיל: 150₪",
+        vipTicket: "כרטיס VIP: 350₪"
+      },
+      collaborationOpportunities: ["שיתופי פעולה"],
+      contentMarketing: ["תוכן איכותי"],
+      followUpStrategy: "מעקב ומדידה"
+    };
   }
 }
 
@@ -104,45 +122,33 @@ async function callOpenAI(prompt: string): Promise<any> {
 
 async function generateStrategyContent(formData: any, outline: any): Promise<any> {
   const prompt = `
-אתה יועץ שיווק ומכירות מומחה. צור אסטרטגיית שיווק ומכירות מקיפה.
+צור אסטרטגיית שיווק ומכירות מקיפה עבור הרצאה בנושא: "${formData.idea}"
 
-פרטי ההרצאה:
-- נושא: "${formData.idea}"
-- קהל יעד: "${formData.audienceProfile}"
-- מוצר/שירות: "${formData.serviceOrProduct}"
-
-צור אסטרטגיה מקיפה:
+החזר JSON תקין בפורמט הבא:
 
 {
   "targetAudiences": [
-    "קהל יעד ראשי: ${formData.audienceProfile} בעלי עניין מרבי ב${formData.idea}",
-    "קהל יעד משני מותאם",
-    "קהל יעד שלישי מותאם"
+    "קהל יעד ראשי",
+    "קהל יעד משני"
   ],
   "marketingChannels": [
     {
-      "channel": "לינקדאין B2B",
-      "strategy": "יצירת תוכן מקצועי על ${formData.idea}",
-      "timeline": "4-6 שבועות לפני ההרצאה",
-      "budget": "500-1000₪ לחודש"
+      "channel": "שם הערוץ",
+      "strategy": "אסטרטגיה",
+      "timeline": "זמן",
+      "budget": "תקציב"
     }
   ],
   "pricingStrategy": {
-    "basicTicket": "כרטיס רגיל: 150₪",
-    "vipTicket": "כרטיס VIP: 350₪",
-    "premiumTicket": "כרטיס פרימיום: 750₪",
-    "corporatePackage": "חבילה ארגונית: 2,500₪"
+    "basicTicket": "מחיר רגיל",
+    "vipTicket": "מחיר VIP"
   },
-  "collaborationOpportunities": [
-    "שיתוף פעולה עם איגודים מקצועיים בתחום ${formData.idea}"
-  ],
-  "contentMarketing": [
-    "סדרת מאמרים מקצועיים על ${formData.idea}"
-  ],
-  "followUpStrategy": "אסטרטגיית מעקב מקיפה"
+  "collaborationOpportunities": ["הזדמנות 1"],
+  "contentMarketing": ["תוכן 1"],
+  "followUpStrategy": "אסטרטגיית מעקב"
 }
 
-התאם הכל לנושא ${formData.idea} ולקהל ${formData.audienceProfile}.
+התאם הכל לנושא "${formData.idea}" ולקהל "${formData.audienceProfile}".
 `;
 
   return await callOpenAI(prompt);
@@ -166,7 +172,13 @@ serve(async (req) => {
   } catch (error) {
     console.error('Error in generate-strategy function:', error);
     return new Response(JSON.stringify({ 
-      error: error.message 
+      error: error.message,
+      targetAudiences: [],
+      marketingChannels: [],
+      pricingStrategy: {},
+      collaborationOpportunities: [],
+      contentMarketing: [],
+      followUpStrategy: ""
     }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },

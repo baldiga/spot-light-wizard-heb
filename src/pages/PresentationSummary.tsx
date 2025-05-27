@@ -65,20 +65,36 @@ const PresentationSummary = () => {
 
       // Stage 2: Generate slides
       setCurrentStage(1);
+      console.log('🎯 Starting slides generation...');
       const slides = await generateSlideStructure(formData, outline);
-      setDynamicSlides(slides);
+      console.log('🎯 Slides response:', slides);
+      
+      // Handle slides data - extract slides array if it exists
+      if (slides && slides.slides && Array.isArray(slides.slides)) {
+        setDynamicSlides(slides.slides);
+        console.log('✅ Set slides:', slides.slides.length, 'slides');
+      } else if (Array.isArray(slides)) {
+        setDynamicSlides(slides);
+        console.log('✅ Set slides (direct array):', slides.length, 'slides');
+      } else {
+        console.warn('⚠️ Unexpected slides format:', slides);
+        setDynamicSlides([]);
+      }
       await new Promise(resolve => setTimeout(resolve, 500));
 
       // Stage 3: Generate engagement content
       setCurrentStage(2);
+      console.log('🎯 Starting engagement generation...');
       const engagement = await generateEngagementContent(formData, outline);
+      console.log('🎯 Engagement response:', engagement);
       setEngagementData(engagement);
       await new Promise(resolve => setTimeout(resolve, 500));
 
       // Stage 4: Generate strategy
       setCurrentStage(3);
+      console.log('🎯 Starting strategy generation...');
       const strategy = await generateSalesStrategy(formData, outline);
-      console.log('Marketing Strategy Data:', strategy); // Debug log
+      console.log('🎯 Strategy response:', strategy);
       setDynamicStrategy(strategy);
       
       // Complete loading
@@ -86,7 +102,7 @@ const PresentationSummary = () => {
       setIsGenerating(false);
       
     } catch (error) {
-      console.error('Error generating content:', error);
+      console.error('❌ Error generating content:', error);
       toast({
         title: "שגיאה ביצירת תוכן",
         description: "אירעה שגיאה ביצירת התוכן הדינמי",
@@ -240,10 +256,10 @@ const PresentationSummary = () => {
                         <div className="flex items-center justify-between mb-3">
                           <div className="flex items-center">
                             <div className="w-8 h-8 bg-whiskey text-white rounded-full flex items-center justify-center text-sm font-bold ml-3">
-                              {slide.number}
+                              {slide.number || index + 1}
                             </div>
                             <div>
-                              <h3 className="text-lg font-semibold text-gray-800">{slide.headline}</h3>
+                              <h3 className="text-lg font-semibold text-gray-800">{slide.headline || `שקף ${index + 1}`}</h3>
                               {slide.section && <span className="text-sm text-gray-500 bg-gray-100 px-2 py-1 rounded">{slide.section}</span>}
                             </div>
                           </div>
@@ -255,11 +271,11 @@ const PresentationSummary = () => {
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-right">
                           <div>
                             <h4 className="font-semibold text-gray-700 mb-2">תוכן השקף:</h4>
-                            <p className="text-gray-600 text-sm">{slide.content}</p>
+                            <p className="text-gray-600 text-sm">{slide.content || 'תוכן השקף'}</p>
                           </div>
                           <div>
                             <h4 className="font-semibold text-gray-700 mb-2">אלמנטים ויזואליים:</h4>
-                            <p className="text-gray-600 text-sm">{slide.visual}</p>
+                            <p className="text-gray-600 text-sm">{slide.visual || 'תיאור ויזואלי'}</p>
                           </div>
                         </div>
                         
@@ -287,7 +303,10 @@ const PresentationSummary = () => {
                     ))}
                   </div>
                 ) : (
-                  <p className="text-gray-500 text-center text-right">מבנה השקפים טרם נוצר</p>
+                  <div className="text-center py-8">
+                    <p className="text-gray-500 text-right">מבנה השקפים בתהליך יצירה...</p>
+                    <p className="text-gray-400 text-sm text-right mt-2">אנא המתן, התוכן נטען</p>
+                  </div>
                 )}
               </CardContent>
             </Card>
@@ -364,7 +383,7 @@ const PresentationSummary = () => {
               <CardContent className="pt-6" dir="rtl">
                 {engagementData ? (
                   <div className="space-y-6 text-right">
-                    {engagementData.interactiveActivities && Array.isArray(engagementData.interactiveActivities) && (
+                    {engagementData.interactiveActivities && Array.isArray(engagementData.interactiveActivities) && engagementData.interactiveActivities.length > 0 && (
                       <div className="mb-6">
                         <h3 className="text-xl font-bold text-gray-800 mb-4">פעילויות אינטראקטיביות</h3>
                         <div className="space-y-3">
@@ -377,7 +396,7 @@ const PresentationSummary = () => {
                       </div>
                     )}
 
-                    {engagementData.discussionQuestions && typeof engagementData.discussionQuestions === 'object' && (
+                    {engagementData.discussionQuestions && typeof engagementData.discussionQuestions === 'object' && Object.keys(engagementData.discussionQuestions).length > 0 && (
                       <div className="mb-6">
                         <h3 className="text-xl font-bold text-gray-800 mb-4">שאלות לדיון</h3>
                         {Object.entries(engagementData.discussionQuestions).map(([chapter, questions]) => (
@@ -414,7 +433,10 @@ const PresentationSummary = () => {
                     )}
                   </div>
                 ) : (
-                  <p className="text-gray-500 text-center text-right">תוכן מעורבות טרם נוצר</p>
+                  <div className="text-center py-8">
+                    <p className="text-gray-500 text-right">תוכן מעורבות בתהליך יצירה...</p>
+                    <p className="text-gray-400 text-sm text-right mt-2">אנא המתן, התוכן נטען</p>
+                  </div>
                 )}
               </CardContent>
             </Card>
@@ -429,7 +451,7 @@ const PresentationSummary = () => {
               <CardContent className="pt-6" dir="rtl">
                 {dynamicStrategy ? (
                   <div className="space-y-6 text-right">
-                    {dynamicStrategy.targetAudiences && Array.isArray(dynamicStrategy.targetAudiences) && (
+                    {dynamicStrategy.targetAudiences && Array.isArray(dynamicStrategy.targetAudiences) && dynamicStrategy.targetAudiences.length > 0 && (
                       <div className="mb-6">
                         <h3 className="text-xl font-bold text-gray-800 mb-4">קהלי יעד</h3>
                         <div className="space-y-3">
@@ -442,7 +464,7 @@ const PresentationSummary = () => {
                       </div>
                     )}
 
-                    {dynamicStrategy.marketingChannels && Array.isArray(dynamicStrategy.marketingChannels) && (
+                    {dynamicStrategy.marketingChannels && Array.isArray(dynamicStrategy.marketingChannels) && dynamicStrategy.marketingChannels.length > 0 && (
                       <div className="mb-6">
                         <h3 className="text-xl font-bold text-gray-800 mb-4">ערוצי שיווק</h3>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -458,7 +480,7 @@ const PresentationSummary = () => {
                       </div>
                     )}
 
-                    {dynamicStrategy.pricingStrategy && typeof dynamicStrategy.pricingStrategy === 'object' && (
+                    {dynamicStrategy.pricingStrategy && typeof dynamicStrategy.pricingStrategy === 'object' && Object.keys(dynamicStrategy.pricingStrategy).length > 0 && (
                       <div className="mb-6">
                         <h3 className="text-xl font-bold text-gray-800 mb-4">אסטרטגיית תמחור</h3>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -471,7 +493,7 @@ const PresentationSummary = () => {
                       </div>
                     )}
 
-                    {dynamicStrategy.collaborationOpportunities && Array.isArray(dynamicStrategy.collaborationOpportunities) && (
+                    {dynamicStrategy.collaborationOpportunities && Array.isArray(dynamicStrategy.collaborationOpportunities) && dynamicStrategy.collaborationOpportunities.length > 0 && (
                       <div className="mb-6">
                         <h3 className="text-xl font-bold text-gray-800 mb-4">הזדמנויות שיתוף פעולה</h3>
                         <div className="space-y-3">
@@ -484,7 +506,7 @@ const PresentationSummary = () => {
                       </div>
                     )}
 
-                    {dynamicStrategy.contentMarketing && Array.isArray(dynamicStrategy.contentMarketing) && (
+                    {dynamicStrategy.contentMarketing && Array.isArray(dynamicStrategy.contentMarketing) && dynamicStrategy.contentMarketing.length > 0 && (
                       <div className="mb-6">
                         <h3 className="text-xl font-bold text-gray-800 mb-4">שיווק תוכן</h3>
                         <div className="space-y-3">
@@ -507,7 +529,10 @@ const PresentationSummary = () => {
                     )}
                   </div>
                 ) : (
-                  <p className="text-gray-500 text-center text-right">אסטרטגיית השיווק טרם נוצרה</p>
+                  <div className="text-center py-8">
+                    <p className="text-gray-500 text-right">אסטרטגיית השיווק בתהליך יצירה...</p>
+                    <p className="text-gray-400 text-sm text-right mt-2">אנא המתן, התוכן נטען</p>
+                  </div>
                 )}
               </CardContent>
             </Card>
