@@ -75,16 +75,31 @@ export const usePresentationStore = create<PresentationState>((set, get) => ({
     set({ 
       isLoading: true, 
       error: null,
-      loadingMessage: "יוצרים מבנה הרצאה מותאם אישית בהתבסס על הנתונים שלך..."
+      loadingMessage: "מתחברים לשירות הבינה המלאכותית ויוצרים תוכן מותאם אישית..."
     });
     
     try {
       console.log('Starting outline generation for topic:', formData.idea);
+      console.log('Speaker background:', formData.speakerBackground);
+      console.log('Audience profile:', formData.audienceProfile);
       
-      // Generate outline using the new secure service
+      // Generate outline using the secure Edge Function
       const outlineData = await generatePresentationOutline(formData);
       
-      console.log('Outline generated successfully');
+      console.log('Outline generated successfully with', outlineData.chapters.length, 'chapters');
+      
+      // Validate that we got real content, not dummy content
+      const hasPersonalizedContent = outlineData.chapters.some(chapter => 
+        chapter.title.includes(formData.idea) || 
+        chapter.points.some(point => 
+          point.content.includes(formData.speakerBackground) ||
+          point.content.includes(formData.audienceProfile)
+        )
+      );
+
+      if (!hasPersonalizedContent) {
+        console.warn('Generated content may not be properly personalized');
+      }
       
       set({ 
         outline: outlineData,
@@ -108,15 +123,19 @@ export const usePresentationStore = create<PresentationState>((set, get) => ({
     } catch (error) {
       console.error("Failed to generate outline:", error);
       
-      // Provide more specific error messages
-      let errorMessage = "אירעה שגיאה ביצירת מבנה ההרצאה.";
+      // Provide more specific error messages based on error type
+      let errorMessage = "אירעה שגיאה ביצירת מבנה הרצאה.";
       
       if (error.message.includes('API key')) {
-        errorMessage = "בעיה בהגדרות המערכת. אנא נסה שנית או צור קשר עם התמיכה.";
-      } else if (error.message.includes('parse')) {
-        errorMessage = "שגיאה בעיבוד תשובת ה-AI. נסה שנית.";
+        errorMessage = "בעיה במפתח ה-API של OpenAI. אנא בדוק את ההגדרות.";
+      } else if (error.message.includes('parse') || error.message.includes('JSON')) {
+        errorMessage = "שגיאה בעיבוד תשובת הבינה המלאכותית. אנא נסה שנית.";
       } else if (error.message.includes('network') || error.message.includes('fetch')) {
         errorMessage = "בעיית תקשורת. בדוק את החיבור לאינטרנט ונסה שנית.";
+      } else if (error.message.includes('Invalid response')) {
+        errorMessage = "התקבלה תשובה לא תקינה מהשירות. אנא נסה שנית.";
+      } else if (error.message.includes('Failed to generate outline')) {
+        errorMessage = "השירות לא הצליח ליצור מבנה הרצאה. אנא נסה שנית או צור קשר עם התמיכה.";
       }
       
       set({ 

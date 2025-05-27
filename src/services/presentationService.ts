@@ -9,6 +9,11 @@ import { generateId } from '@/utils/helpers';
 export async function generatePresentationOutline(formData: PresentationFormData): Promise<PresentationOutline> {
   try {
     console.log('Calling Supabase Edge Function for outline generation...');
+    console.log('Form data:', {
+      idea: formData.idea,
+      duration: formData.duration,
+      audienceProfile: formData.audienceProfile
+    });
     
     const { data, error } = await supabase.functions.invoke('generate-presentation', {
       body: {
@@ -27,6 +32,8 @@ export async function generatePresentationOutline(formData: PresentationFormData
     }
 
     console.log('Successfully generated outline via Edge Function');
+    console.log('Generated outline structure:', Object.keys(data));
+    
     return parseApiResponse(data);
   } catch (error) {
     console.error("Error generating presentation outline:", error);
@@ -39,15 +46,28 @@ export async function generatePresentationOutline(formData: PresentationFormData
  */
 function parseApiResponse(response: any): PresentationOutline {
   try {
+    console.log('Parsing API response:', response);
+    
+    // Validate response structure
+    if (!response.chapters || !Array.isArray(response.chapters)) {
+      throw new Error('Invalid response: missing or invalid chapters array');
+    }
+
     // Add IDs to chapters and points
-    const chaptersWithIds = response.chapters.map((chapter: any) => ({
-      id: generateId(),
-      title: chapter.title,
-      points: chapter.points.map((point: any) => ({
+    const chaptersWithIds = response.chapters.map((chapter: any) => {
+      if (!chapter.title || !chapter.points || !Array.isArray(chapter.points)) {
+        throw new Error('Invalid chapter structure');
+      }
+      
+      return {
         id: generateId(),
-        content: point.content
-      }))
-    }));
+        title: chapter.title,
+        points: chapter.points.map((point: any) => ({
+          id: generateId(),
+          content: point.content || point
+        }))
+      };
+    });
 
     // Add IDs to sales process steps if they exist
     const salesProcessWithIds = response.salesProcess ? 
@@ -58,7 +78,7 @@ function parseApiResponse(response: any): PresentationOutline {
         order: step.order || index + 1
       })) : [];
     
-    return {
+    const parsedOutline = {
       chapters: chaptersWithIds,
       openingStyles: response.openingStyles || [],
       timeDistribution: response.timeDistribution || "",
@@ -70,6 +90,9 @@ function parseApiResponse(response: any): PresentationOutline {
       motivationalMessage: response.motivationalMessage || "",
       salesProcess: salesProcessWithIds
     };
+
+    console.log('Successfully parsed outline with', chaptersWithIds.length, 'chapters');
+    return parsedOutline;
   } catch (error) {
     console.error("Error parsing API response:", error);
     throw new Error("Failed to parse the AI response. Please try again.");
