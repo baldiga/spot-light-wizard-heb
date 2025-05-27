@@ -106,7 +106,7 @@ const PresentationSummary = () => {
     }, {
       number: 8,
       headline: "יסודות מעשיים",
-      content: `${chapters[0]?.points[2]?.content || ''} - כלים בסיסיים ליישום`,
+      content: `${chapters[0]?.points[2]?.content || ''} - כלים בסיסיים ליישום",
       visual: "דוגמאות ויזואליות",
       notes: "מעבר מתיאוריה לפרקטיקה"
     }, {
@@ -126,13 +126,13 @@ const PresentationSummary = () => {
     }, {
       number: 11,
       headline: "אסטרטגיות מתקדמות",
-      content: `${chapters[1]?.points[0]?.content || ''} - שיטות עבודה מוכחות`,
+      content: `${chapters[1]?.points[0]?.content || ''} - שיטות עבודה מוכחות",
       visual: "תרשימי זרימה",
       notes: "העמקה ברמה גבוהה יותר"
     }, {
       number: 12,
       headline: "כלים וטכנולוגיות",
-      content: `${chapters[1]?.points[1]?.content || ''} - כלים מעשיים וחדשניים`,
+      content: `${chapters[1]?.points[1]?.content || ''} - כלים מעשיים וחדשניים",
       visual: "ממשקי משתמש/דגמים",
       notes: "הצגת פתרונות טכנולוגיים"
     }, {
@@ -150,7 +150,7 @@ const PresentationSummary = () => {
     }, {
       number: 15,
       headline: "יישום בפועל",
-      content: `${chapters[1]?.points[2]?.content || ''} - דוגמאות מורכבות מהשטח`,
+      content: `${chapters[1]?.points[2]?.content || ''} - דוגמאות מורכבות מהשטח",
       visual: "מקרי מבחן מפורטים",
       notes: "הוכחת יעילות בסביבה אמיתית"
     },
@@ -164,19 +164,19 @@ const PresentationSummary = () => {
     }, {
       number: 17,
       headline: "תוצאות ומדידה",
-      content: `${chapters[2]?.points[0]?.content || ''} - איך למדוד הצלחה`,
+      content: `${chapters[2]?.points[0]?.content || ''} - איך למדוד הצלחה",
       visual: "דשבורד ומדדי KPI",
       notes: "כלים למעקב וביקורת"
     }, {
       number: 18,
       headline: "אופטימיזציה מתמשכת",
-      content: `${chapters[2]?.points[1]?.content || ''} - שיפור מתמיד`,
+      content: `${chapters[2]?.points[1]?.content || ''} - שיפור מתמיד",
       visual: "מחזור שיפור",
       notes: "תהליך מתמשך לשיפור"
     }, {
       number: 19,
       headline: "מקרי הצלחה",
-      content: `${chapters[2]?.points[2]?.content || ''} - דוגמאות מוצלחות וחדשניות`,
+      content: `${chapters[2]?.points[2]?.content || ''} - דוגמאות מוצלחות וחדשניות",
       visual: "gráfiques הצלחה ועדויות",
       notes: "הצגת תוצאות מוחשיות"
     },
