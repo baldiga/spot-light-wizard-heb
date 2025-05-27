@@ -81,7 +81,7 @@ const OutlineConfirmation = () => {
       <div className="max-w-4xl mx-auto">
         <div className="flex items-center justify-center mb-8">
           <SpotlightLogo className="w-12 h-12 mr-3" />
-          <h1 className="text-3xl font-bold text-gray-dark">אישור מבנה ההרצאה</h1>
+          <h1 className="text-3xl font-bold text-gray-dark">זו הולכת להיות הרצאה מדהימה</h1>
         </div>
 
         {/* Motivational Message */}
@@ -90,9 +90,6 @@ const OutlineConfirmation = () => {
             <div className="flex items-start gap-3 text-right">
               <Star className="w-6 h-6 text-whiskey flex-shrink-0 mt-1" />
               <div className="text-right">
-                <h3 className="font-bold text-gray-800 mb-2 text-right">
-                  {outline?.motivationalMessage ? 'הודעת עידוד אישית' : 'כל הכבוד! אתה על הדרך הנכונה'}
-                </h3>
                 <p className="text-gray-700 text-right leading-relaxed">
                   {outline?.motivationalMessage || 
                    'יצרת מבנה הרצאה מקצועי ומותאם אישית! ההרצאה שלך בנויה על עקרונות מוכחים של הצגה יעילה ומכירה טבעית. עכשיו הגיע הזמן לסקור את התוכן ולוודא שהוא משקף בדיוק את החזון שלך. זכור - הרצאה מצוינת מתחילה במבנה מוצק, ואתה כבר עשית את הצעד החשוב ביותר!'}
@@ -150,11 +147,11 @@ const OutlineConfirmation = () => {
                   .sort((a, b) => a.order - b.order)
                   .map((step, index) => (
                     <div key={step.id} className="text-right">
-                      <div className="flex items-center mb-3 justify-end">
-                        <h3 className="text-lg font-bold text-gray-800 text-right ml-3">{step.title}</h3>
-                        <div className="w-8 h-8 rounded-full bg-whiskey text-white flex items-center justify-center text-sm font-bold">
+                      <div className="flex items-center mb-3 justify-start">
+                        <div className="w-8 h-8 rounded-full bg-whiskey text-white flex items-center justify-center text-sm font-bold ml-3">
                           {index + 1}
                         </div>
+                        <h3 className="text-lg font-bold text-gray-800 text-right">{step.title}</h3>
                       </div>
                       <p className="text-gray-600 pr-11 text-right">{step.description}</p>
                     </div>

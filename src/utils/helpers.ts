@@ -24,3 +24,12 @@ export function createEmptyUserRegistrationData(): UserRegistrationData {
     emailVerified: false
   };
 }
+
+export const validateCharacterCount = (text: string, min: number = 50, max: number = 1000) => {
+  return {
+    isValid: text.length >= min && text.length <= max,
+    count: text.length,
+    min,
+    max
+  };
+};

@@ -1,3 +1,4 @@
+
 import { PresentationFormData, PresentationOutline, Chapter, SlideStructure, DynamicSalesStrategy } from '@/types/presentation';
 import { generateId } from '@/utils/helpers';
 
@@ -130,59 +131,64 @@ export async function generatePresentationOutline(formData: PresentationFormData
     const threadId = await createThread();
     
     const prompt = `
-אתה עוזר מומחה ליצירת מבנה הרצאות. אנא צור מבנה הרצאה על סמך המידע הבא:
+אתה עוזר מומחה ליצירת מבנה הרצאות. אנא צור מבנה הרצאה מותאם אישית על סמך המידע הבא:
 
-נושא ההרצאה: ${formData.idea}
-רקע המרצה: ${formData.speakerBackground}
-פרופיל הקהל: ${formData.audienceProfile}
+נושא ההרצאה: "${formData.idea}"
+רקע המרצה: "${formData.speakerBackground}"
+פרופיל הקהל: "${formData.audienceProfile}"
 משך ההרצאה: ${formData.duration} דקות
-התנגדויות נפוצות ואמונות מגבילות: ${formData.commonObjections}
-מוצר או שירות: ${formData.serviceOrProduct}
-קריאה לפעולה: ${formData.callToAction}
+התנגדויות נפוצות ואמונות מגבילות: "${formData.commonObjections}"
+מוצר או שירות לקידום: "${formData.serviceOrProduct}"
+קריאה לפעולה: "${formData.callToAction}"
 
-חשוב מאוד: בנה את ההרצאה כך שתתמודד עם ההתנגדויות והאמונות המגבילות שצוינו. הרצאה טובה היא כמו שיחת מכירה שמתמודדת עם התנגדויות בצורה טבעית ללא שיכול את הקהל.
+חשוב ביותר: 
+1. בנה את ההרצאה כך שתתמודד בצורה ישירה עם ההתנגדויות והאמונות המגבילות שצוינו: "${formData.commonObjections}"
+2. התאם את התוכן לפרופיל הקהל הספציפי: "${formData.audienceProfile}"
+3. הקפד שהרצאה תוביל בצורה טבעית למוצר/שירות: "${formData.serviceOrProduct}"
+4. המסר המרכזי צריך להיות מבוסס על: "${formData.idea}"
+5. סגנון ההרצאה צריך להתאים לרקע המרצה: "${formData.speakerBackground}"
 
 יש לענות בעברית בלבד ולהחזיר תוכן במבנה JSON הכולל:
-1. שלושה פרקים עיקריים (chapters) עם כותרת ו-3 נקודות מרכזיות לכל פרק
-2. סגנונות פתיחה אפשריים (openingStyles)
-3. חלוקת זמנים מומלצת (timeDistribution)
-4. פעילויות אינטראקטיביות מומלצות (interactiveActivities)
+1. שלושה פרקים עיקריים (chapters) עם כותרת ו-3 נקודות מרכזיות לכל פרק - מותאמים למידע שסופק
+2. סגנונות פתיחה אפשריים (openingStyles) - מותאמים לקהל ולנושא
+3. חלוקת זמנים מומלצת (timeDistribution) - מותאמת למשך ${formData.duration} דקות
+4. פעילויות אינטראקטיביות מומלצות (interactiveActivities) - מותאמות לקהל
 5. מבנה המצגת הכולל (presentationStructure)
 6. שאלות לדיון לפי חלקים (discussionQuestions)
-7. מדריך מכירות (salesGuide) אם רלוונטי למוצר/שירות
+7. מדריך מכירות (salesGuide) מותאם למוצר/שירות שצוין
 8. תוכנית למעקב לאחר ההרצאה (postPresentationPlan)
-9. הודעה מוטיבציונית אישית (motivationalMessage) - הודעה מעודדת ומחזקת בעברית
-10. מהלך מכירה בהרצאה (salesProcess) - עד 10 שלבים עם כותרת ותיאור
+9. הודעה מוטיבציונית אישית (motivationalMessage) - מעודדת ומותאמת אישית לתוכן שהמשתמש הזין
+10. מהלך מכירה בהרצאה (salesProcess) - עד 10 שלבים מותאמים לקהל ולמוצר, עם כותרת ותיאור מפורט
 
 נדרש מבנה JSON כדלקמן:
 {
   "chapters": [
     {
-      "title": "כותרת פרק 1",
+      "title": "כותרת פרק 1 מותאמת לנושא",
       "points": [
-        {"content": "נקודה 1"},
-        {"content": "נקודה 2"},
-        {"content": "נקודה 3"}
+        {"content": "נקודה 1 המתמודדת עם התנגדויות"},
+        {"content": "נקודה 2 מותאמת לקהל"},
+        {"content": "נקודה 3 המובילה למכירה"}
       ]
     },
     // chapters 2 and 3...
   ],
-  "openingStyles": ["סגנון 1", "סגנון 2", "סגנון 3"],
-  "timeDistribution": "חלוקת זמנים מפורטת",
-  "interactiveActivities": ["פעילות 1", "פעילות 2", "פעילות 3"],
-  "presentationStructure": "מבנה המצגת המוצע",
+  "openingStyles": ["סגנון 1 מותאם לקהל", "סגנון 2", "סגנון 3"],
+  "timeDistribution": "חלוקת זמנים מפורטת ל-${formData.duration} דקות",
+  "interactiveActivities": ["פעילות 1 מותאמת", "פעילות 2", "פעילות 3"],
+  "presentationStructure": "מבנה המצגת המוצע המותאם לתוכן",
   "discussionQuestions": {
-    "חלק 1": ["שאלה 1", "שאלה 2"],
+    "חלק 1": ["שאלה 1 מותאמת", "שאלה 2"],
     "חלק 2": ["שאלה 1", "שאלה 2"],
     "חלק 3": ["שאלה 1", "שאלה 2"]
   },
-  "salesGuide": "מדריך מכירות",
-  "postPresentationPlan": "תוכנית למעקב",
-  "motivationalMessage": "הודעה מוטיבציונית אישית מעודדת בעברית",
+  "salesGuide": "מדריך מכירות מותאם למוצר/שירות שצוין",
+  "postPresentationPlan": "תוכנית למעקב מותאמת",
+  "motivationalMessage": "הודעה מוטיבציונית אישית מעודדת ומותאמת לתוכן הספציפי שהמשתמש הזין",
   "salesProcess": [
     {
-      "title": "כותרת שלב 1",
-      "description": "תיאור מפורט של השלב",
+      "title": "כותרת שלב 1 מותאמת לקהל ולמוצר",
+      "description": "תיאור מפורט של השלב המותאם למידע שסופק",
       "order": 1
     },
     // up to 10 steps...
@@ -210,42 +216,40 @@ export async function generateDynamicSlideStructure(formData: PresentationFormDa
     const threadId = await createThread();
     
     const prompt = `
-על סמך מבנה ההרצאה הבא, אנא צור מבנה מפורט למצגת שקף אחר שקף:
+על סמך מבנה ההרצאה הבא, אנא צור מבנה מפורט למצגת שקף אחר שקף שמתבסס על המידע הספציפי שהמשתמש הזין:
 
-נושא ההרצאה: ${formData.idea}
-רקע המרצה: ${formData.speakerBackground}
-פרופיל הקהל: ${formData.audienceProfile}
+נושא ההרצאה: "${formData.idea}"
+רקע המרצה: "${formData.speakerBackground}"
+פרופיל הקהל: "${formData.audienceProfile}"
 משך ההרצאה: ${formData.duration} דקות
-התנגדויות נפוצות ואמונות מגבילות: ${formData.commonObjections}
-מוצר או שירות: ${formData.serviceOrProduct}
+התנגדויות נפוצות ואמונות מגבילות: "${formData.commonObjections}"
+מוצר או שירות: "${formData.serviceOrProduct}"
+קריאה לפעולה: "${formData.callToAction}"
 
 פרקי ההרצאה:
 ${outline.chapters.map((chapter, idx) => 
   `פרק ${idx + 1}: ${chapter.title}\n${chapter.points.map(point => `- ${point.content}`).join('\n')}`
 ).join('\n\n')}
 
-חשוב: הקפד לבנות את השקפים כך שיתמודדו עם ההתנגדויות והאמונות המגבילות שצוינו.
+חשוב: 
+1. הקפד לבנות את השקפים כך שיתמודדו עם ההתנגדויות שצוינו: "${formData.commonObjections}"
+2. התאם את התוכן לקהל הספציפי: "${formData.audienceProfile}"
+3. השתמש בחומר שמתבסס על הנושא האמיתי: "${formData.idea}"
+4. הוביל לקריאה לפעולה: "${formData.callToAction}"
 
 אנא צור מבנה מפורט של שקפים במבנה JSON הבא:
 [
   {
     "number": 1,
-    "headline": "כותרת השקף",
-    "content": "תוכן מפורט של השקף",
-    "visual": "הצעה לאלמנטים ויזואליים",
-    "notes": "הערות למרצה",
+    "headline": "כותרת השקף מותאמת לתוכן הספציפי",
+    "content": "תוכן מפורט של השקף המבוסס על המידע שהמשתמש הזין",
+    "visual": "הצעה לאלמנטים ויזואליים מותאמים",
+    "notes": "הערות למרצה מבוססות על הרקע שלו",
     "timeAllocation": "זמן מוקדש בדקות"
   }
 ]
 
-הקפד על:
-1. חלוקה הגיונית של התוכן לשקפים
-2. פירוק רעיונות מורכבים למספר שקפים
-3. שקפי מעבר בין פרקים
-4. שקפי פתיחה וסיכום
-5. שקפים להדגמות והצגת המוצר/שירות
-6. התאמה למשך ההרצאה (${formData.duration} דקות)
-7. שקפים שמתמודדים עם ההתנגדויות הנפוצות
+הקפד על התאמה מלאה למידע שהמשתמש הזין ועל משך ההרצאה של ${formData.duration} דקות.
     `;
 
     await addMessageToThread(threadId, prompt);
