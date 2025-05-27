@@ -422,7 +422,7 @@ const PresentationSummary = () => {
                         <h3 className="text-xl font-bold text-gray-800 mb-4">כלים נוספים למעורבות</h3>
                         {engagementData.engagementMetrics.pollQuestions && Array.isArray(engagementData.engagementMetrics.pollQuestions) && (
                           <div className="mb-4">
-                            <h4 className="font-semibold text-gray-700 mb-2">שאלות סקר</h4>
+                            <h4 className="font-semibold text-gray-800 mb-2">שאלות סקר</h4>
                             <div className="space-y-2">
                               {engagementData.engagementMetrics.pollQuestions.map((poll: any, index: number) => (
                                 <div key={index} className="p-3 bg-yellow-50 rounded">
@@ -617,14 +617,26 @@ const PresentationSummary = () => {
 
         </Tabs>
 
-        {/* Only restart button */}
-        <div className="flex justify-center mt-12">
+        {/* Action buttons section */}
+        <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mt-12">
           <Button 
             onClick={handleRestart}
             className="bg-whiskey hover:bg-whiskey-dark text-white px-8 py-3 text-lg"
           >
             סיום והתחלה מחדש
           </Button>
+          
+          <div className="text-center">
+            <p className="text-gray-700 mb-3 max-w-md">
+              רוצים להוציא את ההרצאה לפועל ולמכור מהבמה? לחצו ליצירת קשר וקבלת ייעוץ ראשוני ללא עלות
+            </p>
+            <Button 
+              onClick={() => window.open('https://wa.link/47lii7', '_blank')}
+              className="bg-green-600 hover:bg-green-700 text-white px-6 py-2"
+            >
+              יצירת קשר וייעוץ חינם
+            </Button>
+          </div>
         </div>
       </div>
     </div>
