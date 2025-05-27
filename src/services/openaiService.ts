@@ -1,4 +1,3 @@
-
 import { PresentationFormData, PresentationOutline, Chapter, SlideStructure, DynamicSalesStrategy, PresentationTools } from '@/types/presentation';
 import { generateId } from '@/utils/helpers';
 
@@ -280,7 +279,7 @@ async function runAssistant(threadId: string): Promise<string> {
 }
 
 /**
- * Generates presentation outline using the custom assistant with improved error handling
+ * Generates presentation outline using the custom assistant with enhanced personalization
  */
 export async function generatePresentationOutline(formData: PresentationFormData): Promise<PresentationOutline> {
   try {
@@ -288,57 +287,89 @@ export async function generatePresentationOutline(formData: PresentationFormData
     const threadId = await createThread();
     
     const prompt = `
-אתה עוזר מומחה ליצירת מבנה הרצאות. אנא צור מבנה הרצאה מותאם אישית על סמך המידע הבא:
+אתה יועץ מקצועי ליצירת הרצאות מותאמות אישית. המשימה שלך היא ליצור מבנה הרצאה מפורט ומדויק שמשקף בדיוק את המומחיות של המרצה ואת הצרכים הספציפיים של הקהל.
 
-נושא ההרצאה: ${sanitizeText(formData.idea)}
-רקע המרצה: ${sanitizeText(formData.speakerBackground)}
-פרופיל הקהל: ${sanitizeText(formData.audienceProfile)}
-משך ההרצאה: ${formData.duration} דקות
-התנגדויות נפוצות ואמונות מגבילות: ${sanitizeText(formData.commonObjections)}
-מוצר או שירות לקידום: ${sanitizeText(formData.serviceOrProduct)}
-קריאה לפעולה: ${sanitizeText(formData.callToAction)}
+פרטי ההרצאה שעליך לבסס עליהם את התוכן:
+- נושא מרכזי: "${sanitizeText(formData.idea)}" 
+- רקע המרצה: "${sanitizeText(formData.speakerBackground)}"
+- פרופיל הקהל: "${sanitizeText(formData.audienceProfile)}"
+- משך ההרצאה: ${formData.duration} דקות
+- התנגדויות נפוצות: "${sanitizeText(formData.commonObjections)}"
+- מוצר/שירות לקידום: "${sanitizeText(formData.serviceOrProduct)}"
+- קריאה לפעולה: "${sanitizeText(formData.callToAction)}"
 
-חשוב מאוד:
-1. הקפד על פורמט JSON תקין בלבד
-2. השתמש במרכאות כפולות בלבד
-3. הימנע מעריכות בסוף השורות
-4. וודא שכל מחרוזת עברית מסתיימת כהלכה
-5. השתמש בטקסט קצר וברור
+הוראות מדויקות ליצירת תוכן מותאם:
+
+1. השתמש ברקע המרצה כדי לקבוע:
+   - עומק הידע הטכני שיוצג
+   - סגנון הדיבור והמושגים שיפוצו
+   - סוג הדוגמאות והניסיון שיוזכר
+   - רמת המקצועיות והאמינות
+
+2. התאם את התוכן לקהל הספציפי:
+   - השתמש בשפה ומושגים מתאימים לרמת הקהל
+   - צור דוגמאות רלוונטיות לתחום עיסוקם
+   - התייחס לאתגרים הספציפיים שלהם
+   - התאם את סגנון ההצגה לציפיות הקהל
+
+3. בנה תוכן ייחודי לנושא:
+   - כל פרק חייב להתקדם לוגית לעבר המטרה העיסקית
+   - התייחס ישירות לנושא ולא לכללים
+   - צור תוכן שרק מומחה בתחום יכול לספק
+   - הימנע מתוכן גנרי או משותף
+
+4. שלב את התנגדויות והפתרונות:
+   - התייחס ישירות לחששות שהוזכרו
+   - בנה תשובות מבוססות ידע מהרקע של המרצה
+   - הראה איך הניסיון של המרצה פותר בעיות אלו
+
+5. קשר טבעי למוצר/שירות:
+   - אל תעשה מכירה ישירה בפרקים
+   - צור זרימה טבעית שמובילה לפתרון
+   - הראה איך המומחיות מתרגמת לערך מעשי
 
 יש להחזיר JSON תקין במבנה הבא בלבד:
 {
   "chapters": [
     {
-      "title": "כותרת פרק 1",
+      "title": "כותרת פרק מותאמת לנושא הספציפי",
       "points": [
-        {"content": "נקודה 1"},
-        {"content": "נקודה 2"},
-        {"content": "נקודה 3"}
+        {"content": "נקודה מקצועית המבוססת על רקע המרצה"},
+        {"content": "תובנה מעשית רלוונטית לקהל היעד"},
+        {"content": "דוגמה ספציפית מהתחום"}
       ]
     }
   ],
-  "openingStyles": ["סגנון 1", "סגנון 2", "סגנון 3"],
-  "timeDistribution": "חלוקת זמנים",
-  "interactiveActivities": ["פעילות 1", "פעילות 2", "פעילות 3"],
-  "presentationStructure": "מבנה המצגת",
+  "openingStyles": [
+    "פתיחה המתאימה לסגנון המרצה ולקהל הספציפי",
+    "אפשרות שנייה המבוססת על הניסיון המקצועי",
+    "גישה שלישית המותאמת לנושא הייחודי"
+  ],
+  "timeDistribution": "חלוקת זמנים מותאמת למשך ההרצאה ולתוכן הספציפי",
+  "interactiveActivities": [
+    "פעילות מעורבות רלוונטית לקהל היעד",
+    "אינטראקציה המתאימה לנושא הספציפי",
+    "משימה מעשית המבוססת על התוכן"
+  ],
+  "presentationStructure": "מבנה מפורט המותאם לסגנון המרצה ולמטרות ההרצאה",
   "discussionQuestions": {
-    "חלק 1": ["שאלה 1", "שאלה 2"],
-    "חלק 2": ["שאלה 1", "שאלה 2"],
-    "חלק 3": ["שאלה 1", "שאלה 2"]
+    "פרק 1": ["שאלה ספציפית לתוכן", "שאלה נוספת המתאימה לקהל"],
+    "פרק 2": ["שאלה מעמיקה בנושא", "שאלה מעשית יותר"],
+    "פרק 3": ["שאלה מסכמת", "שאלה המובילה לפעולה"]
   },
-  "salesGuide": "מדריך מכירות",
-  "postPresentationPlan": "תוכנית מעקב",
-  "motivationalMessage": "הודעה מוטיבציונית",
+  "salesGuide": "מדריך מכירות מותאם שמתבסס על האמינות והמומחיות של המרצה",
+  "postPresentationPlan": "תוכנית מעקב מותאמת לסוג הקהל ולמטרות המרצה",
+  "motivationalMessage": "הודעה מעודדת אישית המתייחסת לחוזקות המרצה",
   "salesProcess": [
     {
-      "title": "כותרת שלב 1",
-      "description": "תיאור השלב",
+      "title": "שלב מכירה המותאם לסגנון המרצה",
+      "description": "תיאור מפורט שמתבסס על הרקע המקצועי",
       "order": 1
     }
   ]
 }
 
-אנא הקפד על פורמט JSON תקין בלבד ללא תוספות טקסט.
+חשוב מאוד: אל תיצור תוכן גנרי! כל משפט חייב להיות רלוונטי לנושא הספציפי, לרקע המרצה ולקהל היעד.
     `;
 
     await addMessageToThread(threadId, prompt);
@@ -359,7 +390,7 @@ export async function generatePresentationOutline(formData: PresentationFormData
 }
 
 /**
- * Generates dynamic slide structure using chunked approach with enhanced error handling
+ * Generates dynamic slide structure with deep personalization
  */
 export async function generateDynamicSlideStructure(formData: PresentationFormData, outline: PresentationOutline): Promise<SlideStructure[]> {
   try {
@@ -367,38 +398,53 @@ export async function generateDynamicSlideStructure(formData: PresentationFormDa
     const threadId = await createThread();
     
     const durationMinutes = parseInt(formData.duration);
-    const estimatedSlides = Math.min(Math.floor(durationMinutes * 0.8), 25); // Cap at 25 slides
+    const estimatedSlides = Math.min(Math.floor(durationMinutes * 0.8), 25);
     
     const prompt = `
-צור מבנה מפורט של שקפים להרצאה. הקפד על JSON תקין בלבד.
+אתה מומחה ליצירת מצגות מותאמות אישית. עליך ליצור מבנה שקפים מפורט המשקף בדיוק את המומחיות של המרצה ואת הצרכים של הקהל.
 
 פרטי ההרצאה:
-- נושא: ${sanitizeText(formData.idea)}
-- משך: ${formData.duration} דקות (בערך ${estimatedSlides} שקפים)
-- קהל: ${sanitizeText(formData.audienceProfile)}
+- נושא: "${sanitizeText(formData.idea)}"
+- רקע המרצה: "${sanitizeText(formData.speakerBackground)}"
+- קהל יעד: "${sanitizeText(formData.audienceProfile)}"
+- משך: ${formData.duration} דקות (יש ליצור ${estimatedSlides} שקפים)
+- מוצר/שירות: "${sanitizeText(formData.serviceOrProduct)}"
 
-דרישות למבנה השקפים:
-1. פתיחה: 3 שקפים
-2. כל פרק: 4-6 שקפים
-3. מהלך מכירה: 3 שקפים
-4. סיום: 2 שקפים
+פרקי ההרצאה שנוצרו:
+${outline.chapters.map((chapter, idx) => 
+  `פרק ${idx + 1}: ${chapter.title}\n${chapter.points.map(point => `- ${point.content}`).join('\n')}`
+).join('\n\n')}
 
-החזר JSON array של שקפים בפורמט (מקסימום ${estimatedSlides} שקפים):
+הוראות ליצירת שקפים מותאמים:
+
+1. כל שקף חייב להשקף את המומחיות הספציפית של המרצה
+2. התוכן חייב להיות רלוונטי ישירות לקהל היעד
+3. השתמש במושגים ובשפה המתאימים לרמת הקהל
+4. צור תוכן ייחודי שרק מומחה בתחום יכול לספק
+5. האלמנטים הויזואליים חייבים להתאים לנושא הספציפי
+6. הערות למרצה חייבות לנצל את הרקע המקצועי שלו
+
+מבנה נדרש:
+- פתיחה: 3 שקפים מותאמים אישית
+- תוכן מרכזי: מחולק לפי הפרקים שנוצרו
+- סיכום ופעולה: 3 שקפים
+
+החזר JSON array של שקפים (מקסימום ${estimatedSlides} שקפים):
 [
   {
     "number": 1,
     "section": "פתיחה",
-    "headline": "כותרת השקף",
-    "content": "תוכן השקף - טקסט קצר",
-    "visual": "הצעה ויזואלית - טקסט קצר",
-    "notes": "הערות למרצה - טקסט קצר",
-    "timeAllocation": "2 דקות",
-    "engagementTip": "טיפ למעורבות - טקסט קצר",
-    "transitionPhrase": "משפט מעבר - טקסט קצר"
+    "headline": "כותרת ייחודית הקשורה לנושא הספציפי",
+    "content": "תוכן המשקף את המומחיות של המרצה ורלוונטי לקהל",
+    "visual": "הצעה ויזואלית ספציפית לנושא ולתחום",
+    "notes": "הערות שמנצלות את הרקע המקצועי של המרצה",
+    "timeAllocation": "זמן מותאם",
+    "engagementTip": "טיפ מעורבות הספציפי לסוג הקהל",
+    "transitionPhrase": "מעבר המתאים לסגנון המרצה"
   }
 ]
 
-הקפד על JSON תקין בלבד. השתמש בטקסט קצר וברור.
+חשוב: כל שקף חייב להיות ייחודי ולהשקף את התמחות המרצה. הימנע מתוכן גנרי!
     `;
 
     await addMessageToThread(threadId, prompt);
@@ -419,7 +465,7 @@ export async function generateDynamicSlideStructure(formData: PresentationFormDa
 }
 
 /**
- * Generates dynamic B2B email using the assistant with error handling
+ * Generates dynamic B2B email with deep personalization
  */
 export async function generateDynamicB2BEmail(formData: PresentationFormData, outline: PresentationOutline): Promise<string> {
   try {
@@ -427,16 +473,31 @@ export async function generateDynamicB2BEmail(formData: PresentationFormData, ou
     const threadId = await createThread();
     
     const prompt = `
-כתב מייל פנייה B2B מקצועי בעברית להרצאה:
+כתב מייל פנייה B2B מותאם אישית המבוסס על המומחיות הספציפית של המרצה.
 
-נושא: ${sanitizeText(formData.idea)}
-רקע מרצה: ${sanitizeText(formData.speakerBackground)}
-קהל יעד: ${sanitizeText(formData.audienceProfile)}
-מוצר/שירות: ${sanitizeText(formData.serviceOrProduct)}
+פרטי המרצה והנושא:
+- נושא ההרצאה: "${sanitizeText(formData.idea)}"
+- רקע והתמחות המרצה: "${sanitizeText(formData.speakerBackground)}"
+- קהל יעד: "${sanitizeText(formData.audienceProfile)}"
+- מוצר/שירות: "${sanitizeText(formData.serviceOrProduct)}"
 
-המייל צריך להיות 250-350 מילים, מקצועי וחם.
+הוראות למייל מותאם:
+
+1. התחל בפתיחה שמראה הבנה עמוקה של האתגרים הספציפיים של הקהל היעד
+2. הדגש את המומחיות הייחודית של המרצה הרלוונטית לנושא
+3. התייחס לתוצאות או להצלחות קודמות בתחום הספציפי
+4. הצע ערך ברור וישיר לקהל המסוים
+5. צור קריאה לפעולה המתאימה לקהל העסקי הספציפי
+
+המייל חייב להיות:
+- 300-400 מילים
+- מקצועי ואמין
+- ספציפי לתחום ולא גנרי
+- מותאם לרמת הקהל
+- מבוסס על רקע המרצה בפועל
+
 החזר רק את תוכן המייל ללא פורמט JSON או תגיות נוספות.
-השתמש בעברית פשוטה וברורה.
+השתמש בעברית מקצועית וברורה.
     `;
 
     await addMessageToThread(threadId, prompt);
@@ -451,7 +512,7 @@ export async function generateDynamicB2BEmail(formData: PresentationFormData, ou
 }
 
 /**
- * Generates dynamic sales strategy using the assistant with validation
+ * Generates dynamic sales strategy with deep customization
  */
 export async function generateDynamicSalesStrategy(formData: PresentationFormData, outline: PresentationOutline): Promise<DynamicSalesStrategy> {
   try {
@@ -459,35 +520,46 @@ export async function generateDynamicSalesStrategy(formData: PresentationFormDat
     const threadId = await createThread();
     
     const prompt = `
-צור אסטרטגיית שיווק ומכירות מותאמת:
+צור אסטרטגיית שיווק ומכירות מותאמת אישית לפי המומחיות והנושא הספציפיים.
 
-נושא: ${sanitizeText(formData.idea)}
-מוצר/שירות: ${sanitizeText(formData.serviceOrProduct)}
-קהל: ${sanitizeText(formData.audienceProfile)}
+פרטי ההקשר:
+- נושא ההרצאה: "${sanitizeText(formData.idea)}"
+- רקע המרצה: "${sanitizeText(formData.speakerBackground)}"
+- מוצר/שירות: "${sanitizeText(formData.serviceOrProduct)}"
+- קהל יעד: "${sanitizeText(formData.audienceProfile)}"
 
-החזר JSON בפורמט קצר וברור:
+הוראות ליצירת אסטרטגיה מותאמת:
+
+1. קהלי יעד - זהה מי יהיה מעוניין בדיוק בנושא הספציפי הזה
+2. ערוצי שיווק - הצע ערוצים שמתאימים לתחום ולקהל הספציפי
+3. תמחור - בסס על ערך השירות/מוצר לקהל המסוים
+4. שיתופי פעולה - הצע גורמים רלוונטיים בתחום
+5. תוכן שיווקי - צור רעיונות ספציפיים לנושא
+6. מעקב - התאם לסוג הקהל והשירות
+
+החזר JSON בפורמט מותאם:
 {
-  "targetAudiences": ["קהל 1", "קהל 2"],
+  "targetAudiences": ["קהל ספציפי לתחום", "קבוצה רלוונטיה נוספת"],
   "marketingChannels": [
     {
-      "channel": "שם ערוץ",
-      "strategy": "אסטרטגיה קצרה",
-      "timeline": "זמן",
-      "budget": "תקציב"
+      "channel": "ערוץ רלוונטי לתחום",
+      "strategy": "אסטרטגיה ספציפית לנושא",
+      "timeline": "זמן מותאם",
+      "budget": "תקציב הגיוני"
     }
   ],
   "pricingStrategy": {
-    "basicTicket": "מחיר בסיסי",
-    "vipTicket": "מחיר VIP",
-    "premiumTicket": "מחיר פרמיום",
-    "corporatePackage": "חבילה ארגונית"
+    "basicTicket": "מחיר מותאם לערך הנושא",
+    "vipTicket": "מחיר משקף עמק התמחות",
+    "premiumTicket": "מחיר לפגישה אישית",
+    "corporatePackage": "חבילה ארגונית מותאמת"
   },
-  "collaborationOpportunities": ["הזדמנות 1", "הזדמנות 2"],
-  "contentMarketing": ["רעיון 1", "רעיון 2"],
-  "followUpStrategy": "אסטרטגיית מעקב קצרה"
+  "collaborationOpportunities": ["שותף רלוונטי לתחום", "ארגון מקצועי בתחום"],
+  "contentMarketing": ["תוכן ספציפי לנושא", "רעיון שיווקי ייחודי"],
+  "followUpStrategy": "אסטרטגיית מעקב המתאימה לקהל ולשירות"
 }
 
-הקפד על JSON תקין בלבד. השתמש בטקסט קצר.
+הקפד על תוכן ספציפי ולא גנרי!
     `;
 
     await addMessageToThread(threadId, prompt);
@@ -503,7 +575,7 @@ export async function generateDynamicSalesStrategy(formData: PresentationFormDat
 }
 
 /**
- * Generates presentation tools and tips with enhanced structure
+ * Generates presentation tools with deep personalization and specificity
  */
 export async function generatePresentationTools(formData: PresentationFormData, outline: PresentationOutline): Promise<any> {
   try {
@@ -511,72 +583,89 @@ export async function generatePresentationTools(formData: PresentationFormData, 
     const threadId = await createThread();
     
     const prompt = `
-צור כלים מעשיים להצגה:
+צור כלים מעשיים ומותאמים אישית להצגה המבוססים על המומחיות הספציפית של המרצה.
 
-נושא: ${sanitizeText(formData.idea)}
-רקע מרצה: ${sanitizeText(formData.speakerBackground)}
-קהל: ${sanitizeText(formData.audienceProfile)}
+פרטי ההקשר:
+- נושא: "${sanitizeText(formData.idea)}"
+- רקע המרצה: "${sanitizeText(formData.speakerBackground)}"
+- קהל: "${sanitizeText(formData.audienceProfile)}"
+- משך: ${formData.duration} דקות
 
-החזר JSON בפורמט קצר:
+פרקי ההרצאה:
+${outline.chapters.map((chapter, idx) => 
+  `פרק ${idx + 1}: ${chapter.title}\n${chapter.points.map(point => `- ${point.content}`).join('\n')}`
+).join('\n\n')}
+
+הוראות ליצירת כלים מותאמים:
+
+1. פתיחות - צור פתיחות שמנצלות את הרקע הספציפי של המרצה
+2. שאלות לפרקים - התבסס על התוכן המסוים שנוצר
+3. פעילויות - התאם לסוג הקהל ולנושא הספציפי
+4. מעברים - צור מעברים שמתאימים לסגנון ולתוכן
+5. טכניקות מעורבות - התאם לרמת הקהל ולנושא
+6. פתרון בעיות - התמקד בבעיות הספציפיות לתחום
+7. סיומים - צור סיומים שמתאימים למטרות המרצה
+
+החזר JSON מותאם:
 {
   "openingSuggestions": [
     {
-      "type": "סוג פתיחה",
-      "script": "סקריפט קצר",
-      "tips": "טיפים קצרים לביצוע"
+      "type": "סוג פתיחה המותאם לרקע המרצה",
+      "script": "סקריפט ספציפי שמנצל את המומחיות",
+      "tips": "טיפים המבוססים על הנושא הספציפי"
     }
   ],
   "chapterQuestions": {
-    "פרק 1": [
+    "${outline.chapters[0]?.title || 'פרק 1'}": [
       {
-        "question": "שאלה למעורבות",
-        "purpose": "מטרת השאלה",
-        "expectedAnswers": ["תשובה 1", "תשובה 2"],
-        "followUp": "איך להמשיך"
+        "question": "שאלה ספציפית לתוכן הפרק",
+        "purpose": "מטרה המתאימה לקהל היעד",
+        "expectedAnswers": ["תשובה רלוונטית לנושא", "תשובה נוספת מהתחום"],
+        "followUp": "המשך המבוסס על הניסיון של המרצה"
       }
     ]
   },
   "interactiveActivities": [
     {
-      "activity": "שם פעילות",
-      "timing": "מתי לבצע",
-      "duration": "משך זמן",
-      "instructions": "הוראות קצרות",
-      "materials": "חומרים נדרשים"
+      "activity": "פעילות ספציפית לנושא ולקהל",
+      "timing": "זמן מותאם להרצאה",
+      "duration": "משך זמן הגיוני",
+      "instructions": "הוראות ברורות ומותאמות",
+      "materials": "חומרים רלוונטיים לנושא"
     }
   ],
   "transitionPhrases": [
     {
-      "from": "מקטע מקור",
-      "to": "מקטע יעד",
-      "phrase": "משפט מעבר"
+      "from": "נקודת מוצא מהתוכן",
+      "to": "נקודת יעד מהתוכן",
+      "phrase": "מעבר טבעי ורלוונטי"
     }
   ],
   "engagementTechniques": [
     {
-      "technique": "שם טכניקה",
-      "when": "מתי להשתמש",
-      "howTo": "איך לבצע",
-      "benefits": "יעילות"
+      "technique": "טכניקה מותאמת לקהל ולנושא",
+      "when": "זמן מתאים בהקשר ההרצאה",
+      "howTo": "ביצוע ספציפי למרצה",
+      "benefits": "יעילות מבוססת ניסיון"
     }
   ],
   "troubleshooting": [
     {
-      "problem": "בעיה אפשרית",
-      "solution": "פתרון",
-      "prevention": "מניעה"
+      "problem": "בעיה ספציפית לתחום או לקהל",
+      "solution": "פתרון המבוסס על מומחיות המרצה",
+      "prevention": "מניעה רלוונטית לנושא"
     }
   ],
   "closingTechniques": [
     {
-      "type": "סוג סיום",
-      "script": "סקריפט",
-      "callToAction": "קריאה לפעולה"
+      "type": "סיום המתאים למטרות המרצה",
+      "script": "סקריפט ספציפי לקריאה לפעולה",
+      "callToAction": "פעולה ברורה ומתאימה לקהל"
     }
   ]
 }
 
-הקפד על JSON תקין בלבד. השתמש בטקסט קצר וברור.
+חשוב: כל כלי חייב להיות ספציפי ומותאם! הימנע מתשובות גנריות.
     `;
 
     await addMessageToThread(threadId, prompt);
