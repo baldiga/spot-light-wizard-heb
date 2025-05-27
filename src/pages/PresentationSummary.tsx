@@ -66,20 +66,24 @@ const PresentationSummary = () => {
       // Stage 2: Generate slides
       setCurrentStage(1);
       console.log('🎯 Starting slides generation...');
-      const slides = await generateSlideStructure(formData, outline);
-      console.log('🎯 Slides response:', slides);
+      const slidesResponse = await generateSlideStructure(formData, outline);
+      console.log('🎯 Slides response:', slidesResponse);
       
-      // Handle slides data - check for both array and object with slides property
-      if (Array.isArray(slides)) {
-        setDynamicSlides(slides);
-        console.log('✅ Set slides (direct array):', slides.length, 'slides');
-      } else if (slides && typeof slides === 'object' && Array.isArray(slides.slides)) {
-        setDynamicSlides(slides.slides);
-        console.log('✅ Set slides (from object):', slides.slides.length, 'slides');
+      // Handle slides data with proper typing
+      let slidesToSet: any[] = [];
+      
+      if (Array.isArray(slidesResponse)) {
+        slidesToSet = slidesResponse;
+        console.log('✅ Set slides (direct array):', slidesToSet.length, 'slides');
+      } else if (slidesResponse && typeof slidesResponse === 'object' && 'slides' in slidesResponse && Array.isArray(slidesResponse.slides)) {
+        slidesToSet = slidesResponse.slides;
+        console.log('✅ Set slides (from object):', slidesToSet.length, 'slides');
       } else {
-        console.warn('⚠️ Unexpected slides format:', slides);
-        setDynamicSlides([]);
+        console.warn('⚠️ Unexpected slides format:', slidesResponse);
+        slidesToSet = [];
       }
+      
+      setDynamicSlides(slidesToSet);
       await new Promise(resolve => setTimeout(resolve, 500));
 
       // Stage 3: Generate engagement content
