@@ -1,7 +1,12 @@
 import { create } from 'zustand';
-import { PresentationFormData, PresentationOutline, Chapter, UserRegistrationData } from '@/types/presentation';
+import { PresentationFormData, PresentationOutline, Chapter, UserRegistrationData, SlideStructure, DynamicSalesStrategy } from '@/types/presentation';
 import { generateId } from '@/utils/helpers';
-import { generatePresentationOutline } from '@/services/openaiService';
+import { 
+  generatePresentationOutline, 
+  generateDynamicSlideStructure, 
+  generateDynamicB2BEmail, 
+  generateDynamicSalesStrategy 
+} from '@/services/openaiService';
 import { sendToZapierWebhook } from '@/services/webhookService';
 
 interface PresentationState {
@@ -10,6 +15,7 @@ interface PresentationState {
   outline: PresentationOutline | null;
   chapters: Chapter[];
   isLoading: boolean;
+  loadingMessage: string;
   error: string | null;
   setFormData: (data: PresentationFormData) => void;
   setUserRegistration: (data: UserRegistrationData) => void;
@@ -18,7 +24,7 @@ interface PresentationState {
   updateChapter: (chapterId: string, title: string) => void;
   updatePoint: (chapterId: string, pointId: string, content: string) => void;
   generateOutlineFromAPI: () => Promise<void>;
-  generateDummyOutline: () => void; // Keeping for fallback
+  generateDummyOutline: () => void;
 }
 
 export const usePresentationStore = create<PresentationState>((set, get) => ({
@@ -27,6 +33,7 @@ export const usePresentationStore = create<PresentationState>((set, get) => ({
   outline: null,
   chapters: [],
   isLoading: false,
+  loadingMessage: "יוצרים את מבנה ההרצאה...",
   error: null,
   
   setFormData: (data) => set({ formData: data }),
@@ -61,15 +68,42 @@ export const usePresentationStore = create<PresentationState>((set, get) => ({
       return;
     }
     
-    set({ isLoading: true, error: null });
+    set({ 
+      isLoading: true, 
+      error: null,
+      loadingMessage: "אנחנו בונים את ההרצאה בהתאמה אישית מלאה על סמך נסיון ומחקר של אלפי הרצאות ממירות, זה יקח עוד כמה שניות..."
+    });
     
     try {
+      // Step 1: Generate basic outline
+      set({ loadingMessage: "יוצרים את מבנה ההרצאה הבסיסי..." });
       const outlineData = await generatePresentationOutline(formData);
       
+      // Step 2: Generate dynamic slide structure
+      set({ loadingMessage: "בונים מבנה מפורט של השקפים..." });
+      const dynamicSlides = await generateDynamicSlideStructure(formData, outlineData);
+      
+      // Step 3: Generate dynamic B2B email
+      set({ loadingMessage: "כותבים מייל פנייה מותאם אישית..." });
+      const dynamicB2BEmail = await generateDynamicB2BEmail(formData, outlineData);
+      
+      // Step 4: Generate dynamic sales strategy
+      set({ loadingMessage: "מכינים אסטרטגיית שיווק מותאמת..." });
+      const dynamicSalesStrategy = await generateDynamicSalesStrategy(formData, outlineData);
+      
+      // Combine all generated content
+      const completeOutline: PresentationOutline = {
+        ...outlineData,
+        dynamicSlides,
+        dynamicB2BEmail,
+        dynamicSalesStrategy
+      };
+      
       set({ 
-        outline: outlineData,
+        outline: completeOutline,
         chapters: outlineData.chapters,
-        isLoading: false 
+        isLoading: false,
+        loadingMessage: "יוצרים את מבנה ההרצאה..."
       });
 
       // Send data to Zapier webhook after successful outline generation
@@ -78,18 +112,18 @@ export const usePresentationStore = create<PresentationState>((set, get) => ({
           await sendToZapierWebhook({
             presentationData: formData,
             userRegistration,
-            outline: outlineData
+            outline: completeOutline
           });
         } catch (webhookError) {
           console.error("Failed to send data to webhook:", webhookError);
-          // Don't fail the whole process if webhook fails
         }
       }
     } catch (error) {
       console.error("Failed to generate outline:", error);
       set({ 
         error: "אירעה שגיאה ביצירת מבנה ההרצאה. נסה שנית.", 
-        isLoading: false 
+        isLoading: false,
+        loadingMessage: "יוצרים את מבנה ההרצאה..."
       });
       
       // Fallback to dummy outline if API fails
@@ -161,7 +195,9 @@ export const usePresentationStore = create<PresentationState>((set, get) => ({
         salesGuide: "פתח בהצגת האתגר, הדגם כיצד המוצר/שירות שלך פותר אותו, הצג עדויות והצלחות קודמות, הסבר את התהליך בפשטות, הדגש את הערך והתועלת, הצג אפשרויות שונות והצעה מיוחדת למשתתפי ההרצאה.",
         postPresentationPlan: "שליחת מייל תודה עם סיכום הנקודות המרכזיות והצעה לפגישת המשך, שליחת סקר משוב קצר לאיסוף תובנות, מעקב טלפוני אישי עם משתתפים מעוניינים, הצעת חבילת התנסות בשירות במחיר מיוחד"
       },
-      error: null
+      error: null,
+      isLoading: false,
+      loadingMessage: "יוצרים את מבנה ההרצאה..."
     });
   }
 }));

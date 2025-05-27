@@ -27,6 +27,38 @@ export interface Chapter {
   points: ChapterPoint[];
 }
 
+export interface SlideStructure {
+  number: number;
+  headline: string;
+  content: string;
+  visual: string;
+  notes: string;
+  timeAllocation?: string;
+}
+
+export interface MarketingChannel {
+  channel: string;
+  strategy: string;
+  timeline: string;
+  budget: string;
+}
+
+export interface PricingStrategy {
+  basicTicket: string;
+  vipTicket: string;
+  premiumTicket: string;
+  corporatePackage: string;
+}
+
+export interface DynamicSalesStrategy {
+  targetAudiences: string[];
+  marketingChannels: MarketingChannel[];
+  pricingStrategy: PricingStrategy;
+  collaborationOpportunities: string[];
+  contentMarketing: string[];
+  followUpStrategy: string;
+}
+
 export interface PresentationOutline {
   chapters: Chapter[];
   openingStyles: string[];
@@ -36,4 +68,8 @@ export interface PresentationOutline {
   discussionQuestions: Record<string, string[]>;
   salesGuide: string;
   postPresentationPlan: string;
+  // New dynamic content fields
+  dynamicSlides?: SlideStructure[];
+  dynamicB2BEmail?: string;
+  dynamicSalesStrategy?: DynamicSalesStrategy;
 }

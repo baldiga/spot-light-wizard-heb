@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -13,7 +12,15 @@ import { AlertTriangle, Loader2 } from 'lucide-react';
 const OutlineConfirmation = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { formData, chapters, isLoading, error, generateOutlineFromAPI, generateDummyOutline } = usePresentationStore();
+  const { 
+    formData, 
+    chapters, 
+    isLoading, 
+    loadingMessage, 
+    error, 
+    generateOutlineFromAPI, 
+    generateDummyOutline 
+  } = usePresentationStore();
   const [apiAttempted, setApiAttempted] = useState(false);
 
   useEffect(() => {
@@ -53,8 +60,12 @@ const OutlineConfirmation = () => {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50">
         <SpotlightLogo className="w-16 h-16 mb-6" />
-        <h2 className="text-2xl font-bold text-gray-800 mb-4">יוצרים את מבנה ההרצאה...</h2>
-        <p className="text-gray-600 mb-6">אנו מעבדים את המידע שהזנת כדי ליצור מבנה מותאם אישית</p>
+        <h2 className="text-2xl font-bold text-gray-800 mb-4 text-center max-w-2xl">
+          {loadingMessage}
+        </h2>
+        <p className="text-gray-600 mb-6 text-center max-w-lg">
+          המערכת שלנו משתמשת בבינה מלאכותית מתקדמת כדי ליצור תוכן מותאם במיוחד עבורך
+        </p>
         <div className="flex items-center gap-2">
           <Loader2 className="h-8 w-8 animate-spin text-whiskey" />
           <span className="text-whiskey font-medium">אנא המתן...</span>
