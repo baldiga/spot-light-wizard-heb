@@ -1,4 +1,3 @@
-
 import { PresentationFormData, PresentationOutline, Chapter, SlideStructure, DynamicSalesStrategy } from '@/types/presentation';
 import { generateId } from '@/utils/helpers';
 
@@ -137,8 +136,11 @@ export async function generatePresentationOutline(formData: PresentationFormData
 רקע המרצה: ${formData.speakerBackground}
 פרופיל הקהל: ${formData.audienceProfile}
 משך ההרצאה: ${formData.duration} דקות
+התנגדויות נפוצות ואמונות מגבילות: ${formData.commonObjections}
 מוצר או שירות: ${formData.serviceOrProduct}
 קריאה לפעולה: ${formData.callToAction}
+
+חשוב מאוד: בנה את ההרצאה כך שתתמודד עם ההתנגדויות והאמונות המגבילות שצוינו. הרצאה טובה היא כמו שיחת מכירה שמתמודדת עם התנגדויות בצורה טבעית ללא שיכול את הקהל.
 
 יש לענות בעברית בלבד ולהחזיר תוכן במבנה JSON הכולל:
 1. שלושה פרקים עיקריים (chapters) עם כותרת ו-3 נקודות מרכזיות לכל פרק
@@ -203,12 +205,15 @@ export async function generateDynamicSlideStructure(formData: PresentationFormDa
 רקע המרצה: ${formData.speakerBackground}
 פרופיל הקהל: ${formData.audienceProfile}
 משך ההרצאה: ${formData.duration} דקות
+התנגדויות נפוצות ואמונות מגבילות: ${formData.commonObjections}
 מוצר או שירות: ${formData.serviceOrProduct}
 
 פרקי ההרצאה:
 ${outline.chapters.map((chapter, idx) => 
   `פרק ${idx + 1}: ${chapter.title}\n${chapter.points.map(point => `- ${point.content}`).join('\n')}`
 ).join('\n\n')}
+
+חשוב: הקפד לבנות את השקפים כך שיתמודדו עם ההתנגדויות והאמונות המגבילות שצוינו.
 
 אנא צור מבנה מפורט של שקפים במבנה JSON הבא:
 [
@@ -229,6 +234,7 @@ ${outline.chapters.map((chapter, idx) =>
 4. שקפי פתיחה וסיכום
 5. שקפים להדגמות והצגת המוצר/שירות
 6. התאמה למשך ההרצאה (${formData.duration} דקות)
+7. שקפים שמתמודדים עם ההתנגדויות הנפוצות
     `;
 
     await addMessageToThread(threadId, prompt);
@@ -263,6 +269,7 @@ export async function generateDynamicB2BEmail(formData: PresentationFormData, ou
 רקע המרצה: ${formData.speakerBackground}
 פרופיל הקהל: ${formData.audienceProfile}
 משך ההרצאה: ${formData.duration} דקות
+התנגדויות נפוצות ואמונות מגבילות: ${formData.commonObjections}
 מוצר או שירות: ${formData.serviceOrProduct}
 קריאה לפעולה: ${formData.callToAction}
 
@@ -271,15 +278,18 @@ ${outline.chapters.map((chapter, idx) =>
   `${idx + 1}. ${chapter.title}`
 ).join('\n')}
 
+חשוב: הקפד לכתוב מייל שמתמודד עם ההתנגדויות והאמונות המגבילות שצוינו.
+
 דרישות למייל:
 1. נושא מעניין וחודר
 2. פתיחה עם סיפור או נתון מעניין
 3. הצגת הערך הייחודי של ההרצאה
 4. פירוט קצר של התועלות למשתתפים
-5. קריאה לפעולה ברורה
-6. טון מקצועי אך חם ואישי
-7. התייחסות ספציפית לתחום הקהל
-8. עברית ברמה גבוהה
+5. התמודדות עדינה עם התנגדויות נפוצות
+6. קריאה לפעולה ברורה
+7. טון מקצועי אך חם ואישי
+8. התייחסות ספציפית לתחום הקהל
+9. עברית ברמה גבוהה
 
 המייל צריך להיות ברמה של 300-400 מילים ולכלול את כל החלקים הנדרשים.
     `;

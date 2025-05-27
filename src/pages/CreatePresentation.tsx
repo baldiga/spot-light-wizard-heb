@@ -11,6 +11,7 @@ import { useToast } from '@/hooks/use-toast';
 import { createEmptyPresentationFormData } from '@/utils/helpers';
 import { usePresentationStore } from '@/store/presentationStore';
 import SpotlightLogo from '@/components/SpotlightLogo';
+
 const CreatePresentation = () => {
   const navigate = useNavigate();
   const {
@@ -59,6 +60,14 @@ const CreatePresentation = () => {
         toast({
           title: "שדה חסר",
           description: "אנא בחר את משך ההרצאה",
+          variant: "destructive"
+        });
+        return false;
+      }
+      if (!formData.commonObjections.trim()) {
+        toast({
+          title: "שדה חסר",
+          description: "אנא הזן את ההתנגדויות והאמונות המגבילות של הקהל",
           variant: "destructive"
         });
         return false;
@@ -145,11 +154,34 @@ const CreatePresentation = () => {
             {currentStep === 2 && <>
                 <div className="space-y-2">
                   <Label htmlFor="audienceProfile">פרופיל הקהל – גיל, תפקיד, רקע, רמת ידע</Label>
-                  <Textarea id="audienceProfile" placeholder="מיהו קהל היעד שלך? מה הגיל, התפקיד, הרקע ורמת הידע שלהם?" rows={4} value={formData.audienceProfile} onChange={e => updateFormField('audienceProfile', e.target.value)} className="resize-none rtl-form" />
+                  <Textarea
+                    id="audienceProfile"
+                    placeholder="מיהו קהל היעד שלך? מה הגיל, התפקיד, הרקע ורמת הידע שלהם?"
+                    rows={4}
+                    value={formData.audienceProfile}
+                    onChange={(e) => updateFormField('audienceProfile', e.target.value)}
+                    className="resize-none rtl-form"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="commonObjections">התנגדויות נפוצות, מעכבי החלטות ואמונות מגבילות של הקהל</Label>
+                  <Textarea
+                    id="commonObjections"
+                    placeholder="הרצאה טובה היא כמו שיחת מכירה, ספר על מה שעלול לגרום לקהל שלך *לא* לרכוש ממך בסיום ההרצאה"
+                    rows={4}
+                    value={formData.commonObjections}
+                    onChange={(e) => updateFormField('commonObjections', e.target.value)}
+                    className="resize-none rtl-form"
+                  />
                 </div>
                 <div className="space-y-2">
                   <Label>משך הרצאה</Label>
-                  <RadioGroup value={formData.duration} onValueChange={value => updateFormField('duration', value as "30" | "45" | "60")} className="flex space-x-4 space-x-reverse">
+                  <RadioGroup
+                    value={formData.duration}
+                    onValueChange={(value) => updateFormField('duration', value as "30" | "45" | "60" | "75" | "90" | "120")}
+                    className="grid grid-cols-2 gap-4"
+                    dir="rtl"
+                  >
                     <div className="flex items-center space-x-2 space-x-reverse">
                       <RadioGroupItem value="30" id="duration-30" />
                       <Label htmlFor="duration-30">30 דקות</Label>
@@ -161,6 +193,18 @@ const CreatePresentation = () => {
                     <div className="flex items-center space-x-2 space-x-reverse">
                       <RadioGroupItem value="60" id="duration-60" />
                       <Label htmlFor="duration-60">60 דקות</Label>
+                    </div>
+                    <div className="flex items-center space-x-2 space-x-reverse">
+                      <RadioGroupItem value="75" id="duration-75" />
+                      <Label htmlFor="duration-75">75 דקות</Label>
+                    </div>
+                    <div className="flex items-center space-x-2 space-x-reverse">
+                      <RadioGroupItem value="90" id="duration-90" />
+                      <Label htmlFor="duration-90">90 דקות</Label>
+                    </div>
+                    <div className="flex items-center space-x-2 space-x-reverse">
+                      <RadioGroupItem value="120" id="duration-120" />
+                      <Label htmlFor="duration-120">120 דקות</Label>
                     </div>
                   </RadioGroup>
                 </div>

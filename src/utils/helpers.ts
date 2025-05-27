@@ -1,20 +1,18 @@
+import { PresentationFormData } from '@/types/presentation';
 
-import { PresentationFormData, UserRegistrationData } from "@/types/presentation";
-
-export function generateId() {
+export const generateId = () => {
   return Math.random().toString(36).substr(2, 9);
-}
+};
 
-export function createEmptyPresentationFormData(): PresentationFormData {
-  return {
-    idea: "",
-    speakerBackground: "",
-    audienceProfile: "",
-    duration: "45",
-    serviceOrProduct: "",
-    callToAction: ""
-  };
-}
+export const createEmptyPresentationFormData = (): PresentationFormData => ({
+  idea: '',
+  speakerBackground: '',
+  audienceProfile: '',
+  duration: "30",
+  commonObjections: '',
+  serviceOrProduct: '',
+  callToAction: ''
+});
 
 export function createEmptyUserRegistrationData(): UserRegistrationData {
   return {

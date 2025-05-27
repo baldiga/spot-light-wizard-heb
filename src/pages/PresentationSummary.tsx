@@ -64,14 +64,18 @@ const PresentationSummary = () => {
       headline: "שקף פתיחה",
       content: "כותרת ההרצאה, שם המרצה ותפקידו",
       visual: "לוגו/תמונה מייצגת",
-      notes: "התחלה חזקה ומושכת תשומת לב"
+      notes: "התחלה חזקה ומושכת תשומת לב",
+      timeAllocation: "2"
     }, {
       number: 2,
       headline: "מי אני",
       content: `הצגה עצמית מקצועית - ${formData.speakerBackground}`,
       visual: "תמונה אישית/מקצועית",
-      notes: "בניית אמינות ורלוונטיות"
-    }, {
+      notes: "בניית אמינות ורלוונטיות",
+      timeAllocation: "3"
+    },
+    // Add more slides with timeAllocation...
+    {
       number: 3,
       headline: "למה אתם כאן?",
       content: `זיהוי הקהל - ${formData.audienceProfile}`,
@@ -296,6 +300,10 @@ const PresentationSummary = () => {
                 <p className="text-gray-600 bg-gray-50 p-3 rounded border border-gray-100 text-right">{formData.duration} דקות</p>
               </div>
               <div className="text-right">
+                <h3 className="font-semibold text-gray-800 mb-2 text-right">התנגדויות נפוצות ואמונות מגבילות</h3>
+                <p className="text-gray-600 bg-gray-50 p-3 rounded border border-gray-100 text-right">{formData.commonObjections}</p>
+              </div>
+              <div className="text-right">
                 <h3 className="font-semibold text-gray-800 mb-2 text-right">שירות/מוצר לקידום</h3>
                 <p className="text-gray-600 bg-gray-50 p-3 rounded border border-gray-100 text-right">{formData.serviceOrProduct}</p>
               </div>
@@ -418,8 +426,8 @@ const PresentationSummary = () => {
                       <TableCell className="text-right">{slide.content}</TableCell>
                       <TableCell className="text-right text-sm text-gray-600">{slide.visual}</TableCell>
                       <TableCell className="text-right text-sm text-gray-500">{slide.notes}</TableCell>
-                      {slide.timeAllocation && (
-                        <TableCell className="text-right text-sm">{slide.timeAllocation}</TableCell>
+                      {slides.some(s => s.timeAllocation) && (
+                        <TableCell className="text-right text-sm">{slide.timeAllocation || '-'}</TableCell>
                       )}
                     </TableRow>
                   ))}
