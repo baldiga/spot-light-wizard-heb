@@ -159,7 +159,7 @@ const PresentationSummary = () => {
       number: 16,
       headline: `התחלת ${chapters[2]?.title || "פרק שלישי"}`,
       content: "מעבר לשלב התוצאות והמדידה",
-      visual: "גרפי מגמות",
+      visual: "gráfiques מגמות",
       notes: "הצגת הערך העסקי"
     }, {
       number: 17,
@@ -177,7 +177,7 @@ const PresentationSummary = () => {
       number: 19,
       headline: "מקרי הצלחה",
       content: `${chapters[2]?.points[2]?.content || ''} - דוגמאות מוצלחות וחדשניות`,
-      visual: "גרפי הצלחה ועדויות",
+      visual: "gráfiques הצלחה ועדויות",
       notes: "הצגת תוצאות מוחשיות"
     },
     // מעבר למכירה
@@ -405,7 +405,7 @@ const PresentationSummary = () => {
                     <TableHead className="text-right font-bold">תוכן</TableHead>
                     <TableHead className="text-right font-bold">אלמנטים ויזואליים</TableHead>
                     <TableHead className="text-right font-bold">הערות</TableHead>
-                    {slides[0]?.timeAllocation && (
+                    {slides.some(slide => slide.timeAllocation) && (
                       <TableHead className="text-right font-bold">זמן (דקות)</TableHead>
                     )}
                   </TableRow>
