@@ -10,3 +10,6 @@ max_rows = 1000
 
 [functions.send-verification-email]
 verify_jwt = false
+
+[functions.generate-presentation]
+verify_jwt = false

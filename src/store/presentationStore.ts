@@ -1,13 +1,7 @@
 import { create } from 'zustand';
 import { PresentationFormData, PresentationOutline, Chapter, UserRegistrationData, SlideStructure, DynamicSalesStrategy } from '@/types/presentation';
 import { generateId } from '@/utils/helpers';
-import { 
-  generatePresentationOutline, 
-  generateDynamicSlideStructure, 
-  generateDynamicB2BEmail, 
-  generateDynamicSalesStrategy, 
-  generatePresentationTools 
-} from '@/services/openaiService';
+import { generatePresentationOutline } from '@/services/presentationService';
 import { sendToZapierWebhook } from '@/services/webhookService';
 
 interface PresentationState {
@@ -81,71 +75,20 @@ export const usePresentationStore = create<PresentationState>((set, get) => ({
     set({ 
       isLoading: true, 
       error: null,
-      loadingMessage: "אנחנו בונים את ההרצאה בהתאמה אישית מלאה על סמך נסיון ומחקר של אלפי הרצאות ממירות, זה יקח עוד כמה שניות..."
+      loadingMessage: "יוצרים מבנה הרצאה מותאם אישית בהתבסס על הנתונים שלך..."
     });
     
     try {
-      // Step 1: Generate basic outline
-      set({ loadingMessage: "יוצרים את מבנה ההרצאה הבסיסי..." });
+      console.log('Starting outline generation for topic:', formData.idea);
+      
+      // Generate outline using the new secure service
       const outlineData = await generatePresentationOutline(formData);
       
-      // Rate limiting delay between API calls
-      await delay(2000);
-      
-      // Step 2: Generate dynamic slide structure
-      set({ loadingMessage: "בונים מבנה מפורט של השקפים..." });
-      let dynamicSlides: SlideStructure[] = [];
-      try {
-        dynamicSlides = await generateDynamicSlideStructure(formData, outlineData);
-      } catch (error) {
-        console.warn('Failed to generate slides, continuing without them:', error);
-      }
-      
-      await delay(2000);
-      
-      // Step 3: Generate dynamic B2B email
-      set({ loadingMessage: "כותבים מייל פנייה מותאם אישית..." });
-      let dynamicB2BEmail = '';
-      try {
-        dynamicB2BEmail = await generateDynamicB2BEmail(formData, outlineData);
-      } catch (error) {
-        console.warn('Failed to generate email, continuing without it:', error);
-      }
-      
-      await delay(2000);
-      
-      // Step 4: Generate dynamic sales strategy
-      set({ loadingMessage: "מכינים אסטרטגיית שיווק מותאמת..." });
-      let dynamicSalesStrategy: DynamicSalesStrategy | undefined;
-      try {
-        dynamicSalesStrategy = await generateDynamicSalesStrategy(formData, outlineData);
-      } catch (error) {
-        console.warn('Failed to generate sales strategy, continuing without it:', error);
-      }
-      
-      await delay(2000);
-      
-      // Step 5: Generate presentation tools
-      set({ loadingMessage: "יוצרים כלים מעשיים להצגה..." });
-      let presentationTools: any = null;
-      try {
-        presentationTools = await generatePresentationTools(formData, outlineData);
-      } catch (error) {
-        console.warn('Failed to generate presentation tools, continuing without them:', error);
-      }
-      
-      // Combine all generated content
-      const completeOutline: PresentationOutline = {
-        ...outlineData,
-        dynamicSlides,
-        dynamicB2BEmail,
-        dynamicSalesStrategy
-      };
+      console.log('Outline generated successfully');
       
       set({ 
-        outline: completeOutline,
+        outline: outlineData,
         chapters: outlineData.chapters,
-        presentationTools,
         isLoading: false,
         loadingMessage: "יוצרים את מבנה ההרצאה..."
       });
@@ -156,7 +99,7 @@ export const usePresentationStore = create<PresentationState>((set, get) => ({
           await sendToZapierWebhook({
             presentationData: formData,
             userRegistration,
-            outline: completeOutline
+            outline: outlineData
           });
         } catch (webhookError) {
           console.error("Failed to send data to webhook:", webhookError);
@@ -168,12 +111,12 @@ export const usePresentationStore = create<PresentationState>((set, get) => ({
       // Provide more specific error messages
       let errorMessage = "אירעה שגיאה ביצירת מבנה ההרצאה.";
       
-      if (error.message.includes('parse')) {
+      if (error.message.includes('API key')) {
+        errorMessage = "בעיה בהגדרות המערכת. אנא נסה שנית או צור קשר עם התמיכה.";
+      } else if (error.message.includes('parse')) {
         errorMessage = "שגיאה בעיבוד תשובת ה-AI. נסה שנית.";
-      } else if (error.message.includes('timeout')) {
-        errorMessage = "הבקשה ארכה זמן רב מדי. נסה שנית.";
-      } else if (error.message.includes('HTTP')) {
-        errorMessage = "בעיית תקשורת עם השרת. נסה שנית.";
+      } else if (error.message.includes('network') || error.message.includes('fetch')) {
+        errorMessage = "בעיית תקשורת. בדוק את החיבור לאינטרנט ונסה שנית.";
       }
       
       set({ 
@@ -181,10 +124,6 @@ export const usePresentationStore = create<PresentationState>((set, get) => ({
         isLoading: false,
         loadingMessage: "יוצרים את מבנה ההרצאה..."
       });
-      
-      // Fallback to dummy outline if API fails completely
-      console.log("Falling back to dummy outline due to API error");
-      get().generateDummyOutline();
     }
   },
 
