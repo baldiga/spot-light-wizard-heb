@@ -9,14 +9,12 @@ import { usePresentationStore } from '@/store/presentationStore';
 import { useToast } from '@/hooks/use-toast';
 import SpotlightLogo from '@/components/SpotlightLogo';
 import { 
-  Loader2, FileText, Users, Target, Mail, DollarSign, MessageSquare, 
-  Presentation, Lightbulb, CheckSquare, Zap, HelpCircle, Megaphone 
+  Loader2, FileText, Users, Target, DollarSign, 
+  Presentation, Lightbulb, Zap 
 } from 'lucide-react';
 import { 
   generateSlideStructure, 
-  generateB2BEmail, 
   generateSalesStrategy, 
-  generatePresentationTools,
   generateEngagementContent
 } from '@/services/presentationService';
 
@@ -27,12 +25,10 @@ interface LoadingStage {
 }
 
 const loadingStages: LoadingStage[] = [
-  { name: 'outline', message: 'יצירת מבנה ההרצאה הושלמה...', progress: 15 },
-  { name: 'slides', message: 'יוצר מבנה שקפים מפורט...', progress: 30 },
-  { name: 'engagement', message: 'יוצר תוכן מעורבות אינטראקטיבי...', progress: 45 },
-  { name: 'email', message: 'כותב דוא"ל שיווק B2B...', progress: 60 },
-  { name: 'strategy', message: 'מפתח אסטרטגיית שיווק ומכירות...', progress: 80 },
-  { name: 'tools', message: 'יוצר ארגז כלים למרצה...', progress: 100 }
+  { name: 'outline', message: 'יצירת מבנה ההרצאה הושלמה...', progress: 25 },
+  { name: 'slides', message: 'יוצר מבנה שקפים מפורט...', progress: 50 },
+  { name: 'engagement', message: 'יוצר תוכן מעורבות אינטראקטיבי...', progress: 75 },
+  { name: 'strategy', message: 'מפתח אסטרטגיית שיווק ומכירות...', progress: 100 }
 ];
 
 const PresentationSummary = () => {
@@ -42,9 +38,7 @@ const PresentationSummary = () => {
   const [isGenerating, setIsGenerating] = useState(true);
   const [currentStage, setCurrentStage] = useState(0);
   const [dynamicSlides, setDynamicSlides] = useState<any[]>([]);
-  const [dynamicEmail, setDynamicEmail] = useState<string>('');
   const [dynamicStrategy, setDynamicStrategy] = useState<any>(null);
-  const [tools, setTools] = useState<any>(null);
   const [engagementData, setEngagementData] = useState<any>(null);
 
   useEffect(() => {
@@ -81,22 +75,11 @@ const PresentationSummary = () => {
       setEngagementData(engagement);
       await new Promise(resolve => setTimeout(resolve, 500));
 
-      // Stage 4: Generate email
+      // Stage 4: Generate strategy
       setCurrentStage(3);
-      const email = await generateB2BEmail(formData, outline);
-      setDynamicEmail(email);
-      await new Promise(resolve => setTimeout(resolve, 500));
-
-      // Stage 5: Generate strategy
-      setCurrentStage(4);
       const strategy = await generateSalesStrategy(formData, outline);
+      console.log('Marketing Strategy Data:', strategy); // Debug log
       setDynamicStrategy(strategy);
-      await new Promise(resolve => setTimeout(resolve, 500));
-
-      // Stage 6: Generate tools
-      setCurrentStage(5);
-      const presentationTools = await generatePresentationTools(formData, outline);
-      setTools(presentationTools);
       
       // Complete loading
       await new Promise(resolve => setTimeout(resolve, 1000));
@@ -150,7 +133,7 @@ const PresentationSummary = () => {
         </div>
 
         <Tabs defaultValue="overview" className="w-full" dir="rtl">
-          <TabsList className="grid w-full grid-cols-9 mb-8 text-xs">
+          <TabsList className="grid w-full grid-cols-7 mb-8 text-xs">
             <TabsTrigger value="overview" className="flex items-center gap-1">
               <FileText className="w-3 h-3" />
               <span className="hidden sm:inline">סקירה</span>
@@ -175,17 +158,9 @@ const PresentationSummary = () => {
               <Zap className="w-3 h-3" />
               <span className="hidden sm:inline">מעורבות</span>
             </TabsTrigger>
-            <TabsTrigger value="email" className="flex items-center gap-1">
-              <Mail className="w-3 h-3" />
-              <span className="hidden sm:inline">דוא"ל</span>
-            </TabsTrigger>
             <TabsTrigger value="marketing" className="flex items-center gap-1">
               <DollarSign className="w-3 h-3" />
               <span className="hidden sm:inline">שיווק</span>
-            </TabsTrigger>
-            <TabsTrigger value="toolkit" className="flex items-center gap-1">
-              <CheckSquare className="w-3 h-3" />
-              <span className="hidden sm:inline">כלים</span>
             </TabsTrigger>
           </TabsList>
 
@@ -445,26 +420,6 @@ const PresentationSummary = () => {
             </Card>
           </TabsContent>
 
-          {/* Email Tab */}
-          <TabsContent value="email" className="space-y-6">
-            <Card className="border-whiskey/20" dir="rtl">
-              <CardHeader className="bg-whiskey/5 text-right">
-                <CardTitle className="text-2xl text-gray-dark text-right">דוא"ל שיווק B2B</CardTitle>
-              </CardHeader>
-              <CardContent className="pt-6" dir="rtl">
-                {dynamicEmail && typeof dynamicEmail === 'string' ? (
-                  <div className="bg-white border rounded-lg p-6 text-right">
-                    <div className="whitespace-pre-line text-gray-700 leading-relaxed">
-                      {dynamicEmail}
-                    </div>
-                  </div>
-                ) : (
-                  <p className="text-gray-500 text-center text-right">דוא"ל השיווק טרם נוצר</p>
-                )}
-              </CardContent>
-            </Card>
-          </TabsContent>
-
           {/* Marketing Tab */}
           <TabsContent value="marketing" className="space-y-6">
             <Card className="border-whiskey/20" dir="rtl">
@@ -478,9 +433,9 @@ const PresentationSummary = () => {
                       <div className="mb-6">
                         <h3 className="text-xl font-bold text-gray-800 mb-4">קהלי יעד</h3>
                         <div className="space-y-3">
-                          {dynamicStrategy.targetAudiences.map((audience: any, index: number) => (
+                          {dynamicStrategy.targetAudiences.map((audience: string, index: number) => (
                             <div key={index} className="p-4 bg-blue-50 rounded-lg">
-                              <p className="text-gray-700">{typeof audience === 'string' ? audience : JSON.stringify(audience)}</p>
+                              <p className="text-gray-700">{audience}</p>
                             </div>
                           ))}
                         </div>
@@ -515,76 +470,44 @@ const PresentationSummary = () => {
                         </div>
                       </div>
                     )}
+
+                    {dynamicStrategy.collaborationOpportunities && Array.isArray(dynamicStrategy.collaborationOpportunities) && (
+                      <div className="mb-6">
+                        <h3 className="text-xl font-bold text-gray-800 mb-4">הזדמנויות שיתוף פעולה</h3>
+                        <div className="space-y-3">
+                          {dynamicStrategy.collaborationOpportunities.map((opportunity: string, index: number) => (
+                            <div key={index} className="p-4 bg-purple-50 rounded-lg">
+                              <p className="text-gray-700">{opportunity}</p>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {dynamicStrategy.contentMarketing && Array.isArray(dynamicStrategy.contentMarketing) && (
+                      <div className="mb-6">
+                        <h3 className="text-xl font-bold text-gray-800 mb-4">שיווק תוכן</h3>
+                        <div className="space-y-3">
+                          {dynamicStrategy.contentMarketing.map((content: string, index: number) => (
+                            <div key={index} className="p-4 bg-orange-50 rounded-lg">
+                              <p className="text-gray-700">{content}</p>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {dynamicStrategy.followUpStrategy && (
+                      <div>
+                        <h3 className="text-xl font-bold text-gray-800 mb-4">אסטרטגיית מעקב</h3>
+                        <div className="p-4 bg-gray-50 rounded-lg">
+                          <p className="text-gray-700">{dynamicStrategy.followUpStrategy}</p>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 ) : (
                   <p className="text-gray-500 text-center text-right">אסטרטגיית השיווק טרם נוצרה</p>
-                )}
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          {/* Toolkit Tab */}
-          <TabsContent value="toolkit" className="space-y-6">
-            <Card className="border-whiskey/20" dir="rtl">
-              <CardHeader className="bg-whiskey/5 text-right">
-                <CardTitle className="text-2xl text-gray-dark text-right">ארגז כלים למרצה</CardTitle>
-              </CardHeader>
-              <CardContent className="pt-6" dir="rtl">
-                {tools ? (
-                  <div className="space-y-6 text-right">
-                    {tools.openingSuggestions && Array.isArray(tools.openingSuggestions) && (
-                      <div className="mb-6">
-                        <h3 className="text-xl font-bold text-gray-800 mb-4">הצעות לפתיחה</h3>
-                        <div className="space-y-4">
-                          {tools.openingSuggestions.map((suggestion: any, index: number) => (
-                            <div key={index} className="border rounded-lg p-4 bg-white shadow-sm">
-                              <h4 className="font-semibold text-gray-800 mb-2">{suggestion?.type || `הצעה ${index + 1}`}</h4>
-                              <p className="text-gray-700 mb-3">{suggestion?.script || ''}</p>
-                              <div className="p-3 bg-blue-50 rounded">
-                                <p className="text-blue-800 text-sm"><strong>טיפים:</strong> {suggestion?.tips || ''}</p>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-
-                    {tools.interactiveActivities && Array.isArray(tools.interactiveActivities) && (
-                      <div className="mb-6">
-                        <h3 className="text-xl font-bold text-gray-800 mb-4">פעילויות אינטראקטיביות</h3>
-                        <div className="space-y-4">
-                          {tools.interactiveActivities.map((activity: any, index: number) => (
-                            <div key={index} className="border rounded-lg p-4 bg-white shadow-sm">
-                              <h4 className="font-semibold text-gray-800 mb-2">{activity?.activity || `פעילות ${index + 1}`}</h4>
-                              <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-sm">
-                                <p><strong>זמן:</strong> {activity?.timing || ''}</p>
-                                <p><strong>משך:</strong> {activity?.duration || ''}</p>
-                                <p><strong>חומרים:</strong> {activity?.materials || ''}</p>
-                              </div>
-                              <p className="text-gray-700 mt-3">{activity?.instructions || ''}</p>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-
-                    {tools.troubleshooting && Array.isArray(tools.troubleshooting) && (
-                      <div>
-                        <h3 className="text-xl font-bold text-gray-800 mb-4">פתרון בעיות</h3>
-                        <div className="space-y-4">
-                          {tools.troubleshooting.map((tip: any, index: number) => (
-                            <div key={index} className="border rounded-lg p-4 bg-white shadow-sm">
-                              <h4 className="font-semibold text-red-800 mb-2">בעיה: {tip?.problem || ''}</h4>
-                              <p className="text-gray-700 mb-2"><strong>פתרון:</strong> {tip?.solution || ''}</p>
-                              <p className="text-green-700"><strong>מניעה:</strong> {tip?.prevention || ''}</p>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                ) : (
-                  <p className="text-gray-500 text-center text-right">ארגז הכלים טרם נוצר</p>
                 )}
               </CardContent>
             </Card>

@@ -54,28 +54,6 @@ export async function generateSlideStructure(formData: PresentationFormData, out
 }
 
 /**
- * Generates B2B email using Supabase Edge Function
- */
-export async function generateB2BEmail(formData: PresentationFormData, outline: any): Promise<string> {
-  try {
-    console.log('Generating B2B email...');
-    
-    const { data, error } = await supabase.functions.invoke('generate-email', {
-      body: { formData: formData, outline: outline }
-    });
-
-    if (error) {
-      throw new Error(`Failed to generate email: ${error.message}`);
-    }
-
-    return data || '';
-  } catch (error) {
-    console.error("Error generating B2B email:", error);
-    throw error;
-  }
-}
-
-/**
  * Generates sales strategy using Supabase Edge Function
  */
 export async function generateSalesStrategy(formData: PresentationFormData, outline: any): Promise<any> {
@@ -93,28 +71,6 @@ export async function generateSalesStrategy(formData: PresentationFormData, outl
     return data || null;
   } catch (error) {
     console.error("Error generating sales strategy:", error);
-    throw error;
-  }
-}
-
-/**
- * Generates presentation tools using Supabase Edge Function
- */
-export async function generatePresentationTools(formData: PresentationFormData, outline: any): Promise<any> {
-  try {
-    console.log('Generating presentation tools...');
-    
-    const { data, error } = await supabase.functions.invoke('generate-tools', {
-      body: { formData: formData, outline: outline }
-    });
-
-    if (error) {
-      throw new Error(`Failed to generate tools: ${error.message}`);
-    }
-
-    return data || null;
-  } catch (error) {
-    console.error("Error generating presentation tools:", error);
     throw error;
   }
 }
