@@ -57,50 +57,121 @@ function cleanAndParseJSON(response: string): any {
   }
 }
 
-async function callOpenAI(prompt: string): Promise<any> {
+async function callOpenAIAssistant(prompt: string): Promise<any> {
   const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
   
   if (!openAIApiKey) {
     throw new Error('OpenAI API key not configured');
   }
 
-  console.log('Making OpenAI API call...');
+  console.log('Using OpenAI Assistant API...');
   
-  const response = await fetch('https://api.openai.com/v1/chat/completions', {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${openAIApiKey}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      model: 'gpt-4o-mini',
-      messages: [
-        {
-          role: 'system',
-          content: 'אתה מומחה ליצירת הרצאות מקצועיות בעברית. תמיד החזר JSON תקין וספציפי לנושא המבוקש. התמקד במבנה הרצאה עם בדיוק 4 פרקים ו-10 שלבי מכירה.'
-        },
-        {
-          role: 'user',
-          content: prompt
+  try {
+    // Create a thread
+    const threadResponse = await fetch('https://api.openai.com/v1/threads', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${openAIApiKey}`,
+        'Content-Type': 'application/json',
+        'OpenAI-Beta': 'assistants=v2'
+      },
+      body: JSON.stringify({})
+    });
+
+    if (!threadResponse.ok) {
+      throw new Error(`Thread creation failed: ${threadResponse.status}`);
+    }
+
+    const thread = await threadResponse.json();
+    console.log('Thread created:', thread.id);
+
+    // Add message to thread
+    const messageResponse = await fetch(`https://api.openai.com/v1/threads/${thread.id}/messages`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${openAIApiKey}`,
+        'Content-Type': 'application/json',
+        'OpenAI-Beta': 'assistants=v2'
+      },
+      body: JSON.stringify({
+        role: 'user',
+        content: prompt
+      })
+    });
+
+    if (!messageResponse.ok) {
+      throw new Error(`Message creation failed: ${messageResponse.status}`);
+    }
+
+    // Run the assistant
+    const runResponse = await fetch(`https://api.openai.com/v1/threads/${thread.id}/runs`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${openAIApiKey}`,
+        'Content-Type': 'application/json',
+        'OpenAI-Beta': 'assistants=v2'
+      },
+      body: JSON.stringify({
+        assistant_id: 'asst_etLDYkL7Oj3ggr9IKpwmGE76'
+      })
+    });
+
+    if (!runResponse.ok) {
+      throw new Error(`Run creation failed: ${runResponse.status}`);
+    }
+
+    const run = await runResponse.json();
+    console.log('Run started:', run.id);
+
+    // Poll for completion
+    let runStatus = run;
+    while (runStatus.status === 'queued' || runStatus.status === 'in_progress') {
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      const statusResponse = await fetch(`https://api.openai.com/v1/threads/${thread.id}/runs/${run.id}`, {
+        headers: {
+          'Authorization': `Bearer ${openAIApiKey}`,
+          'OpenAI-Beta': 'assistants=v2'
         }
-      ],
-      temperature: 0.7,
-      max_tokens: 2000
-    }),
-  });
+      });
+      
+      if (statusResponse.ok) {
+        runStatus = await statusResponse.json();
+        console.log('Run status:', runStatus.status);
+      }
+    }
 
-  console.log('OpenAI API response status:', response.status);
+    if (runStatus.status !== 'completed') {
+      throw new Error(`Run failed with status: ${runStatus.status}`);
+    }
 
-  if (!response.ok) {
-    const errorText = await response.text();
-    console.error('OpenAI API error:', errorText);
-    throw new Error(`OpenAI API error: ${response.status} - ${errorText}`);
+    // Get messages
+    const messagesResponse = await fetch(`https://api.openai.com/v1/threads/${thread.id}/messages`, {
+      headers: {
+        'Authorization': `Bearer ${openAIApiKey}`,
+        'OpenAI-Beta': 'assistants=v2'
+      }
+    });
+
+    if (!messagesResponse.ok) {
+      throw new Error(`Messages retrieval failed: ${messagesResponse.status}`);
+    }
+
+    const messages = await messagesResponse.json();
+    const assistantMessage = messages.data.find((msg: any) => msg.role === 'assistant');
+    
+    if (!assistantMessage) {
+      throw new Error('No assistant response found');
+    }
+
+    const content = assistantMessage.content[0]?.text?.value || '';
+    console.log('Assistant response received');
+    
+    return cleanAndParseJSON(content);
+  } catch (error) {
+    console.error('Assistant API error:', error);
+    throw error;
   }
-
-  const data = await response.json();
-  console.log('OpenAI API call successful');
-  
-  return cleanAndParseJSON(data.choices[0].message.content);
 }
 
 async function generateOutlineContent(formData: PresentationFormData): Promise<any> {
@@ -223,7 +294,7 @@ async function generateOutlineContent(formData: PresentationFormData): Promise<a
 חשוב: בדיוק 4 פרקים ו-10 שלבי מכירה!
   `;
 
-  return await callOpenAI(prompt);
+  return await callOpenAIAssistant(prompt);
 }
 
 serve(async (req) => {

@@ -10,18 +10,14 @@ const corsHeaders = {
 function cleanAndParseJSON(response: string): any {
   try {
     console.log('Raw AI response length:', response.length);
-    console.log('First 500 chars:', response.substring(0, 500));
     
-    // Remove markdown code blocks
     let cleanResponse = response.replace(/```json\n?/g, '').replace(/```\n?/g, '');
     
-    // Find JSON boundaries
     const jsonStart = cleanResponse.indexOf('{');
     const jsonEnd = cleanResponse.lastIndexOf('}') + 1;
     
     if (jsonStart === -1 || jsonEnd === 0) {
-      console.log('No JSON object found, trying to extract from response');
-      // Try to create a simple structure if no JSON found
+      console.log('No JSON object found, creating fallback slides');
       return {
         slides: [
           {
@@ -37,22 +33,17 @@ function cleanAndParseJSON(response: string): any {
     
     cleanResponse = cleanResponse.substring(jsonStart, jsonEnd);
     
-    // Clean up common JSON issues
     cleanResponse = cleanResponse
-      .replace(/,(\s*[}\]])/g, '$1') // Remove trailing commas
-      .replace(/([{,]\s*)(\w+):/g, '$1"$2":') // Quote unquoted keys
-      .replace(/:\s*'([^']*)'/g, ': "$1"') // Convert single quotes to double
-      .replace(/[\u200B-\u200D\uFEFF]/g, '') // Remove zero-width characters
-      .replace(/\r/g, '') // Remove carriage returns
-      .replace(/\n\s*\n/g, '\n') // Remove empty lines
+      .replace(/,(\s*[}\]])/g, '$1')
+      .replace(/([{,]\s*)(\w+):/g, '$1"$2":')
+      .replace(/:\s*'([^']*)'/g, ': "$1"')
+      .replace(/[\u200B-\u200D\uFEFF]/g, '')
+      .replace(/\r/g, '')
       .trim();
     
-    console.log('Cleaned response length:', cleanResponse.length);
-    
     const parsed = JSON.parse(cleanResponse);
-    console.log('Successfully parsed JSON with keys:', Object.keys(parsed));
+    console.log('Successfully parsed slides JSON');
     
-    // Ensure we have a slides array
     if (!parsed.slides || !Array.isArray(parsed.slides)) {
       console.log('No slides array found, creating default structure');
       parsed.slides = [];
@@ -61,9 +52,6 @@ function cleanAndParseJSON(response: string): any {
     return parsed;
   } catch (error) {
     console.error('JSON parsing error:', error);
-    console.log('Failed to parse, returning fallback structure');
-    
-    // Return a fallback structure instead of throwing
     return {
       slides: [
         {
@@ -78,50 +66,98 @@ function cleanAndParseJSON(response: string): any {
   }
 }
 
-async function callOpenAI(prompt: string): Promise<any> {
+async function callOpenAIAssistant(prompt: string): Promise<any> {
   const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
   
   if (!openAIApiKey) {
     throw new Error('OpenAI API key not configured');
   }
 
-  console.log('Making OpenAI API call...');
+  console.log('Using OpenAI Assistant API...');
   
-  const response = await fetch('https://api.openai.com/v1/chat/completions', {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${openAIApiKey}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      model: 'gpt-4o-mini',
-      messages: [
-        {
-          role: 'system',
-          content: 'אתה מומחה ליצירת הרצאות מקצועיות בעברית. תמיד החזר JSON תקין וספציפי לנושא המבוקש. ודא שהתשובה שלך היא JSON תקין בלבד.'
-        },
-        {
-          role: 'user',
-          content: prompt
+  try {
+    // Create a thread
+    const threadResponse = await fetch('https://api.openai.com/v1/threads', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${openAIApiKey}`,
+        'Content-Type': 'application/json',
+        'OpenAI-Beta': 'assistants=v2'
+      },
+      body: JSON.stringify({})
+    });
+
+    if (!threadResponse.ok) {
+      throw new Error(`Thread creation failed: ${threadResponse.status}`);
+    }
+
+    const thread = await threadResponse.json();
+
+    // Add message to thread
+    await fetch(`https://api.openai.com/v1/threads/${thread.id}/messages`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${openAIApiKey}`,
+        'Content-Type': 'application/json',
+        'OpenAI-Beta': 'assistants=v2'
+      },
+      body: JSON.stringify({
+        role: 'user',
+        content: prompt
+      })
+    });
+
+    // Run the assistant
+    const runResponse = await fetch(`https://api.openai.com/v1/threads/${thread.id}/runs`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${openAIApiKey}`,
+        'Content-Type': 'application/json',
+        'OpenAI-Beta': 'assistants=v2'
+      },
+      body: JSON.stringify({
+        assistant_id: 'asst_etLDYkL7Oj3ggr9IKpwmGE76'
+      })
+    });
+
+    const run = await runResponse.json();
+
+    // Poll for completion
+    let runStatus = run;
+    while (runStatus.status === 'queued' || runStatus.status === 'in_progress') {
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      const statusResponse = await fetch(`https://api.openai.com/v1/threads/${thread.id}/runs/${run.id}`, {
+        headers: {
+          'Authorization': `Bearer ${openAIApiKey}`,
+          'OpenAI-Beta': 'assistants=v2'
         }
-      ],
-      temperature: 0.7,
-      max_tokens: 4000
-    }),
-  });
+      });
+      
+      if (statusResponse.ok) {
+        runStatus = await statusResponse.json();
+      }
+    }
 
-  console.log('OpenAI API response status:', response.status);
+    // Get messages
+    const messagesResponse = await fetch(`https://api.openai.com/v1/threads/${thread.id}/messages`, {
+      headers: {
+        'Authorization': `Bearer ${openAIApiKey}`,
+        'OpenAI-Beta': 'assistants=v2'
+      }
+    });
 
-  if (!response.ok) {
-    const errorText = await response.text();
-    console.error('OpenAI API error:', errorText);
-    throw new Error(`OpenAI API error: ${response.status} - ${errorText}`);
+    const messages = await messagesResponse.json();
+    const assistantMessage = messages.data.find((msg: any) => msg.role === 'assistant');
+    
+    const content = assistantMessage?.content[0]?.text?.value || '';
+    console.log('Assistant response received for slides');
+    
+    return cleanAndParseJSON(content);
+  } catch (error) {
+    console.error('Assistant API error:', error);
+    throw error;
   }
-
-  const data = await response.json();
-  console.log('OpenAI API call successful');
-  
-  return cleanAndParseJSON(data.choices[0].message.content);
 }
 
 async function generateSlidesContent(formData: any, outline: any): Promise<any> {
@@ -149,7 +185,7 @@ async function generateSlidesContent(formData: any, outline: any): Promise<any> 
 צור 10-12 שקפים מפורטים עבור נושא "${formData.idea}" למשך ${formData.duration} דקות.
 `;
 
-  return await callOpenAI(prompt);
+  return await callOpenAIAssistant(prompt);
 }
 
 serve(async (req) => {
@@ -171,7 +207,7 @@ serve(async (req) => {
     console.error('Error in generate-slides function:', error);
     return new Response(JSON.stringify({ 
       error: error.message,
-      slides: [] // Always return an array for slides
+      slides: []
     }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
