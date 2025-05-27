@@ -30,6 +30,11 @@ interface PresentationState {
   generateDummyOutline: () => void;
 }
 
+/**
+ * Delays execution for the specified number of milliseconds
+ */
+const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
 export const usePresentationStore = create<PresentationState>((set, get) => ({
   formData: null,
   userRegistration: null,
@@ -84,21 +89,50 @@ export const usePresentationStore = create<PresentationState>((set, get) => ({
       set({ loadingMessage: "יוצרים את מבנה ההרצאה הבסיסי..." });
       const outlineData = await generatePresentationOutline(formData);
       
+      // Rate limiting delay between API calls
+      await delay(2000);
+      
       // Step 2: Generate dynamic slide structure
       set({ loadingMessage: "בונים מבנה מפורט של השקפים..." });
-      const dynamicSlides = await generateDynamicSlideStructure(formData, outlineData);
+      let dynamicSlides: SlideStructure[] = [];
+      try {
+        dynamicSlides = await generateDynamicSlideStructure(formData, outlineData);
+      } catch (error) {
+        console.warn('Failed to generate slides, continuing without them:', error);
+      }
+      
+      await delay(2000);
       
       // Step 3: Generate dynamic B2B email
       set({ loadingMessage: "כותבים מייל פנייה מותאם אישית..." });
-      const dynamicB2BEmail = await generateDynamicB2BEmail(formData, outlineData);
+      let dynamicB2BEmail = '';
+      try {
+        dynamicB2BEmail = await generateDynamicB2BEmail(formData, outlineData);
+      } catch (error) {
+        console.warn('Failed to generate email, continuing without it:', error);
+      }
+      
+      await delay(2000);
       
       // Step 4: Generate dynamic sales strategy
       set({ loadingMessage: "מכינים אסטרטגיית שיווק מותאמת..." });
-      const dynamicSalesStrategy = await generateDynamicSalesStrategy(formData, outlineData);
+      let dynamicSalesStrategy: DynamicSalesStrategy | undefined;
+      try {
+        dynamicSalesStrategy = await generateDynamicSalesStrategy(formData, outlineData);
+      } catch (error) {
+        console.warn('Failed to generate sales strategy, continuing without it:', error);
+      }
+      
+      await delay(2000);
       
       // Step 5: Generate presentation tools
       set({ loadingMessage: "יוצרים כלים מעשיים להצגה..." });
-      const presentationTools = await generatePresentationTools(formData, outlineData);
+      let presentationTools: any = null;
+      try {
+        presentationTools = await generatePresentationTools(formData, outlineData);
+      } catch (error) {
+        console.warn('Failed to generate presentation tools, continuing without them:', error);
+      }
       
       // Combine all generated content
       const completeOutline: PresentationOutline = {
@@ -130,13 +164,26 @@ export const usePresentationStore = create<PresentationState>((set, get) => ({
       }
     } catch (error) {
       console.error("Failed to generate outline:", error);
+      
+      // Provide more specific error messages
+      let errorMessage = "אירעה שגיאה ביצירת מבנה ההרצאה.";
+      
+      if (error.message.includes('parse')) {
+        errorMessage = "שגיאה בעיבוד תשובת ה-AI. נסה שנית.";
+      } else if (error.message.includes('timeout')) {
+        errorMessage = "הבקשה ארכה זמן רב מדי. נסה שנית.";
+      } else if (error.message.includes('HTTP')) {
+        errorMessage = "בעיית תקשורת עם השרת. נסה שנית.";
+      }
+      
       set({ 
-        error: "אירעה שגיאה ביצירת מבנה ההרצאה. נסה שנית.", 
+        error: errorMessage, 
         isLoading: false,
         loadingMessage: "יוצרים את מבנה ההרצאה..."
       });
       
-      // Fallback to dummy outline if API fails
+      // Fallback to dummy outline if API fails completely
+      console.log("Falling back to dummy outline due to API error");
       get().generateDummyOutline();
     }
   },

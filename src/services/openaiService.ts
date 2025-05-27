@@ -9,121 +9,230 @@ const OPENAI_ORG_ID = 'org-fdnj54f725C7rUNxPVyt8jEA';
 const ASSISTANT_ID = 'asst_etLDYkL7Oj3ggr9IKpwmGE76';
 
 /**
- * Creates a thread for assistant conversation
+ * Sanitizes Hebrew text for JSON compatibility
+ */
+function sanitizeText(text: string): string {
+  return text
+    .replace(/"/g, '\\"')
+    .replace(/\n/g, '\\n')
+    .replace(/\r/g, '\\r')
+    .replace(/\t/g, '\\t')
+    .replace(/\\/g, '\\\\');
+}
+
+/**
+ * Cleans and validates JSON response
+ */
+function cleanAndParseJSON(response: string): any {
+  try {
+    // Remove any markdown formatting
+    let cleanResponse = response.replace(/```json\n?/g, '').replace(/```\n?/g, '');
+    
+    // Find JSON object boundaries
+    const jsonStart = cleanResponse.indexOf('{');
+    const jsonEnd = cleanResponse.lastIndexOf('}') + 1;
+    
+    if (jsonStart === -1 || jsonEnd === 0) {
+      throw new Error('No JSON object found in response');
+    }
+    
+    cleanResponse = cleanResponse.substring(jsonStart, jsonEnd);
+    
+    // Try to fix common JSON issues
+    cleanResponse = cleanResponse
+      .replace(/,(\s*[}\]])/g, '$1') // Remove trailing commas
+      .replace(/([{,]\s*)(\w+):/g, '$1"$2":') // Quote unquoted keys
+      .replace(/:\s*'([^']*)'/g, ': "$1"') // Replace single quotes with double quotes
+      .replace(/\n\s*\n/g, '\n'); // Remove extra newlines
+    
+    return JSON.parse(cleanResponse);
+  } catch (error) {
+    console.error('JSON parsing error:', error);
+    console.error('Raw response:', response);
+    throw new Error(`Failed to parse AI response: ${error.message}`);
+  }
+}
+
+/**
+ * Validates response against expected schema
+ */
+function validateOutlineResponse(data: any): boolean {
+  return (
+    data &&
+    Array.isArray(data.chapters) &&
+    data.chapters.length > 0 &&
+    Array.isArray(data.openingStyles) &&
+    typeof data.timeDistribution === 'string' &&
+    Array.isArray(data.interactiveActivities) &&
+    typeof data.presentationStructure === 'string' &&
+    typeof data.salesGuide === 'string'
+  );
+}
+
+/**
+ * Creates a thread for assistant conversation with retry logic
  */
 async function createThread(): Promise<string> {
-  const response = await fetch('https://api.openai.com/v1/threads', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${OPENAI_API_KEY}`,
-      'OpenAI-Organization': OPENAI_ORG_ID,
-      'OpenAI-Beta': 'assistants=v2'
+  const maxRetries = 3;
+  
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      const response = await fetch('https://api.openai.com/v1/threads', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${OPENAI_API_KEY}`,
+          'OpenAI-Organization': OPENAI_ORG_ID,
+          'OpenAI-Beta': 'assistants=v2'
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      return data.id;
+    } catch (error) {
+      console.error(`Thread creation attempt ${attempt} failed:`, error);
+      if (attempt === maxRetries) throw error;
+      await new Promise(resolve => setTimeout(resolve, 1000 * attempt)); // Exponential backoff
     }
-  });
-
-  if (!response.ok) {
-    throw new Error('Failed to create thread');
   }
-
-  const data = await response.json();
-  return data.id;
+  
+  throw new Error('Failed to create thread after all retries');
 }
 
 /**
- * Adds a message to the thread
+ * Adds a message to the thread with retry logic
  */
 async function addMessageToThread(threadId: string, content: string): Promise<void> {
-  const response = await fetch(`https://api.openai.com/v1/threads/${threadId}/messages`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${OPENAI_API_KEY}`,
-      'OpenAI-Organization': OPENAI_ORG_ID,
-      'OpenAI-Beta': 'assistants=v2'
-    },
-    body: JSON.stringify({
-      role: 'user',
-      content
-    })
-  });
+  const maxRetries = 3;
+  
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      const response = await fetch(`https://api.openai.com/v1/threads/${threadId}/messages`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${OPENAI_API_KEY}`,
+          'OpenAI-Organization': OPENAI_ORG_ID,
+          'OpenAI-Beta': 'assistants=v2'
+        },
+        body: JSON.stringify({
+          role: 'user',
+          content
+        })
+      });
 
-  if (!response.ok) {
-    throw new Error('Failed to add message to thread');
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+      
+      return;
+    } catch (error) {
+      console.error(`Add message attempt ${attempt} failed:`, error);
+      if (attempt === maxRetries) throw error;
+      await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
+    }
   }
 }
 
 /**
- * Runs the assistant and waits for completion
+ * Runs the assistant and waits for completion with enhanced error handling
  */
 async function runAssistant(threadId: string): Promise<string> {
-  // Start the run
-  const runResponse = await fetch(`https://api.openai.com/v1/threads/${threadId}/runs`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${OPENAI_API_KEY}`,
-      'OpenAI-Organization': OPENAI_ORG_ID,
-      'OpenAI-Beta': 'assistants=v2'
-    },
-    body: JSON.stringify({
-      assistant_id: ASSISTANT_ID
-    })
-  });
-
-  if (!runResponse.ok) {
-    throw new Error('Failed to start assistant run');
-  }
-
-  const runData = await runResponse.json();
-  const runId = runData.id;
-
-  // Poll for completion
-  let status = 'queued';
-  while (status === 'queued' || status === 'in_progress') {
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    const statusResponse = await fetch(`https://api.openai.com/v1/threads/${threadId}/runs/${runId}`, {
-      headers: {
-        'Authorization': `Bearer ${OPENAI_API_KEY}`,
-        'OpenAI-Organization': OPENAI_ORG_ID,
-        'OpenAI-Beta': 'assistants=v2'
-      }
-    });
-
-    if (!statusResponse.ok) {
-      throw new Error('Failed to check run status');
-    }
-
-    const statusData = await statusResponse.json();
-    status = statusData.status;
-  }
-
-  if (status !== 'completed') {
-    throw new Error(`Assistant run failed with status: ${status}`);
-  }
-
-  // Get the assistant's response
-  const messagesResponse = await fetch(`https://api.openai.com/v1/threads/${threadId}/messages`, {
-    headers: {
-      'Authorization': `Bearer ${OPENAI_API_KEY}`,
-      'OpenAI-Organization': OPENAI_ORG_ID,
-      'OpenAI-Beta': 'assistants=v2'
-    }
-  });
-
-  if (!messagesResponse.ok) {
-    throw new Error('Failed to retrieve messages');
-  }
-
-  const messagesData = await messagesResponse.json();
-  const lastMessage = messagesData.data[0];
+  const maxRetries = 3;
   
-  return lastMessage.content[0].text.value;
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      // Start the run
+      const runResponse = await fetch(`https://api.openai.com/v1/threads/${threadId}/runs`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${OPENAI_API_KEY}`,
+          'OpenAI-Organization': OPENAI_ORG_ID,
+          'OpenAI-Beta': 'assistants=v2'
+        },
+        body: JSON.stringify({
+          assistant_id: ASSISTANT_ID
+        })
+      });
+
+      if (!runResponse.ok) {
+        throw new Error(`HTTP ${runResponse.status}: ${runResponse.statusText}`);
+      }
+
+      const runData = await runResponse.json();
+      const runId = runData.id;
+
+      // Poll for completion with timeout
+      let status = 'queued';
+      let pollCount = 0;
+      const maxPolls = 60; // 60 seconds timeout
+      
+      while ((status === 'queued' || status === 'in_progress') && pollCount < maxPolls) {
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        pollCount++;
+        
+        const statusResponse = await fetch(`https://api.openai.com/v1/threads/${threadId}/runs/${runId}`, {
+          headers: {
+            'Authorization': `Bearer ${OPENAI_API_KEY}`,
+            'OpenAI-Organization': OPENAI_ORG_ID,
+            'OpenAI-Beta': 'assistants=v2'
+          }
+        });
+
+        if (!statusResponse.ok) {
+          throw new Error(`HTTP ${statusResponse.status}: ${statusResponse.statusText}`);
+        }
+
+        const statusData = await statusResponse.json();
+        status = statusData.status;
+        
+        if (status === 'failed') {
+          throw new Error(`Assistant run failed: ${statusData.last_error?.message || 'Unknown error'}`);
+        }
+      }
+
+      if (pollCount >= maxPolls) {
+        throw new Error('Assistant run timed out');
+      }
+
+      if (status !== 'completed') {
+        throw new Error(`Assistant run failed with status: ${status}`);
+      }
+
+      // Get the assistant's response
+      const messagesResponse = await fetch(`https://api.openai.com/v1/threads/${threadId}/messages`, {
+        headers: {
+          'Authorization': `Bearer ${OPENAI_API_KEY}`,
+          'OpenAI-Organization': OPENAI_ORG_ID,
+          'OpenAI-Beta': 'assistants=v2'
+        }
+      });
+
+      if (!messagesResponse.ok) {
+        throw new Error(`HTTP ${messagesResponse.status}: ${messagesResponse.statusText}`);
+      }
+
+      const messagesData = await messagesResponse.json();
+      const lastMessage = messagesData.data[0];
+      
+      return lastMessage.content[0].text.value;
+    } catch (error) {
+      console.error(`Assistant run attempt ${attempt} failed:`, error);
+      if (attempt === maxRetries) throw error;
+      await new Promise(resolve => setTimeout(resolve, 2000 * attempt)); // Longer backoff for assistant runs
+    }
+  }
+  
+  throw new Error('Failed to run assistant after all retries');
 }
 
 /**
- * Generates presentation outline using the custom assistant
+ * Generates presentation outline using the custom assistant with improved error handling
  */
 export async function generatePresentationOutline(formData: PresentationFormData): Promise<PresentationOutline> {
   try {
@@ -132,75 +241,66 @@ export async function generatePresentationOutline(formData: PresentationFormData
     const prompt = `
 אתה עוזר מומחה ליצירת מבנה הרצאות. אנא צור מבנה הרצאה מותאם אישית על סמך המידע הבא:
 
-נושא ההרצאה: "${formData.idea}"
-רקע המרצה: "${formData.speakerBackground}"
-פרופיל הקהל: "${formData.audienceProfile}"
+נושא ההרצאה: ${sanitizeText(formData.idea)}
+רקע המרצה: ${sanitizeText(formData.speakerBackground)}
+פרופיל הקהל: ${sanitizeText(formData.audienceProfile)}
 משך ההרצאה: ${formData.duration} דקות
-התנגדויות נפוצות ואמונות מגבילות: "${formData.commonObjections}"
-מוצר או שירות לקידום: "${formData.serviceOrProduct}"
-קריאה לפעולה: "${formData.callToAction}"
+התנגדויות נפוצות ואמונות מגבילות: ${sanitizeText(formData.commonObjections)}
+מוצר או שירות לקידום: ${sanitizeText(formData.serviceOrProduct)}
+קריאה לפעולה: ${sanitizeText(formData.callToAction)}
 
-חשוב ביותר: 
-1. בנה את ההרצאה כך שתתמודד בצורה ישירה עם ההתנגדויות והאמונות המגבילות שצוינו: "${formData.commonObjections}"
-2. התאם את התוכן לפרופיל הקהל הספציפי: "${formData.audienceProfile}"
-3. הקפד שהרצאה תוביל בצורה טבעית למוצר/שירות: "${formData.serviceOrProduct}"
-4. המסר המרכזי צריך להיות מבוסס על: "${formData.idea}"
-5. סגנון ההרצאה צריך להתאים לרקע המרצה: "${formData.speakerBackground}"
+חשוב מאוד:
+1. הקפד על פורמט JSON תקין בלבד
+2. השתמש במרכאות כפולות בלבד
+3. הימנע מעריכות בסוף השורות
+4. וודא שכל מחרוזת עברית מסתיימת כהלכה
 
-יש לענות בעברית בלבד ולהחזיר תוכן במבנה JSON הכולל:
-1. שלושה פרקים עיקריים (chapters) עם כותרת ו-3 נקודות מרכזיות לכל פרק - מותאמים למידע שסופק
-2. סגנונות פתיחה אפשריים (openingStyles) - מותאמים לקהל ולנושא
-3. חלוקת זמנים מומלצת (timeDistribution) - מותאמת למשך ${formData.duration} דקות
-4. פעילויות אינטראקטיביות מומלצות (interactiveActivities) - מותאמות לקהל
-5. מבנה המצגת הכולל (presentationStructure)
-6. שאלות לדיון לפי חלקים (discussionQuestions)
-7. מדריך מכירות (salesGuide) מותאם למוצר/שירות שצוין
-8. תוכנית למעקב לאחר ההרצאה (postPresentationPlan)
-9. הודעה מוטיבציונית אישית (motivationalMessage) - מעודדת ומותאמת אישית לתוכן שהמשתמש הזין
-10. מהלך מכירה בהרצאה (salesProcess) - עד 10 שלבים מותאמים לקהל ולמוצר, עם כותרת ותיאור מפורט
-
-נדרש מבנה JSON כדלקמן:
+יש להחזיר JSON תקין במבנה הבא בלבד:
 {
   "chapters": [
     {
-      "title": "כותרת פרק 1 מותאמת לנושא",
+      "title": "כותרת פרק 1",
       "points": [
-        {"content": "נקודה 1 המתמודדת עם התנגדויות"},
-        {"content": "נקודה 2 מותאמת לקהל"},
-        {"content": "נקודה 3 המובילה למכירה"}
+        {"content": "נקודה 1"},
+        {"content": "נקודה 2"},
+        {"content": "נקודה 3"}
       ]
-    },
-    // chapters 2 and 3...
+    }
   ],
-  "openingStyles": ["סגנון 1 מותאם לקהל", "סגנון 2", "סגנון 3"],
-  "timeDistribution": "חלוקת זמנים מפורטת ל-${formData.duration} דקות",
-  "interactiveActivities": ["פעילות 1 מותאמת", "פעילות 2", "פעילות 3"],
-  "presentationStructure": "מבנה המצגת המוצע המותאם לתוכן",
+  "openingStyles": ["סגנון 1", "סגנון 2", "סגנון 3"],
+  "timeDistribution": "חלוקת זמנים",
+  "interactiveActivities": ["פעילות 1", "פעילות 2", "פעילות 3"],
+  "presentationStructure": "מבנה המצגת",
   "discussionQuestions": {
-    "חלק 1": ["שאלה 1 מותאמת", "שאלה 2"],
+    "חלק 1": ["שאלה 1", "שאלה 2"],
     "חלק 2": ["שאלה 1", "שאלה 2"],
     "חלק 3": ["שאלה 1", "שאלה 2"]
   },
-  "salesGuide": "מדריך מכירות מותאם למוצר/שירות שצוין",
-  "postPresentationPlan": "תוכנית למעקב מותאמת",
-  "motivationalMessage": "הודעה מוטיבציונית אישית מעודדת ומותאמת לתוכן הספציפי שהמשתמש הזין",
+  "salesGuide": "מדריך מכירות",
+  "postPresentationPlan": "תוכנית מעקב",
+  "motivationalMessage": "הודעה מוטיבציונית",
   "salesProcess": [
     {
-      "title": "כותרת שלב 1 מותאמת לקהל ולמוצר",
-      "description": "תיאור מפורט של השלב המותאם למידע שסופק",
+      "title": "כותרת שלב 1",
+      "description": "תיאור השלב",
       "order": 1
-    },
-    // up to 10 steps...
+    }
   ]
 }
 
-אנא הקפד על פורמט זה בדיוק, כדי שהמערכת תוכל לעבד את התשובה.
+אנא הקפד על פורמט JSON תקין בלבד ללא תוספות טקסט.
     `;
 
     await addMessageToThread(threadId, prompt);
     const response = await runAssistant(threadId);
     
-    return parseApiResponse(response);
+    const parsedData = cleanAndParseJSON(response);
+    
+    if (!validateOutlineResponse(parsedData)) {
+      throw new Error('Invalid response structure from AI assistant');
+    }
+    
+    return parseApiResponse(JSON.stringify(parsedData));
   } catch (error) {
     console.error("Error generating presentation outline:", error);
     throw error;
@@ -208,95 +308,57 @@ export async function generatePresentationOutline(formData: PresentationFormData
 }
 
 /**
- * Generates dynamic slide structure using the assistant
+ * Generates dynamic slide structure using chunked approach
  */
 export async function generateDynamicSlideStructure(formData: PresentationFormData, outline: PresentationOutline): Promise<SlideStructure[]> {
   try {
     const threadId = await createThread();
     
     const durationMinutes = parseInt(formData.duration);
-    const estimatedSlides = Math.floor(durationMinutes * 0.8); // Approximately 0.8 slides per minute
+    const estimatedSlides = Math.floor(durationMinutes * 0.8);
     
     const prompt = `
-על סמך מבנה ההרצאה הבא, אנא צור מבנה מפורט למצגת שקף אחר שקף שמתבסס על המידע הספציפי שהמשתמש הזין:
+צור מבנה מפורט של שקפים להרצאה. הקפד על JSON תקין בלבד.
 
-נושא ההרצאה: "${formData.idea}"
-רקע המרצה: "${formData.speakerBackground}"
-פרופיל הקהל: "${formData.audienceProfile}"
-משך ההרצאה: ${formData.duration} דקות
-התנגדויות נפוצות ואמונות מגבילות: "${formData.commonObjections}"
-מוצר או שירות: "${formData.serviceOrProduct}"
-קריאה לפעולה: "${formData.callToAction}"
+פרטי ההרצאה:
+- נושא: ${sanitizeText(formData.idea)}
+- משך: ${formData.duration} דקות (בערך ${estimatedSlides} שקפים)
+- קהל: ${sanitizeText(formData.audienceProfile)}
 
-פרקי ההרצאה:
-${outline.chapters.map((chapter, idx) => 
-  `פרק ${idx + 1}: ${chapter.title}\n${chapter.points.map(point => `- ${point.content}`).join('\n')}`
-).join('\n\n')}
+דרישות למבנה השקפים:
+1. פתיחה: 5 שקפים
+2. כל פרק: 6-9 שקפים
+3. מהלך מכירה: שקף לכל שלב
+4. סיום: 3 שקפים
 
-מהלך המכירה:
-${outline.salesProcess?.map((step, idx) => 
-  `${idx + 1}. ${step.title}: ${step.description}`
-).join('\n')}
-
-חשוב מאוד - דרישות מפורטות למבנה השקפים:
-
-1. פתיחה (לפחות 5 שקפים):
-   - שקף ברכה וחיבור
-   - שקף הוק/פתיחה מושכת
-   - שקף סדר יום
-   - שקף הצגה עצמית של המרצה
-   - שקף מעורבות ראשונית עם הקהל
-
-2. כל פרק (6-9 שקפים):
-   - שקף פתיחת הפרק
-   - 2-3 שקפים לכל נקודה מרכזית
-   - שקף סיכום הפרק
-   - שקף שאלות לקהל
-
-3. מהלך מכירה (שקף אחד לכל שלב):
-   - שקף נפרד לכל אחד מ-${outline.salesProcess?.length || 10} השלבים
-
-4. סיום (לפחות 3 שקפים):
-   - שקף סיכום נקודות מפתח
-   - שקף קריאה לפעולה
-   - שקף פרטי יצירת קשר ושאלות
-
-סה"כ כ-${estimatedSlides} שקפים למשך ${formData.duration} דקות.
-
-התאם את התוכן לקהל הספציפי: "${formData.audienceProfile}"
-התמודד עם ההתנגדויות: "${formData.commonObjections}"
-הוביל לקריאה לפעולה: "${formData.callToAction}"
-
-אנא צור מבנה מפורט של שקפים במבנה JSON הבא:
+החזר JSON array של שקפים בפורמט:
 [
   {
     "number": 1,
     "section": "פתיחה",
-    "headline": "כותרת השקף מותאמת לתוכן הספציפי",
-    "content": "תוכן מפורט של השקף המבוסס על המידע שהמשתמש הזין",
-    "visual": "הצעה מפורטת לאלמנטים ויזואליים",
-    "notes": "הערות מפורטות למרצה מבוססות על הרקע שלו",
-    "timeAllocation": "X דקות",
-    "engagementTip": "טיפ למעורבות הקהל",
-    "transitionPhrase": "משפט מעבר לשקף הבא"
+    "headline": "כותרת השקף",
+    "content": "תוכן השקף",
+    "visual": "הצעה ויזואלית",
+    "notes": "הערות למרצה",
+    "timeAllocation": "2 דקות",
+    "engagementTip": "טיפ למעורבות",
+    "transitionPhrase": "משפט מעבר"
   }
 ]
 
-הקפד על התאמה מלאה למידע שהמשתמש הזין ועל משך ההרצאה של ${formData.duration} דקות.
+הקפד על JSON תקין בלבד.
     `;
 
     await addMessageToThread(threadId, prompt);
     const response = await runAssistant(threadId);
     
-    // Parse the JSON response
-    const jsonMatch = response.match(/```json\n([\s\S]*?)\n```/) || response.match(/\[([\s\S]*?)\]/);
+    const slides = cleanAndParseJSON(response);
     
-    if (jsonMatch) {
-      const slides = JSON.parse(jsonMatch[0].includes('```') ? jsonMatch[1] : jsonMatch[0]);
-      return slides;
-    } else {
-      throw new Error("Could not parse slide structure from assistant response");
+    if (!Array.isArray(slides)) {
+      throw new Error('Expected array of slides from AI response');
     }
+    
+    return slides;
   } catch (error) {
     console.error("Error generating slide structure:", error);
     throw error;
@@ -405,48 +467,28 @@ ${outline.chapters.map((chapter, idx) =>
 }
 
 /**
- * Generates dynamic B2B email using the assistant
+ * Generates dynamic B2B email using the assistant with error handling
  */
 export async function generateDynamicB2BEmail(formData: PresentationFormData, outline: PresentationOutline): Promise<string> {
   try {
     const threadId = await createThread();
     
     const prompt = `
-אנא כתב מייל פנייה B2B מקצועי לארגונים בעברית על סמך המידע הבא:
+כתב מייל פנייה B2B מקצועי בעברית להרצאה:
 
-נושא ההרצאה: ${formData.idea}
-רקע המרצה: ${formData.speakerBackground}
-פרופיל הקהל: ${formData.audienceProfile}
-משך ההרצאה: ${formData.duration} דקות
-התנגדויות נפוצות ואמונות מגבילות: ${formData.commonObjections}
-מוצר או שירות: ${formData.serviceOrProduct}
-קריאה לפעולה: ${formData.callToAction}
+נושא: ${sanitizeText(formData.idea)}
+רקע מרצה: ${sanitizeText(formData.speakerBackground)}
+קהל יעד: ${sanitizeText(formData.audienceProfile)}
+מוצר/שירות: ${sanitizeText(formData.serviceOrProduct)}
 
-פרקי ההרצאה:
-${outline.chapters.map((chapter, idx) => 
-  `${idx + 1}. ${chapter.title}`
-).join('\n')}
-
-חשוב: הקפד לכתוב מייל שמתמודד עם ההתנגדויות והאמונות המגבילות שצוינו.
-
-דרישות למייל:
-1. נושא מעניין וחודר
-2. פתיחה עם סיפור או נתון מעניין
-3. הצגת הערך הייחודי של ההרצאה
-4. פירוט קצר של התועלות למשתתפים
-5. התמודדות עדינה עם התנגדויות נפוצות
-6. קריאה לפעולה ברורה
-7. טון מקצועי אך חם ואישי
-8. התייחסות ספציפית לתחום הקהל
-9. עברית ברמה גבוהה
-
-המייל צריך להיות ברמה של 300-400 מילים ולכלול את כל החלקים הנדרשים.
+המייל צריך להיות 300-400 מילים, מקצועי וחם.
+החזר רק את תוכן המייל ללא פורמט JSON.
     `;
 
     await addMessageToThread(threadId, prompt);
     const response = await runAssistant(threadId);
     
-    return response;
+    return response.trim();
   } catch (error) {
     console.error("Error generating B2B email:", error);
     throw error;
@@ -454,66 +496,136 @@ ${outline.chapters.map((chapter, idx) =>
 }
 
 /**
- * Generates dynamic sales strategy using the assistant
+ * Generates dynamic sales strategy using the assistant with validation
  */
 export async function generateDynamicSalesStrategy(formData: PresentationFormData, outline: PresentationOutline): Promise<DynamicSalesStrategy> {
   try {
     const threadId = await createThread();
     
     const prompt = `
-על סמך המידע הבא, אנא צור אסטרטגיית שיווק ומכירות מותאמת אישית:
+צור אסטרטגיית שיווק ומכירות מותאמת:
 
-נושא ההרצאה: ${formData.idea}
-רקע המרצה: ${formData.speakerBackground}
-פרופיל הקהל: ${formData.audienceProfile}
-מוצר או שירות: ${formData.serviceOrProduct}
-קריאה לפעולה: ${formData.callToAction}
+נושא: ${sanitizeText(formData.idea)}
+מוצר/שירות: ${sanitizeText(formData.serviceOrProduct)}
+קהל: ${sanitizeText(formData.audienceProfile)}
 
-אנא צור תוכנית מפורטת במבנה JSON הבא:
+החזר JSON בפורמט:
 {
-  "targetAudiences": ["קהל יעד 1", "קהל יעד 2", "קהל יעד 3"],
+  "targetAudiences": ["קהל 1", "קהל 2"],
   "marketingChannels": [
     {
-      "channel": "שם הערוץ",
-      "strategy": "אסטרטגיה מפורטת",
-      "timeline": "ציר זמן",
-      "budget": "תקציב מוערך"
+      "channel": "שם ערוץ",
+      "strategy": "אסטרטגיה",
+      "timeline": "זמן",
+      "budget": "תקציב"
     }
   ],
   "pricingStrategy": {
-    "basicTicket": "מחיר בסיסי והסבר",
-    "vipTicket": "מחיר VIP והטבות",
-    "premiumTicket": "מחיר פרמיום והטבות",
+    "basicTicket": "מחיר בסיסי",
+    "vipTicket": "מחיר VIP",
+    "premiumTicket": "מחיר פרמיום",
     "corporatePackage": "חבילה ארגונית"
   },
-  "collaborationOpportunities": [
-    "הזדמנות שיתוף 1",
-    "הזדמנות שיתוף 2"
-  ],
-  "contentMarketing": [
-    "רעיון תוכן 1",
-    "רעיון תוכן 2"
-  ],
-  "followUpStrategy": "אסטרטגיית מעקב מפורטת"
+  "collaborationOpportunities": ["הזדמנות 1", "הזדמנות 2"],
+  "contentMarketing": ["רעיון 1", "רעיון 2"],
+  "followUpStrategy": "אסטרטגיית מעקב"
 }
 
-התאם את האסטרטגיה לתחום הספציפי ולקהל היעד.
+הקפד על JSON תקין בלבד.
     `;
 
     await addMessageToThread(threadId, prompt);
     const response = await runAssistant(threadId);
     
-    // Parse the JSON response
-    const jsonMatch = response.match(/```json\n([\s\S]*?)\n```/) || response.match(/\{[\s\S]*\}/);
-    
-    if (jsonMatch) {
-      const strategy = JSON.parse(jsonMatch[0].includes('```') ? jsonMatch[1] : jsonMatch[0]);
-      return strategy;
-    } else {
-      throw new Error("Could not parse sales strategy from assistant response");
-    }
+    return cleanAndParseJSON(response);
   } catch (error) {
     console.error("Error generating sales strategy:", error);
+    throw error;
+  }
+}
+
+/**
+ * Generates presentation tools and tips with enhanced structure
+ */
+export async function generatePresentationTools(formData: PresentationFormData, outline: PresentationOutline): Promise<any> {
+  try {
+    const threadId = await createThread();
+    
+    const prompt = `
+צור כלים מעשיים להצגה:
+
+נושא: ${sanitizeText(formData.idea)}
+רקע מרצה: ${sanitizeText(formData.speakerBackground)}
+קהל: ${sanitizeText(formData.audienceProfile)}
+
+החזר JSON בפורמט:
+{
+  "openingSuggestions": [
+    {
+      "type": "סוג פתיחה",
+      "script": "סקריפט מפורט",
+      "tips": "טיפים לביצוע"
+    }
+  ],
+  "chapterQuestions": {
+    "פרק 1": [
+      {
+        "question": "שאלה למעורבות",
+        "purpose": "מטרת השאלה",
+        "expectedAnswers": ["תשובה 1", "תשובה 2"],
+        "followUp": "איך להמשיך"
+      }
+    ]
+  },
+  "interactiveActivities": [
+    {
+      "activity": "שם פעילות",
+      "timing": "מתי לבצע",
+      "duration": "משך זמן",
+      "instructions": "הוראות",
+      "materials": "חומרים נדרשים"
+    }
+  ],
+  "transitionPhrases": [
+    {
+      "from": "מקטע מקור",
+      "to": "מקטע יעד",
+      "phrase": "משפט מעבר"
+    }
+  ],
+  "engagementTechniques": [
+    {
+      "technique": "שם טכניקה",
+      "when": "מתי להשתמש",
+      "howTo": "איך לבצע",
+      "benefits": "יעילות"
+    }
+  ],
+  "troubleshooting": [
+    {
+      "problem": "בעיה אפשרית",
+      "solution": "פתרון",
+      "prevention": "מניעה"
+    }
+  ],
+  "closingTechniques": [
+    {
+      "type": "סוג סיום",
+      "script": "סקריפט",
+      "callToAction": "קריאה לפעולה"
+    }
+  ]
+}
+
+הקפד על JSON תקין בלבד.
+    `;
+
+    await addMessageToThread(threadId, prompt);
+    const response = await runAssistant(threadId);
+    
+    return cleanAndParseJSON(response);
+  } catch (error) {
+    console.error("Error generating presentation tools:", error);
     throw error;
   }
 }
@@ -523,16 +635,7 @@ export async function generateDynamicSalesStrategy(formData: PresentationFormDat
  */
 function parseApiResponse(response: string): PresentationOutline {
   try {
-    // Extract JSON from the message (handle potential markdown formatting)
-    const jsonMatch = response.match(/```json\n([\s\S]*?)\n```/) || response.match(/\{[\s\S]*\}/);
-    
-    let parsedResponse;
-    if (jsonMatch) {
-      parsedResponse = JSON.parse(jsonMatch[0].includes('```') ? jsonMatch[1] : jsonMatch[0]);
-    } else {
-      // Try to parse the whole content as JSON
-      parsedResponse = JSON.parse(response);
-    }
+    const parsedResponse = cleanAndParseJSON(response);
     
     // Add IDs to chapters and points
     const chaptersWithIds = parsedResponse.chapters.map((chapter: any) => ({
