@@ -1,0 +1,164 @@
+import "https://deno.land/x/xhr@0.1.0/mod.ts";
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+};
+
+interface PresentationFormData {
+  idea: string;
+  speakerBackground: string;
+  audienceProfile: string;
+  duration: string;
+  commonObjections: string;
+  serviceOrProduct: string;
+  callToAction: string;
+}
+
+function sanitizeText(text: string): string {
+  return text
+    .replace(/"/g, '\\"')
+    .replace(/\n/g, '\\n')
+    .replace(/\r/g, '\\r')
+    .replace(/\t/g, '\\t');
+}
+
+function cleanAndParseJSON(response: string): any {
+  try {
+    console.log('Raw AI response length:', response.length);
+    
+    let cleanResponse = response.replace(/```json\n?/g, '').replace(/```\n?/g, '');
+    
+    const jsonStart = cleanResponse.indexOf('{');
+    const jsonEnd = cleanResponse.lastIndexOf('}') + 1;
+    
+    if (jsonStart === -1 || jsonEnd === 0) {
+      throw new Error('No JSON object found in response');
+    }
+    
+    cleanResponse = cleanResponse.substring(jsonStart, jsonEnd);
+    
+    cleanResponse = cleanResponse
+      .replace(/,(\s*[}\]])/g, '$1')
+      .replace(/([{,]\s*)(\w+):/g, '$1"$2":')
+      .replace(/:\s*'([^']*)'/g, ': "$1"')
+      .replace(/[\u200B-\u200D\uFEFF]/g, '')
+      .replace(/\r/g, '')
+      .trim();
+    
+    const parsed = JSON.parse(cleanResponse);
+    console.log('Successfully parsed JSON');
+    return parsed;
+  } catch (error) {
+    console.error('JSON parsing error:', error);
+    throw new Error(`Failed to parse AI response: ${error.message}`);
+  }
+}
+
+async function callOpenAI(prompt: string): Promise<any> {
+  const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
+  
+  if (!openAIApiKey) {
+    throw new Error('OpenAI API key not configured');
+  }
+
+  console.log('Making OpenAI API call...');
+  
+  const response = await fetch('https://api.openai.com/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${openAIApiKey}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      model: 'gpt-4o-mini',
+      messages: [
+        {
+          role: 'system',
+          content: 'אתה מומחה ליצירת הרצאות מקצועיות בעברית. תמיד החזר JSON תקין וספציפי לנושא המבוקש.'
+        },
+        {
+          role: 'user',
+          content: prompt
+        }
+      ],
+      temperature: 0.7,
+      max_tokens: 4000
+    }),
+  });
+
+  console.log('OpenAI API response status:', response.status);
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    console.error('OpenAI API error:', errorText);
+    throw new Error(`OpenAI API error: ${response.status} - ${errorText}`);
+  }
+
+  const data = await response.json();
+  console.log('OpenAI API call successful');
+  
+  return cleanAndParseJSON(data.choices[0].message.content);
+}
+
+async function generateSlidesContent(formData: any, outline: any): Promise<any> {
+  const prompt = `
+אתה מומחה ליצירת מצגות מקצועיות. צור מבנה שקפים מפורט עם אלמנטי מעורבות.
+
+פרטי ההרצאה:
+- נושא: "${formData.idea}"
+- קהל יעד: "${formData.audienceProfile}"
+- משך: ${formData.duration} דקות
+
+צור מבנה שקפים מקיף עם 12-15 שקפים הכולל אלמנטי מעורבות:
+
+{
+  "slides": [
+    {
+      "number": 1,
+      "section": "פתיחה",
+      "headline": "כותרת מושכת עבור ${formData.idea}",
+      "content": "תוכן פתיחה חזק שמתחבר ל${formData.audienceProfile}",
+      "visual": "רקע מרשים עם גרפיקה דינמית הקשורה ל${formData.idea}",
+      "notes": "התחל בביטחון, קיים קשר עין עם הקהל",
+      "timeAllocation": "3 דקות",
+      "engagementTip": "בקש מהקהל להרים יד אם יש להם חוויה עם ${formData.idea}",
+      "transitionPhrase": "עכשיו שהכרנו את השטח, בואו נצלול לעומק הנושא",
+      "interactionElement": "סקר מהיר: שאלה פתיחה לקהל",
+      "audienceAction": "המשתתפים מגיבים לשאלת הפתיחה"
+    }
+  ]
+}
+
+צור 12-15 שקפים מפורטים המכסים את כל ההרצאה עם אלמנטי מעורבות מגוונים.
+`;
+
+  return await callOpenAI(prompt);
+}
+
+serve(async (req) => {
+  if (req.method === 'OPTIONS') {
+    return new Response(null, { headers: corsHeaders });
+  }
+
+  try {
+    const { formData, outline } = await req.json();
+    
+    console.log('Generating slides for topic:', formData.idea);
+
+    const result = await generateSlidesContent(formData, outline);
+
+    return new Response(JSON.stringify(result), {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
+  } catch (error) {
+    console.error('Error in generate-slides function:', error);
+    return new Response(JSON.stringify({ 
+      error: error.message 
+    }), {
+      status: 500,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
+  }
+});

@@ -10,11 +10,8 @@ export async function generatePresentationOutline(formData: PresentationFormData
   try {
     console.log('Calling Supabase Edge Function for outline generation...');
     
-    const { data, error } = await supabase.functions.invoke('generate-presentation', {
-      body: {
-        type: 'outline',
-        formData: formData
-      }
+    const { data, error } = await supabase.functions.invoke('generate-outline', {
+      body: { formData: formData }
     });
 
     if (error) {
@@ -41,12 +38,8 @@ export async function generateSlideStructure(formData: PresentationFormData, out
   try {
     console.log('Generating slide structure...');
     
-    const { data, error } = await supabase.functions.invoke('generate-presentation', {
-      body: {
-        type: 'slides',
-        formData: formData,
-        outline: outline
-      }
+    const { data, error } = await supabase.functions.invoke('generate-slides', {
+      body: { formData: formData, outline: outline }
     });
 
     if (error) {
@@ -67,12 +60,8 @@ export async function generateB2BEmail(formData: PresentationFormData, outline: 
   try {
     console.log('Generating B2B email...');
     
-    const { data, error } = await supabase.functions.invoke('generate-presentation', {
-      body: {
-        type: 'email',
-        formData: formData,
-        outline: outline
-      }
+    const { data, error } = await supabase.functions.invoke('generate-email', {
+      body: { formData: formData, outline: outline }
     });
 
     if (error) {
@@ -93,12 +82,8 @@ export async function generateSalesStrategy(formData: PresentationFormData, outl
   try {
     console.log('Generating sales strategy...');
     
-    const { data, error } = await supabase.functions.invoke('generate-presentation', {
-      body: {
-        type: 'strategy',
-        formData: formData,
-        outline: outline
-      }
+    const { data, error } = await supabase.functions.invoke('generate-strategy', {
+      body: { formData: formData, outline: outline }
     });
 
     if (error) {
@@ -119,12 +104,8 @@ export async function generatePresentationTools(formData: PresentationFormData, 
   try {
     console.log('Generating presentation tools...');
     
-    const { data, error } = await supabase.functions.invoke('generate-presentation', {
-      body: {
-        type: 'tools',
-        formData: formData,
-        outline: outline
-      }
+    const { data, error } = await supabase.functions.invoke('generate-tools', {
+      body: { formData: formData, outline: outline }
     });
 
     if (error) {
@@ -134,6 +115,28 @@ export async function generatePresentationTools(formData: PresentationFormData, 
     return data || null;
   } catch (error) {
     console.error("Error generating presentation tools:", error);
+    throw error;
+  }
+}
+
+/**
+ * Generates engagement content using Supabase Edge Function
+ */
+export async function generateEngagementContent(formData: PresentationFormData, outline: any): Promise<any> {
+  try {
+    console.log('Generating engagement content...');
+    
+    const { data, error } = await supabase.functions.invoke('generate-engagement', {
+      body: { formData: formData, outline: outline }
+    });
+
+    if (error) {
+      throw new Error(`Failed to generate engagement: ${error.message}`);
+    }
+
+    return data || null;
+  } catch (error) {
+    console.error("Error generating engagement content:", error);
     throw error;
   }
 }
@@ -150,8 +153,11 @@ function parseApiResponse(response: any): PresentationOutline {
       throw new Error('Invalid response: missing or invalid chapters array');
     }
 
+    // Ensure exactly 4 chapters
+    const chapters = response.chapters.slice(0, 4);
+    
     // Add IDs to chapters and points
-    const chaptersWithIds = response.chapters.map((chapter: any) => {
+    const chaptersWithIds = chapters.map((chapter: any) => {
       if (!chapter.title || !chapter.points || !Array.isArray(chapter.points)) {
         throw new Error('Invalid chapter structure');
       }
