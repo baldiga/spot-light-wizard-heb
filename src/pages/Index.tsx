@@ -12,8 +12,10 @@ const Index = () => {
           <span className="text-whiskey">Spotlight</span> - התכונן להרצאה המושלמת
         </h1>
         
-        <p className="text-xl text-gray-700 max-w-lg mx-auto">הכלי היחיד בעברית שעוזר לך להפוך רעיון ומטרות של הרצאה
-למבנה מושלם להרצאה שלך, כולל סגנונות פתיחה, פעילויות אינטראקטיביות, מהלך המכירה מהבמה ואפילו אסטרטגיית שיווק מנצחת</p>
+        <p className="text-xl text-gray-700 max-w-lg mx-auto">הכלי היחיד בעברית שעוזר לך להפוך רעיון ומטרות של הרצאה למבנה מושלם להרצאה שלך, כולל סגנונות פתיחה, פעילויות אינטראקטיביות, מהלך המכירה מהבמה ואפילו אסטרטגיית שיווק מנצחת
+
+
+נוצר ע"י אמיר בלדיגה</p>
         
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 py-8">
           <div className="bg-white p-6 rounded-lg shadow-md border border-gray-100">
