@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -188,39 +189,6 @@ const PresentationSummary = () => {
             </TabsTrigger>
           </TabsList>
 
-          {/* Sales Process Tab */}
-          <TabsContent value="sales-process" className="space-y-6">
-            <Card className="border-whiskey/20" dir="rtl">
-              <CardHeader className="bg-whiskey/5 text-right">
-                <CardTitle className="text-2xl text-gray-dark text-right">מהלך מכירה בהרצאה (10 שלבים)</CardTitle>
-              </CardHeader>
-              <CardContent className="pt-6" dir="rtl">
-                {outline?.salesProcess && outline.salesProcess.length > 0 ? (
-                  <div className="space-y-6 text-right">
-                    {outline.salesProcess
-                      .sort((a, b) => a.order - b.order)
-                      .slice(0, 10)
-                      .map((step, index) => (
-                        <div key={step.id} className="border rounded-lg p-4 bg-white shadow-sm">
-                          <div className="flex items-start justify-end">
-                            <div className="text-right flex-1">
-                              <h3 className="text-lg font-bold text-gray-800 text-right mb-2">{step.title}</h3>
-                              <p className="text-gray-600 text-right">{step.description}</p>
-                            </div>
-                            <div className="w-8 h-8 rounded-full bg-whiskey text-white flex items-center justify-center text-sm font-bold ml-3 flex-shrink-0">
-                              {index + 1}
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                  </div>
-                ) : (
-                  <p className="text-gray-500 text-center text-right">לא נוצר מהלך מכירה עבור הרצאה זו</p>
-                )}
-              </CardContent>
-            </Card>
-          </TabsContent>
-
           {/* Overview Tab */}
           <TabsContent value="overview" className="space-y-6">
             <Card className="border-whiskey/20" dir="rtl">
@@ -350,8 +318,277 @@ const PresentationSummary = () => {
             </Card>
           </TabsContent>
 
-          {/* Keep existing tabs: opening-tools, engagement, email, marketing, toolkit the same */}
-          {/* ... keep existing code (all other tabs) */}
+          {/* Sales Process Tab */}
+          <TabsContent value="sales-process" className="space-y-6">
+            <Card className="border-whiskey/20" dir="rtl">
+              <CardHeader className="bg-whiskey/5 text-right">
+                <CardTitle className="text-2xl text-gray-dark text-right">מהלך מכירה בהרצאה (10 שלבים)</CardTitle>
+              </CardHeader>
+              <CardContent className="pt-6" dir="rtl">
+                {outline?.salesProcess && outline.salesProcess.length > 0 ? (
+                  <div className="space-y-6 text-right">
+                    {outline.salesProcess
+                      .sort((a, b) => a.order - b.order)
+                      .slice(0, 10)
+                      .map((step, index) => (
+                        <div key={step.id} className="border rounded-lg p-4 bg-white shadow-sm">
+                          <div className="flex items-start justify-end">
+                            <div className="text-right flex-1">
+                              <h3 className="text-lg font-bold text-gray-800 text-right mb-2">{step.title}</h3>
+                              <p className="text-gray-600 text-right">{step.description}</p>
+                            </div>
+                            <div className="w-8 h-8 rounded-full bg-whiskey text-white flex items-center justify-center text-sm font-bold ml-3 flex-shrink-0">
+                              {index + 1}
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                  </div>
+                ) : (
+                  <p className="text-gray-500 text-center text-right">לא נוצר מהלך מכירה עבור הרצאה זו</p>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Opening Tools Tab */}
+          <TabsContent value="opening-tools" className="space-y-6">
+            <Card className="border-whiskey/20" dir="rtl">
+              <CardHeader className="bg-whiskey/5 text-right">
+                <CardTitle className="text-2xl text-gray-dark text-right">רעיונות לפתיחת ההרצאה</CardTitle>
+              </CardHeader>
+              <CardContent className="pt-6" dir="rtl">
+                {outline?.openingStyles && outline.openingStyles.length > 0 ? (
+                  <div className="space-y-4 text-right">
+                    {outline.openingStyles.map((style, index) => (
+                      <div key={index} className="border rounded-lg p-4 bg-white shadow-sm">
+                        <div className="flex items-start justify-end">
+                          <div className="text-right flex-1">
+                            <p className="text-gray-700">{style}</p>
+                          </div>
+                          <div className="w-8 h-8 rounded-full bg-whiskey text-white flex items-center justify-center text-sm font-bold ml-3 flex-shrink-0">
+                            {index + 1}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-gray-500 text-center text-right">לא נוצרו רעיונות לפתיחה</p>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Engagement Tab */}
+          <TabsContent value="engagement" className="space-y-6">
+            <Card className="border-whiskey/20" dir="rtl">
+              <CardHeader className="bg-whiskey/5 text-right">
+                <CardTitle className="text-2xl text-gray-dark text-right">כלי מעורבות אינטראקטיביים</CardTitle>
+              </CardHeader>
+              <CardContent className="pt-6" dir="rtl">
+                {engagementData ? (
+                  <div className="space-y-6 text-right">
+                    {engagementData.interactiveActivities && (
+                      <div className="mb-6">
+                        <h3 className="text-xl font-bold text-gray-800 mb-4">פעילויות אינטראקטיביות</h3>
+                        <div className="space-y-3">
+                          {engagementData.interactiveActivities.map((activity, index) => (
+                            <div key={index} className="p-4 bg-blue-50 rounded-lg">
+                              <p className="text-gray-700">{activity}</p>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {engagementData.discussionQuestions && (
+                      <div className="mb-6">
+                        <h3 className="text-xl font-bold text-gray-800 mb-4">שאלות לדיון</h3>
+                        {Object.entries(engagementData.discussionQuestions).map(([chapter, questions]) => (
+                          <div key={chapter} className="mb-4">
+                            <h4 className="font-semibold text-gray-700 mb-2">{chapter}</h4>
+                            <div className="space-y-2">
+                              {questions.map((question, index) => (
+                                <div key={index} className="p-3 bg-green-50 rounded">
+                                  <p className="text-gray-700">{question}</p>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {engagementData.engagementMetrics && (
+                      <div>
+                        <h3 className="text-xl font-bold text-gray-800 mb-4">כלים נוספים למעורבות</h3>
+                        {engagementData.engagementMetrics.pollQuestions && (
+                          <div className="mb-4">
+                            <h4 className="font-semibold text-gray-700 mb-2">שאלות סקר</h4>
+                            <div className="space-y-2">
+                              {engagementData.engagementMetrics.pollQuestions.map((poll, index) => (
+                                <div key={index} className="p-3 bg-yellow-50 rounded">
+                                  <p className="text-gray-700">{poll}</p>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <p className="text-gray-500 text-center text-right">תוכן מעורבות טרם נוצר</p>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Email Tab */}
+          <TabsContent value="email" className="space-y-6">
+            <Card className="border-whiskey/20" dir="rtl">
+              <CardHeader className="bg-whiskey/5 text-right">
+                <CardTitle className="text-2xl text-gray-dark text-right">דוא"ל שיווק B2B</CardTitle>
+              </CardHeader>
+              <CardContent className="pt-6" dir="rtl">
+                {dynamicEmail ? (
+                  <div className="bg-white border rounded-lg p-6 text-right">
+                    <div className="whitespace-pre-line text-gray-700 leading-relaxed">
+                      {dynamicEmail}
+                    </div>
+                  </div>
+                ) : (
+                  <p className="text-gray-500 text-center text-right">דוא"ל השיווק טרם נוצר</p>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Marketing Tab */}
+          <TabsContent value="marketing" className="space-y-6">
+            <Card className="border-whiskey/20" dir="rtl">
+              <CardHeader className="bg-whiskey/5 text-right">
+                <CardTitle className="text-2xl text-gray-dark text-right">אסטרטגיית שיווק ומכירות</CardTitle>
+              </CardHeader>
+              <CardContent className="pt-6" dir="rtl">
+                {dynamicStrategy ? (
+                  <div className="space-y-6 text-right">
+                    {dynamicStrategy.targetAudiences && (
+                      <div className="mb-6">
+                        <h3 className="text-xl font-bold text-gray-800 mb-4">קהלי יעד</h3>
+                        <div className="space-y-3">
+                          {dynamicStrategy.targetAudiences.map((audience, index) => (
+                            <div key={index} className="p-4 bg-blue-50 rounded-lg">
+                              <p className="text-gray-700">{audience}</p>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {dynamicStrategy.marketingChannels && (
+                      <div className="mb-6">
+                        <h3 className="text-xl font-bold text-gray-800 mb-4">ערוצי שיווק</h3>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          {dynamicStrategy.marketingChannels.map((channel, index) => (
+                            <div key={index} className="p-4 bg-green-50 rounded-lg">
+                              <h4 className="font-semibold text-green-800 mb-2">{channel.channel}</h4>
+                              <p className="text-gray-700 text-sm mb-2">{channel.strategy}</p>
+                              <p className="text-gray-600 text-xs"><strong>לוח זמנים:</strong> {channel.timeline}</p>
+                              <p className="text-gray-600 text-xs"><strong>תקציב:</strong> {channel.budget}</p>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {dynamicStrategy.pricingStrategy && (
+                      <div className="mb-6">
+                        <h3 className="text-xl font-bold text-gray-800 mb-4">אסטרטגיית תמחור</h3>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          {Object.entries(dynamicStrategy.pricingStrategy).map(([key, value]) => (
+                            <div key={key} className="p-4 bg-yellow-50 rounded-lg">
+                              <p className="text-gray-700">{value}</p>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <p className="text-gray-500 text-center text-right">אסטרטגיית השיווק טרם נוצרה</p>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Toolkit Tab */}
+          <TabsContent value="toolkit" className="space-y-6">
+            <Card className="border-whiskey/20" dir="rtl">
+              <CardHeader className="bg-whiskey/5 text-right">
+                <CardTitle className="text-2xl text-gray-dark text-right">ארגז כלים למרצה</CardTitle>
+              </CardHeader>
+              <CardContent className="pt-6" dir="rtl">
+                {tools ? (
+                  <div className="space-y-6 text-right">
+                    {tools.openingSuggestions && (
+                      <div className="mb-6">
+                        <h3 className="text-xl font-bold text-gray-800 mb-4">הצעות לפתיחה</h3>
+                        <div className="space-y-4">
+                          {tools.openingSuggestions.map((suggestion, index) => (
+                            <div key={index} className="border rounded-lg p-4 bg-white shadow-sm">
+                              <h4 className="font-semibold text-gray-800 mb-2">{suggestion.type}</h4>
+                              <p className="text-gray-700 mb-3">{suggestion.script}</p>
+                              <div className="p-3 bg-blue-50 rounded">
+                                <p className="text-blue-800 text-sm"><strong>טיפים:</strong> {suggestion.tips}</p>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {tools.interactiveActivities && (
+                      <div className="mb-6">
+                        <h3 className="text-xl font-bold text-gray-800 mb-4">פעילויות אינטראקטיביות</h3>
+                        <div className="space-y-4">
+                          {tools.interactiveActivities.map((activity, index) => (
+                            <div key={index} className="border rounded-lg p-4 bg-white shadow-sm">
+                              <h4 className="font-semibold text-gray-800 mb-2">{activity.activity}</h4>
+                              <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-sm">
+                                <p><strong>זמן:</strong> {activity.timing}</p>
+                                <p><strong>משך:</strong> {activity.duration}</p>
+                                <p><strong>חומרים:</strong> {activity.materials}</p>
+                              </div>
+                              <p className="text-gray-700 mt-3">{activity.instructions}</p>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {tools.troubleshooting && (
+                      <div>
+                        <h3 className="text-xl font-bold text-gray-800 mb-4">פתרון בעיות</h3>
+                        <div className="space-y-4">
+                          {tools.troubleshooting.map((tip, index) => (
+                            <div key={index} className="border rounded-lg p-4 bg-white shadow-sm">
+                              <h4 className="font-semibold text-red-800 mb-2">בעיה: {tip.problem}</h4>
+                              <p className="text-gray-700 mb-2"><strong>פתרון:</strong> {tip.solution}</p>
+                              <p className="text-green-700"><strong>מניעה:</strong> {tip.prevention}</p>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <p className="text-gray-500 text-center text-right">ארגז הכלים טרם נוצר</p>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
 
         </Tabs>
 
