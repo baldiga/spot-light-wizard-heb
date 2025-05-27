@@ -162,6 +162,69 @@ export const usePresentationStore = create<PresentationState>((set, get) => ({
       }
     ];
 
+    const dummySalesProcess = [
+      {
+        id: generateId(),
+        title: "יצירת קשר וחיבור",
+        description: "פתיחה חמה שיוצרת חיבור מיידי עם הקהל ומעוררת עניין בנושא",
+        order: 1
+      },
+      {
+        id: generateId(),
+        title: "זיהוי הבעיה",
+        description: "הצגת האתגר או הבעיה שהקהל מתמודד איתה בצורה שמעוררת זיהוי",
+        order: 2
+      },
+      {
+        id: generateId(),
+        title: "הגברת הכאב",
+        description: "הדגשת המחיר של אי פתירת הבעיה והשלכותיה על העתיד",
+        order: 3
+      },
+      {
+        id: generateId(),
+        title: "הצגת החזון",
+        description: "ציור תמונה של העתיד הרצוי לאחר פתרון הבעיה",
+        order: 4
+      },
+      {
+        id: generateId(),
+        title: "הוכחת יכולת",
+        description: "הצגת הידע, הניסיון והכלים שמוכיחים את היכולת לעזור",
+        order: 5
+      },
+      {
+        id: generateId(),
+        title: "התמודדות עם התנגדויות",
+        description: "מענה טבעי ומוקדם לחששות ולהתנגדויות הנפוצות של הקהל",
+        order: 6
+      },
+      {
+        id: generateId(),
+        title: "הצגת הפתרון",
+        description: "חשיפת המוצר או השירות כתשובה המושלמת לבעיה שהוצגה",
+        order: 7
+      },
+      {
+        id: generateId(),
+        title: "הוכחה חברתית",
+        description: "הצגת עדויות, מקרי הצלחה ולקוחות מרוצים לבניית אמינות",
+        order: 8
+      },
+      {
+        id: generateId(),
+        title: "יצירת דחיפות",
+        description: "הסבר מדוע חשוב לפעול עכשיו ולא לדחות את ההחלטה",
+        order: 9
+      },
+      {
+        id: generateId(),
+        title: "קריאה לפעולה",
+        description: "הנחיה ברורה ומפורטת על השלבים הבאים לעבודה משותפת",
+        order: 10
+      }
+    ];
+
     set({ 
       chapters: dummyChapters,
       outline: {
@@ -193,7 +256,9 @@ export const usePresentationStore = create<PresentationState>((set, get) => ({
           ]
         },
         salesGuide: "פתח בהצגת האתגר, הדגם כיצד המוצר/שירות שלך פותר אותו, הצג עדויות והצלחות קודמות, הסבר את התהליך בפשטות, הדגש את הערך והתועלת, הצג אפשרויות שונות והצעה מיוחדת למשתתפי ההרצאה.",
-        postPresentationPlan: "שליחת מייל תודה עם סיכום הנקודות המרכזיות והצעה לפגישת המשך, שליחת סקר משוב קצר לאיסוף תובנות, מעקב טלפוני אישי עם משתתפים מעוניינים, הצעת חבילת התנסות בשירות במחיר מיוחד"
+        postPresentationPlan: "שליחת מייל תודה עם סיכום הנקודות המרכזיות והצעה לפגישת המשך, שליחת סקר משוב קצר לאיסוף תובנות, מעקב טלפוני אישי עם משתתפים מעוניינים, הצעת חבילת התנסות בשירות במחיר מיוחד",
+        motivationalMessage: "כל הכבוד! יצרת מבנה הרצאה מקצועי ומותאם אישית. ההרצאה שלך בנויה על עקרונות מוכחים של הצגה יעילה ומכירה טבעית. עכשיו הגיע הזמן לסקור את התוכן ולוודא שהוא משקף בדיוק את החזון שלך.",
+        salesProcess: dummySalesProcess
       },
       error: null,
       isLoading: false,

@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -7,7 +8,7 @@ import { useToast } from '@/hooks/use-toast';
 import SpotlightLogo from '@/components/SpotlightLogo';
 import ChapterEditor from '@/components/ChapterEditor';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
-import { AlertTriangle, Loader2 } from 'lucide-react';
+import { AlertTriangle, Loader2, Star } from 'lucide-react';
 
 const OutlineConfirmation = () => {
   const navigate = useNavigate();
@@ -15,6 +16,7 @@ const OutlineConfirmation = () => {
   const { 
     formData, 
     chapters, 
+    outline,
     isLoading, 
     loadingMessage, 
     error, 
@@ -82,6 +84,24 @@ const OutlineConfirmation = () => {
           <h1 className="text-3xl font-bold text-gray-dark">אישור מבנה ההרצאה</h1>
         </div>
 
+        {/* Motivational Message */}
+        <Card className="mb-6 border-whiskey/20 bg-gradient-to-r from-whiskey/5 to-whiskey/10" dir="rtl">
+          <CardContent className="pt-6" dir="rtl">
+            <div className="flex items-start gap-3 text-right">
+              <Star className="w-6 h-6 text-whiskey flex-shrink-0 mt-1" />
+              <div className="text-right">
+                <h3 className="font-bold text-gray-800 mb-2 text-right">
+                  {outline?.motivationalMessage ? 'הודעת עידוד אישית' : 'כל הכבוד! אתה על הדרך הנכונה'}
+                </h3>
+                <p className="text-gray-700 text-right leading-relaxed">
+                  {outline?.motivationalMessage || 
+                   'יצרת מבנה הרצאה מקצועי ומותאם אישית! ההרצאה שלך בנויה על עקרונות מוכחים של הצגה יעילה ומכירה טבעית. עכשיו הגיע הזמן לסקור את התוכן ולוודא שהוא משקף בדיוק את החזון שלך. זכור - הרצאה מצוינת מתחילה במבנה מוצק, ואתה כבר עשית את הצעד החשוב ביותר!'}
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
         {error && (
           <Alert variant="destructive" className="mb-6">
             <AlertTriangle className="h-4 w-4" />
@@ -117,6 +137,32 @@ const OutlineConfirmation = () => {
             />
           ))}
         </div>
+
+        {/* Sales Process Section */}
+        {outline?.salesProcess && outline.salesProcess.length > 0 && (
+          <Card className="mb-8 border-whiskey/20" dir="rtl">
+            <CardHeader className="bg-whiskey/5 text-right">
+              <CardTitle className="text-xl text-gray-dark text-right">מהלך המכירה בהרצאה</CardTitle>
+            </CardHeader>
+            <CardContent className="pt-6" dir="rtl">
+              <div className="space-y-6 text-right">
+                {outline.salesProcess
+                  .sort((a, b) => a.order - b.order)
+                  .map((step, index) => (
+                    <div key={step.id} className="text-right">
+                      <div className="flex items-center mb-3 justify-end">
+                        <h3 className="text-lg font-bold text-gray-800 text-right ml-3">{step.title}</h3>
+                        <div className="w-8 h-8 rounded-full bg-whiskey text-white flex items-center justify-center text-sm font-bold">
+                          {index + 1}
+                        </div>
+                      </div>
+                      <p className="text-gray-600 pr-11 text-right">{step.description}</p>
+                    </div>
+                  ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         <div className="flex justify-between">
           <Button 

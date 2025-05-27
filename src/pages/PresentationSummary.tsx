@@ -9,6 +9,7 @@ import SpotlightLogo from '@/components/SpotlightLogo';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from '@/components/ui/separator';
 import { Copy } from 'lucide-react';
+import jsPDF from 'jspdf';
 
 const PresentationSummary = () => {
   const navigate = useNavigate();
@@ -31,17 +32,122 @@ const PresentationSummary = () => {
     return null;
   }
 
-  const handleExport = (format: string) => {
+  const handleExport = async (format: string) => {
     toast({
       title: "ייצוא בתהליך",
       description: `מייצא את המסמך בפורמט ${format}...`
     });
-    setTimeout(() => {
+
+    try {
+      if (format === 'PDF') {
+        const pdf = new jsPDF();
+        
+        // Configure for RTL Hebrew text
+        pdf.setFont('helvetica');
+        pdf.setFontSize(16);
+        
+        let yPosition = 20;
+        const lineHeight = 10;
+        const pageHeight = pdf.internal.pageSize.height;
+        
+        // Add title
+        pdf.text('סיכום הרצאה', 105, yPosition, { align: 'center' });
+        yPosition += lineHeight * 2;
+        
+        // Add content sections
+        const sections = [
+          { title: 'נושא ההרצאה', content: formData.idea },
+          { title: 'רקע המרצה', content: formData.speakerBackground },
+          { title: 'פרופיל הקהל', content: formData.audienceProfile },
+          { title: 'משך ההרצאה', content: `${formData.duration} דקות` }
+        ];
+        
+        sections.forEach(section => {
+          if (yPosition > pageHeight - 30) {
+            pdf.addPage();
+            yPosition = 20;
+          }
+          
+          pdf.setFontSize(12);
+          pdf.text(section.title + ':', 20, yPosition);
+          yPosition += lineHeight;
+          
+          pdf.setFontSize(10);
+          const splitText = pdf.splitTextToSize(section.content, 170);
+          pdf.text(splitText, 20, yPosition);
+          yPosition += lineHeight * splitText.length + 5;
+        });
+        
+        // Add chapters
+        if (yPosition > pageHeight - 50) {
+          pdf.addPage();
+          yPosition = 20;
+        }
+        
+        pdf.setFontSize(14);
+        pdf.text('מבנה ההרצאה:', 20, yPosition);
+        yPosition += lineHeight * 2;
+        
+        chapters.forEach((chapter, idx) => {
+          if (yPosition > pageHeight - 40) {
+            pdf.addPage();
+            yPosition = 20;
+          }
+          
+          pdf.setFontSize(12);
+          pdf.text(`פרק ${idx + 1}: ${chapter.title}`, 20, yPosition);
+          yPosition += lineHeight;
+          
+          pdf.setFontSize(10);
+          chapter.points.forEach(point => {
+            if (yPosition > pageHeight - 20) {
+              pdf.addPage();
+              yPosition = 20;
+            }
+            const splitPoint = pdf.splitTextToSize(`• ${point.content}`, 160);
+            pdf.text(splitPoint, 30, yPosition);
+            yPosition += lineHeight * splitPoint.length;
+          });
+          yPosition += 5;
+        });
+        
+        pdf.save('presentation-summary.pdf');
+      } else if (format === 'Word') {
+        // For Word export, create a downloadable text file
+        let content = 'סיכום הרצאה\n\n';
+        content += `נושא ההרצאה: ${formData.idea}\n`;
+        content += `רקע המרצה: ${formData.speakerBackground}\n`;
+        content += `פרופיל הקהל: ${formData.audienceProfile}\n`;
+        content += `משך ההרצאה: ${formData.duration} דקות\n\n`;
+        
+        content += 'מבנה ההרצאה:\n';
+        chapters.forEach((chapter, idx) => {
+          content += `\nפרק ${idx + 1}: ${chapter.title}\n`;
+          chapter.points.forEach(point => {
+            content += `• ${point.content}\n`;
+          });
+        });
+        
+        const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'presentation-summary.txt';
+        a.click();
+        URL.revokeObjectURL(url);
+      }
+      
       toast({
         title: "ייצוא הושלם",
         description: `המסמך יוצא בהצלחה בפורמט ${format}`
       });
-    }, 1500);
+    } catch (error) {
+      toast({
+        title: "שגיאה בייצוא",
+        description: "אירעה שגיאה בייצוא המסמך",
+        variant: "destructive"
+      });
+    }
   };
 
   const calculateTimeDistribution = () => {
@@ -74,7 +180,6 @@ const PresentationSummary = () => {
       notes: "בניית אמינות ורלוונטיות",
       timeAllocation: "3"
     },
-    // Add more slides with timeAllocation...
     {
       number: 3,
       headline: "למה אתם כאן?",
@@ -88,7 +193,6 @@ const PresentationSummary = () => {
       visual: "מפת דרכים ויזואלית",
       notes: "הכנת הקהל למסע הלמידה"
     },
-    // פרק ראשון - מורחב
     {
       number: 5,
       headline: `פתיחת ${chapters[0]?.title || "פרק ראשון"}`,
@@ -120,7 +224,6 @@ const PresentationSummary = () => {
       visual: "צילומי מסך/תרשימים",
       notes: "הדגמת יישום בסיסי"
     },
-    // פרק שני - מורחב
     {
       number: 10,
       headline: `מעבר ל${chapters[1]?.title || "פרק שני"}`,
@@ -158,7 +261,6 @@ const PresentationSummary = () => {
       visual: "מקרי מבחן מפורטים",
       notes: "הוכחת יעילות בסביבה אמיתית"
     },
-    // פרק שלישי - מורחב
     {
       number: 16,
       headline: `התחלת ${chapters[2]?.title || "פרק שלישי"}`,
@@ -184,7 +286,6 @@ const PresentationSummary = () => {
       visual: "gráfiques הצלחה ועדויות",
       notes: "הצגת תוצאות מוחשיות"
     },
-    // מעבר למכירה
     {
       number: 20,
       headline: "הצגת הפתרון",
@@ -316,8 +417,9 @@ const PresentationSummary = () => {
         </Card>
 
         <Tabs defaultValue="outline" className="mb-8" dir="rtl">
-          <TabsList className="grid grid-cols-5 mb-6">
+          <TabsList className="grid grid-cols-6 mb-6">
             <TabsTrigger value="outline">מבנה ההרצאה</TabsTrigger>
+            <TabsTrigger value="sales-process">מהלך המכירה</TabsTrigger>
             <TabsTrigger value="opening">פתיחות וחלוקת זמנים</TabsTrigger>
             <TabsTrigger value="interactive">פעילויות ושאלות</TabsTrigger>
             <TabsTrigger value="slides">הצעה למהלך המצגת</TabsTrigger>
@@ -342,6 +444,29 @@ const PresentationSummary = () => {
                   </ul>
                 </div>)}
             </div>
+          </TabsContent>
+
+          <TabsContent value="sales-process" className="bg-white p-6 rounded-lg shadow border border-gray-200" dir="rtl">
+            <h2 className="text-2xl font-bold text-gray-800 mb-6 text-right">מהלך המכירה בהרצאה</h2>
+            {outline.salesProcess && outline.salesProcess.length > 0 ? (
+              <div className="space-y-6 text-right">
+                {outline.salesProcess
+                  .sort((a, b) => a.order - b.order)
+                  .map((step, index) => (
+                    <div key={step.id} className="text-right">
+                      <div className="flex items-center mb-3 justify-end">
+                        <h3 className="text-lg font-bold text-gray-800 text-right ml-3">{step.title}</h3>
+                        <div className="w-8 h-8 rounded-full bg-whiskey text-white flex items-center justify-center text-sm font-bold">
+                          {index + 1}
+                        </div>
+                      </div>
+                      <p className="text-gray-600 pr-11 text-right">{step.description}</p>
+                    </div>
+                  ))}
+              </div>
+            ) : (
+              <p className="text-gray-600 text-center">אין מידע זמין על מהלך המכירה</p>
+            )}
           </TabsContent>
 
           <TabsContent value="opening" className="bg-white p-6 rounded-lg shadow border border-gray-200" dir="rtl">
@@ -499,10 +624,7 @@ const PresentationSummary = () => {
           </TabsContent>
         </Tabs>
 
-        <div className="flex justify-between items-center mb-8" dir="rtl">
-          <Button variant="outline" onClick={() => navigate('/outline-confirmation')} className="border-whiskey text-whiskey hover:bg-whiskey/10">
-            חזרה לעריכת מבנה
-          </Button>
+        <div className="flex justify-center items-center mb-8" dir="rtl">
           <Button onClick={() => navigate('/')} className="bg-whiskey hover:bg-whiskey-dark text-white">
             סיום והתחלה מחדש
           </Button>

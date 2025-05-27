@@ -1,4 +1,3 @@
-
 export interface PresentationFormData {
   idea: string;
   speakerBackground: string;
@@ -60,6 +59,13 @@ export interface DynamicSalesStrategy {
   followUpStrategy: string;
 }
 
+export interface SalesProcessStep {
+  id: string;
+  title: string;
+  description: string;
+  order: number;
+}
+
 export interface PresentationOutline {
   chapters: Chapter[];
   openingStyles: string[];
@@ -73,4 +79,6 @@ export interface PresentationOutline {
   dynamicSlides?: SlideStructure[];
   dynamicB2BEmail?: string;
   dynamicSalesStrategy?: DynamicSalesStrategy;
+  salesProcess?: SalesProcessStep[];
+  motivationalMessage?: string;
 }

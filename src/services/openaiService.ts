@@ -151,6 +151,8 @@ export async function generatePresentationOutline(formData: PresentationFormData
 6. שאלות לדיון לפי חלקים (discussionQuestions)
 7. מדריך מכירות (salesGuide) אם רלוונטי למוצר/שירות
 8. תוכנית למעקב לאחר ההרצאה (postPresentationPlan)
+9. הודעה מוטיבציונית אישית (motivationalMessage) - הודעה מעודדת ומחזקת בעברית
+10. מהלך מכירה בהרצאה (salesProcess) - עד 10 שלבים עם כותרת ותיאור
 
 נדרש מבנה JSON כדלקמן:
 {
@@ -175,7 +177,16 @@ export async function generatePresentationOutline(formData: PresentationFormData
     "חלק 3": ["שאלה 1", "שאלה 2"]
   },
   "salesGuide": "מדריך מכירות",
-  "postPresentationPlan": "תוכנית למעקב"
+  "postPresentationPlan": "תוכנית למעקב",
+  "motivationalMessage": "הודעה מוטיבציונית אישית מעודדת בעברית",
+  "salesProcess": [
+    {
+      "title": "כותרת שלב 1",
+      "description": "תיאור מפורט של השלב",
+      "order": 1
+    },
+    // up to 10 steps...
+  ]
 }
 
 אנא הקפד על פורמט זה בדיוק, כדי שהמערכת תוכל לעבד את התשובה.
@@ -394,6 +405,15 @@ function parseApiResponse(response: string): PresentationOutline {
         content: point.content
       }))
     }));
+
+    // Add IDs to sales process steps if they exist
+    const salesProcessWithIds = parsedResponse.salesProcess ? 
+      parsedResponse.salesProcess.map((step: any, index: number) => ({
+        id: generateId(),
+        title: step.title,
+        description: step.description,
+        order: step.order || index + 1
+      })) : [];
     
     return {
       chapters: chaptersWithIds,
@@ -403,7 +423,9 @@ function parseApiResponse(response: string): PresentationOutline {
       presentationStructure: parsedResponse.presentationStructure || "",
       discussionQuestions: parsedResponse.discussionQuestions || {},
       salesGuide: parsedResponse.salesGuide || "",
-      postPresentationPlan: parsedResponse.postPresentationPlan || ""
+      postPresentationPlan: parsedResponse.postPresentationPlan || "",
+      motivationalMessage: parsedResponse.motivationalMessage || "",
+      salesProcess: salesProcessWithIds
     };
   } catch (error) {
     console.error("Error parsing API response:", error);
