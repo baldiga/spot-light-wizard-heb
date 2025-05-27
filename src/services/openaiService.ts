@@ -1,5 +1,4 @@
-
-import { PresentationFormData, PresentationOutline, Chapter, SlideStructure, DynamicSalesStrategy } from '@/types/presentation';
+import { PresentationFormData, PresentationOutline, Chapter, SlideStructure, DynamicSalesStrategy, PresentationTools } from '@/types/presentation';
 import { generateId } from '@/utils/helpers';
 
 // OpenAI API configuration
@@ -215,6 +214,9 @@ export async function generateDynamicSlideStructure(formData: PresentationFormDa
   try {
     const threadId = await createThread();
     
+    const durationMinutes = parseInt(formData.duration);
+    const estimatedSlides = Math.floor(durationMinutes * 0.8); // Approximately 0.8 slides per minute
+    
     const prompt = `
 על סמך מבנה ההרצאה הבא, אנא צור מבנה מפורט למצגת שקף אחר שקף שמתבסס על המידע הספציפי שהמשתמש הזין:
 
@@ -231,21 +233,52 @@ ${outline.chapters.map((chapter, idx) =>
   `פרק ${idx + 1}: ${chapter.title}\n${chapter.points.map(point => `- ${point.content}`).join('\n')}`
 ).join('\n\n')}
 
-חשוב: 
-1. הקפד לבנות את השקפים כך שיתמודדו עם ההתנגדויות שצוינו: "${formData.commonObjections}"
-2. התאם את התוכן לקהל הספציפי: "${formData.audienceProfile}"
-3. השתמש בחומר שמתבסס על הנושא האמיתי: "${formData.idea}"
-4. הוביל לקריאה לפעולה: "${formData.callToAction}"
+מהלך המכירה:
+${outline.salesProcess?.map((step, idx) => 
+  `${idx + 1}. ${step.title}: ${step.description}`
+).join('\n')}
+
+חשוב מאוד - דרישות מפורטות למבנה השקפים:
+
+1. פתיחה (לפחות 5 שקפים):
+   - שקף ברכה וחיבור
+   - שקף הוק/פתיחה מושכת
+   - שקף סדר יום
+   - שקף הצגה עצמית של המרצה
+   - שקף מעורבות ראשונית עם הקהל
+
+2. כל פרק (6-9 שקפים):
+   - שקף פתיחת הפרק
+   - 2-3 שקפים לכל נקודה מרכזית
+   - שקף סיכום הפרק
+   - שקף שאלות לקהל
+
+3. מהלך מכירה (שקף אחד לכל שלב):
+   - שקף נפרד לכל אחד מ-${outline.salesProcess?.length || 10} השלבים
+
+4. סיום (לפחות 3 שקפים):
+   - שקף סיכום נקודות מפתח
+   - שקף קריאה לפעולה
+   - שקף פרטי יצירת קשר ושאלות
+
+סה"כ כ-${estimatedSlides} שקפים למשך ${formData.duration} דקות.
+
+התאם את התוכן לקהל הספציפי: "${formData.audienceProfile}"
+התמודד עם ההתנגדויות: "${formData.commonObjections}"
+הוביל לקריאה לפעולה: "${formData.callToAction}"
 
 אנא צור מבנה מפורט של שקפים במבנה JSON הבא:
 [
   {
     "number": 1,
+    "section": "פתיחה",
     "headline": "כותרת השקף מותאמת לתוכן הספציפי",
     "content": "תוכן מפורט של השקף המבוסס על המידע שהמשתמש הזין",
-    "visual": "הצעה לאלמנטים ויזואליים מותאמים",
-    "notes": "הערות למרצה מבוססות על הרקע שלו",
-    "timeAllocation": "זמן מוקדש בדקות"
+    "visual": "הצעה מפורטת לאלמנטים ויזואליים",
+    "notes": "הערות מפורטות למרצה מבוססות על הרקע שלו",
+    "timeAllocation": "X דקות",
+    "engagementTip": "טיפ למעורבות הקהל",
+    "transitionPhrase": "משפט מעבר לשקף הבא"
   }
 ]
 
@@ -266,6 +299,107 @@ ${outline.chapters.map((chapter, idx) =>
     }
   } catch (error) {
     console.error("Error generating slide structure:", error);
+    throw error;
+  }
+}
+
+/**
+ * Generates presentation tools and tips
+ */
+export async function generatePresentationTools(formData: PresentationFormData, outline: PresentationOutline): Promise<any> {
+  try {
+    const threadId = await createThread();
+    
+    const prompt = `
+על סמך מבנה ההרצאה ומידע המשתמש, צור כלים מעשיים להצגה:
+
+נושא ההרצאה: "${formData.idea}"
+רקע המרצה: "${formData.speakerBackground}"
+פרופיל הקהל: "${formData.audienceProfile}"
+משך ההרצאה: ${formData.duration} דקות
+
+פרקי ההרצאה:
+${outline.chapters.map((chapter, idx) => 
+  `פרק ${idx + 1}: ${chapter.title}\n${chapter.points.map(point => `- ${point.content}`).join('\n')}`
+).join('\n\n')}
+
+אנא צור JSON עם הכלים הבאים:
+
+{
+  "openingSuggestions": [
+    {
+      "type": "סיפור אישי",
+      "script": "סקריפט מפורט למשך 2-3 דקות",
+      "tips": "טיפים לביצוע"
+    }
+  ],
+  "chapterQuestions": {
+    "פרק 1": [
+      {
+        "question": "שאלה למעורבות הקהל",
+        "purpose": "מטרת השאלה",
+        "expectedAnswers": ["תשובה אפשרית 1", "תשובה אפשרית 2"],
+        "followUp": "איך להמשיך מהתשובות"
+      }
+    ]
+  },
+  "interactiveActivities": [
+    {
+      "activity": "שם הפעילות",
+      "timing": "מתי לבצע",
+      "duration": "כמה זמן",
+      "instructions": "הוראות מפורטות",
+      "materials": "מה צריך להכין"
+    }
+  ],
+  "transitionPhrases": [
+    {
+      "from": "פתיחה",
+      "to": "פרק 1",
+      "phrase": "משפט מעבר חלק"
+    }
+  ],
+  "engagementTechniques": [
+    {
+      "technique": "שם הטכניקה",
+      "when": "מתי להשתמש",
+      "howTo": "איך לבצע",
+      "benefits": "יעילות הטכניקה"
+    }
+  ],
+  "troubleshooting": [
+    {
+      "problem": "בעיה אפשרית",
+      "solution": "פתרון מיידי",
+      "prevention": "איך למנוע מראש"
+    }
+  ],
+  "closingTechniques": [
+    {
+      "type": "סוג סיום",
+      "script": "סקריפט לסיום",
+      "callToAction": "קריאה לפעולה ספציפית"
+    }
+  ]
+}
+
+התאם הכל לתוכן הספציפי שהמשתמש הזין.
+    `;
+
+    await addMessageToThread(threadId, prompt);
+    const response = await runAssistant(threadId);
+    
+    // Parse the JSON response
+    const jsonMatch = response.match(/```json\n([\s\S]*?)\n```/) || response.match(/\{[\s\S]*\}/);
+    
+    if (jsonMatch) {
+      const tools = JSON.parse(jsonMatch[0].includes('```') ? jsonMatch[1] : jsonMatch[0]);
+      return tools;
+    } else {
+      throw new Error("Could not parse presentation tools from assistant response");
+    }
+  } catch (error) {
+    console.error("Error generating presentation tools:", error);
     throw error;
   }
 }

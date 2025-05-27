@@ -5,7 +5,8 @@ import {
   generatePresentationOutline, 
   generateDynamicSlideStructure, 
   generateDynamicB2BEmail, 
-  generateDynamicSalesStrategy 
+  generateDynamicSalesStrategy, 
+  generatePresentationTools 
 } from '@/services/openaiService';
 import { sendToZapierWebhook } from '@/services/webhookService';
 
@@ -14,6 +15,7 @@ interface PresentationState {
   userRegistration: UserRegistrationData | null;
   outline: PresentationOutline | null;
   chapters: Chapter[];
+  presentationTools: any | null;
   isLoading: boolean;
   loadingMessage: string;
   error: string | null;
@@ -21,6 +23,7 @@ interface PresentationState {
   setUserRegistration: (data: UserRegistrationData) => void;
   setOutline: (outline: PresentationOutline) => void;
   setChapters: (chapters: Chapter[]) => void;
+  setPresentationTools: (tools: any) => void;
   updateChapter: (chapterId: string, title: string) => void;
   updatePoint: (chapterId: string, pointId: string, content: string) => void;
   generateOutlineFromAPI: () => Promise<void>;
@@ -32,6 +35,7 @@ export const usePresentationStore = create<PresentationState>((set, get) => ({
   userRegistration: null,
   outline: null,
   chapters: [],
+  presentationTools: null,
   isLoading: false,
   loadingMessage: "יוצרים את מבנה ההרצאה...",
   error: null,
@@ -40,6 +44,7 @@ export const usePresentationStore = create<PresentationState>((set, get) => ({
   setUserRegistration: (data) => set({ userRegistration: data }),
   setOutline: (outline) => set({ outline }),
   setChapters: (chapters) => set({ chapters }),
+  setPresentationTools: (tools) => set({ presentationTools: tools }),
   
   updateChapter: (chapterId, title) => set((state) => ({
     chapters: state.chapters.map(chapter => 
@@ -91,6 +96,10 @@ export const usePresentationStore = create<PresentationState>((set, get) => ({
       set({ loadingMessage: "מכינים אסטרטגיית שיווק מותאמת..." });
       const dynamicSalesStrategy = await generateDynamicSalesStrategy(formData, outlineData);
       
+      // Step 5: Generate presentation tools
+      set({ loadingMessage: "יוצרים כלים מעשיים להצגה..." });
+      const presentationTools = await generatePresentationTools(formData, outlineData);
+      
       // Combine all generated content
       const completeOutline: PresentationOutline = {
         ...outlineData,
@@ -102,6 +111,7 @@ export const usePresentationStore = create<PresentationState>((set, get) => ({
       set({ 
         outline: completeOutline,
         chapters: outlineData.chapters,
+        presentationTools,
         isLoading: false,
         loadingMessage: "יוצרים את מבנה ההרצאה..."
       });

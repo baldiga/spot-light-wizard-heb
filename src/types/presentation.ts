@@ -29,11 +29,14 @@ export interface Chapter {
 
 export interface SlideStructure {
   number: number;
+  section?: string;
   headline: string;
   content: string;
   visual: string;
   notes: string;
   timeAllocation?: string;
+  engagementTip?: string;
+  transitionPhrase?: string;
 }
 
 export interface MarketingChannel {
@@ -81,4 +84,60 @@ export interface PresentationOutline {
   dynamicSalesStrategy?: DynamicSalesStrategy;
   salesProcess?: SalesProcessStep[];
   motivationalMessage?: string;
+}
+
+export interface OpeningSuggestion {
+  type: string;
+  script: string;
+  tips: string;
+}
+
+export interface ChapterQuestion {
+  question: string;
+  purpose: string;
+  expectedAnswers: string[];
+  followUp: string;
+}
+
+export interface InteractiveActivity {
+  activity: string;
+  timing: string;
+  duration: string;
+  instructions: string;
+  materials: string;
+}
+
+export interface TransitionPhrase {
+  from: string;
+  to: string;
+  phrase: string;
+}
+
+export interface EngagementTechnique {
+  technique: string;
+  when: string;
+  howTo: string;
+  benefits: string;
+}
+
+export interface TroubleshootingTip {
+  problem: string;
+  solution: string;
+  prevention: string;
+}
+
+export interface ClosingTechnique {
+  type: string;
+  script: string;
+  callToAction: string;
+}
+
+export interface PresentationTools {
+  openingSuggestions: OpeningSuggestion[];
+  chapterQuestions: Record<string, ChapterQuestion[]>;
+  interactiveActivities: InteractiveActivity[];
+  transitionPhrases: TransitionPhrase[];
+  engagementTechniques: EngagementTechnique[];
+  troubleshooting: TroubleshootingTip[];
+  closingTechniques: ClosingTechnique[];
 }
