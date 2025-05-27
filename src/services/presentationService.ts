@@ -9,11 +9,6 @@ import { generateId } from '@/utils/helpers';
 export async function generatePresentationOutline(formData: PresentationFormData): Promise<PresentationOutline> {
   try {
     console.log('Calling Supabase Edge Function for outline generation...');
-    console.log('Form data:', {
-      idea: formData.idea,
-      duration: formData.duration,
-      audienceProfile: formData.audienceProfile
-    });
     
     const { data, error } = await supabase.functions.invoke('generate-presentation', {
       body: {
@@ -32,11 +27,113 @@ export async function generatePresentationOutline(formData: PresentationFormData
     }
 
     console.log('Successfully generated outline via Edge Function');
-    console.log('Generated outline structure:', Object.keys(data));
-    
     return parseApiResponse(data);
   } catch (error) {
     console.error("Error generating presentation outline:", error);
+    throw error;
+  }
+}
+
+/**
+ * Generates slide structure using Supabase Edge Function
+ */
+export async function generateSlideStructure(formData: PresentationFormData, outline: any): Promise<any[]> {
+  try {
+    console.log('Generating slide structure...');
+    
+    const { data, error } = await supabase.functions.invoke('generate-presentation', {
+      body: {
+        type: 'slides',
+        formData: formData,
+        outline: outline
+      }
+    });
+
+    if (error) {
+      throw new Error(`Failed to generate slides: ${error.message}`);
+    }
+
+    return data.slides || [];
+  } catch (error) {
+    console.error("Error generating slide structure:", error);
+    throw error;
+  }
+}
+
+/**
+ * Generates B2B email using Supabase Edge Function
+ */
+export async function generateB2BEmail(formData: PresentationFormData, outline: any): Promise<string> {
+  try {
+    console.log('Generating B2B email...');
+    
+    const { data, error } = await supabase.functions.invoke('generate-presentation', {
+      body: {
+        type: 'email',
+        formData: formData,
+        outline: outline
+      }
+    });
+
+    if (error) {
+      throw new Error(`Failed to generate email: ${error.message}`);
+    }
+
+    return data || '';
+  } catch (error) {
+    console.error("Error generating B2B email:", error);
+    throw error;
+  }
+}
+
+/**
+ * Generates sales strategy using Supabase Edge Function
+ */
+export async function generateSalesStrategy(formData: PresentationFormData, outline: any): Promise<any> {
+  try {
+    console.log('Generating sales strategy...');
+    
+    const { data, error } = await supabase.functions.invoke('generate-presentation', {
+      body: {
+        type: 'strategy',
+        formData: formData,
+        outline: outline
+      }
+    });
+
+    if (error) {
+      throw new Error(`Failed to generate strategy: ${error.message}`);
+    }
+
+    return data || null;
+  } catch (error) {
+    console.error("Error generating sales strategy:", error);
+    throw error;
+  }
+}
+
+/**
+ * Generates presentation tools using Supabase Edge Function
+ */
+export async function generatePresentationTools(formData: PresentationFormData, outline: any): Promise<any> {
+  try {
+    console.log('Generating presentation tools...');
+    
+    const { data, error } = await supabase.functions.invoke('generate-presentation', {
+      body: {
+        type: 'tools',
+        formData: formData,
+        outline: outline
+      }
+    });
+
+    if (error) {
+      throw new Error(`Failed to generate tools: ${error.message}`);
+    }
+
+    return data || null;
+  } catch (error) {
+    console.error("Error generating presentation tools:", error);
     throw error;
   }
 }
@@ -69,9 +166,9 @@ function parseApiResponse(response: any): PresentationOutline {
       };
     });
 
-    // Add IDs to sales process steps if they exist
+    // Add IDs to sales process steps and ensure exactly 10 steps
     const salesProcessWithIds = response.salesProcess ? 
-      response.salesProcess.map((step: any, index: number) => ({
+      response.salesProcess.slice(0, 10).map((step: any, index: number) => ({
         id: generateId(),
         title: step.title,
         description: step.description,
@@ -91,7 +188,7 @@ function parseApiResponse(response: any): PresentationOutline {
       salesProcess: salesProcessWithIds
     };
 
-    console.log('Successfully parsed outline with', chaptersWithIds.length, 'chapters');
+    console.log('Successfully parsed outline with', chaptersWithIds.length, 'chapters and', salesProcessWithIds.length, 'sales steps');
     return parsedOutline;
   } catch (error) {
     console.error("Error parsing API response:", error);

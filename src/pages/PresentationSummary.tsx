@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Progress } from '@/components/ui/progress';
 import { usePresentationStore } from '@/store/presentationStore';
 import { useToast } from '@/hooks/use-toast';
 import SpotlightLogo from '@/components/SpotlightLogo';
@@ -10,13 +11,33 @@ import {
   Loader2, FileText, Users, Target, Mail, DollarSign, MessageSquare, 
   Presentation, Lightbulb, CheckSquare, Zap, HelpCircle, Megaphone 
 } from 'lucide-react';
-import { generateDynamicSlideStructure, generateDynamicB2BEmail, generateDynamicSalesStrategy, generatePresentationTools } from '@/services/openaiService';
+import { 
+  generateSlideStructure, 
+  generateB2BEmail, 
+  generateSalesStrategy, 
+  generatePresentationTools 
+} from '@/services/presentationService';
+
+interface LoadingStage {
+  name: string;
+  message: string;
+  progress: number;
+}
+
+const loadingStages: LoadingStage[] = [
+  { name: 'outline', message: 'יצירת מבנה ההרצאה הושלמה...', progress: 20 },
+  { name: 'slides', message: 'יוצר מבנה שקפים מפורט...', progress: 40 },
+  { name: 'email', message: 'כותב דוא"ל שיווק B2B...', progress: 60 },
+  { name: 'strategy', message: 'מפתח אסטרטגיית שיווק ומכירות...', progress: 80 },
+  { name: 'tools', message: 'יוצר ארגז כלים למרצה...', progress: 100 }
+];
 
 const PresentationSummary = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { formData, chapters, outline, presentationTools } = usePresentationStore();
-  const [isGenerating, setIsGenerating] = useState(false);
+  const { formData, chapters, outline } = usePresentationStore();
+  const [isGenerating, setIsGenerating] = useState(true);
+  const [currentStage, setCurrentStage] = useState(0);
   const [dynamicSlides, setDynamicSlides] = useState<any[]>([]);
   const [dynamicEmail, setDynamicEmail] = useState<string>('');
   const [dynamicStrategy, setDynamicStrategy] = useState<any>(null);
@@ -33,33 +54,51 @@ const PresentationSummary = () => {
       return;
     }
 
-    generateDynamicContent();
+    generateAllContent();
   }, [formData, outline, navigate, toast]);
 
-  const generateDynamicContent = async () => {
+  const generateAllContent = async () => {
     if (!formData || !outline) return;
     
-    setIsGenerating(true);
     try {
-      const [slides, email, strategy, presentationTools] = await Promise.all([
-        generateDynamicSlideStructure(formData, outline),
-        generateDynamicB2BEmail(formData, outline),
-        generateDynamicSalesStrategy(formData, outline),
-        generatePresentationTools(formData, outline)
-      ]);
-      
+      // Stage 1: Outline already completed
+      setCurrentStage(0);
+      await new Promise(resolve => setTimeout(resolve, 1000));
+
+      // Stage 2: Generate slides
+      setCurrentStage(1);
+      const slides = await generateSlideStructure(formData, outline);
       setDynamicSlides(slides);
+      await new Promise(resolve => setTimeout(resolve, 500));
+
+      // Stage 3: Generate email
+      setCurrentStage(2);
+      const email = await generateB2BEmail(formData, outline);
       setDynamicEmail(email);
+      await new Promise(resolve => setTimeout(resolve, 500));
+
+      // Stage 4: Generate strategy
+      setCurrentStage(3);
+      const strategy = await generateSalesStrategy(formData, outline);
       setDynamicStrategy(strategy);
+      await new Promise(resolve => setTimeout(resolve, 500));
+
+      // Stage 5: Generate tools
+      setCurrentStage(4);
+      const presentationTools = await generatePresentationTools(formData, outline);
       setTools(presentationTools);
+      
+      // Complete loading
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      setIsGenerating(false);
+      
     } catch (error) {
-      console.error('Error generating dynamic content:', error);
+      console.error('Error generating content:', error);
       toast({
         title: "שגיאה ביצירת תוכן",
         description: "אירעה שגיאה ביצירת התוכן הדינמי",
         variant: "destructive",
       });
-    } finally {
       setIsGenerating(false);
     }
   };
@@ -69,15 +108,24 @@ const PresentationSummary = () => {
   };
 
   if (isGenerating) {
+    const stage = loadingStages[currentStage];
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50">
         <SpotlightLogo className="w-16 h-16 mb-6" />
         <h2 className="text-2xl font-bold text-gray-800 mb-4 text-center">
           יוצר תוכן מותאם אישית...
         </h2>
-        <div className="flex items-center gap-2">
-          <Loader2 className="h-8 w-8 animate-spin text-whiskey" />
-          <span className="text-whiskey font-medium">אנא המתן...</span>
+        <div className="w-80 mb-6">
+          <Progress value={stage.progress} className="h-3" />
+          <p className="text-center mt-2 text-gray-600">{stage.progress}% הושלם</p>
+        </div>
+        <div className="flex items-center gap-2 mb-4">
+          <Loader2 className="h-6 w-6 animate-spin text-whiskey" />
+          <span className="text-whiskey font-medium">{stage.message}</span>
+        </div>
+        <div className="text-center text-gray-500 text-sm">
+          <p>יוצר תוכן מותאם אישית עבור: {formData?.idea}</p>
+          <p className="mt-1">אנא המתן, התהליך יכול לקחת מספר דקות...</p>
         </div>
       </div>
     );
@@ -135,7 +183,7 @@ const PresentationSummary = () => {
           <TabsContent value="sales-process" className="space-y-6">
             <Card className="border-whiskey/20" dir="rtl">
               <CardHeader className="bg-whiskey/5 text-right">
-                <CardTitle className="text-2xl text-gray-dark text-right">מהלך מכירה בהרצאה</CardTitle>
+                <CardTitle className="text-2xl text-gray-dark text-right">מהלך מכירה בהרצאה (10 שלבים)</CardTitle>
               </CardHeader>
               <CardContent className="pt-6" dir="rtl">
                 {outline?.salesProcess && outline.salesProcess.length > 0 ? (

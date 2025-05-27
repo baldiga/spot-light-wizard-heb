@@ -1,5 +1,6 @@
+
 import { create } from 'zustand';
-import { PresentationFormData, PresentationOutline, Chapter, UserRegistrationData, SlideStructure, DynamicSalesStrategy } from '@/types/presentation';
+import { PresentationFormData, PresentationOutline, Chapter, UserRegistrationData } from '@/types/presentation';
 import { generateId } from '@/utils/helpers';
 import { generatePresentationOutline } from '@/services/presentationService';
 import { sendToZapierWebhook } from '@/services/webhookService';
@@ -9,7 +10,6 @@ interface PresentationState {
   userRegistration: UserRegistrationData | null;
   outline: PresentationOutline | null;
   chapters: Chapter[];
-  presentationTools: any | null;
   isLoading: boolean;
   loadingMessage: string;
   error: string | null;
@@ -17,24 +17,17 @@ interface PresentationState {
   setUserRegistration: (data: UserRegistrationData) => void;
   setOutline: (outline: PresentationOutline) => void;
   setChapters: (chapters: Chapter[]) => void;
-  setPresentationTools: (tools: any) => void;
   updateChapter: (chapterId: string, title: string) => void;
   updatePoint: (chapterId: string, pointId: string, content: string) => void;
   generateOutlineFromAPI: () => Promise<void>;
   generateDummyOutline: () => void;
 }
 
-/**
- * Delays execution for the specified number of milliseconds
- */
-const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
-
 export const usePresentationStore = create<PresentationState>((set, get) => ({
   formData: null,
   userRegistration: null,
   outline: null,
   chapters: [],
-  presentationTools: null,
   isLoading: false,
   loadingMessage: "יוצרים את מבנה ההרצאה...",
   error: null,
@@ -43,7 +36,6 @@ export const usePresentationStore = create<PresentationState>((set, get) => ({
   setUserRegistration: (data) => set({ userRegistration: data }),
   setOutline: (outline) => set({ outline }),
   setChapters: (chapters) => set({ chapters }),
-  setPresentationTools: (tools) => set({ presentationTools: tools }),
   
   updateChapter: (chapterId, title) => set((state) => ({
     chapters: state.chapters.map(chapter => 
@@ -87,6 +79,12 @@ export const usePresentationStore = create<PresentationState>((set, get) => ({
       const outlineData = await generatePresentationOutline(formData);
       
       console.log('Outline generated successfully with', outlineData.chapters.length, 'chapters');
+      console.log('Sales process steps:', outlineData.salesProcess?.length);
+      
+      // Validate 10 sales process steps
+      if (outlineData.salesProcess && outlineData.salesProcess.length !== 10) {
+        console.warn(`Expected 10 sales process steps, got ${outlineData.salesProcess.length}`);
+      }
       
       // Validate that we got real content, not dummy content
       const hasPersonalizedContent = outlineData.chapters.some(chapter => 
@@ -177,69 +175,13 @@ export const usePresentationStore = create<PresentationState>((set, get) => ({
       }
     ];
 
-    const dummySalesProcess = [
-      {
-        id: generateId(),
-        title: "יצירת קשר וחיבור",
-        description: "פתיחה חמה שיוצרת חיבור מיידי עם הקהל ומעוררת עניין בנושא",
-        order: 1
-      },
-      {
-        id: generateId(),
-        title: "זיהוי הבעיה",
-        description: "הצגת האתגר או הבעיה שהקהל מתמודד איתה בצורה שמעוררת זיהוי",
-        order: 2
-      },
-      {
-        id: generateId(),
-        title: "הגברת הכאב",
-        description: "הדגשת המחיר של אי פתירת הבעיה והשלכותיה על העתיד",
-        order: 3
-      },
-      {
-        id: generateId(),
-        title: "הצגת החזון",
-        description: "ציור תמונה של העתיד הרצוי לאחר פתרון הבעיה",
-        order: 4
-      },
-      {
-        id: generateId(),
-        title: "הוכחת יכולת",
-        description: "הצגת הידע, הניסיון והכלים שמוכיחים את היכולת לעזור",
-        order: 5
-      },
-      {
-        id: generateId(),
-        title: "התמודדות עם התנגדויות",
-        description: "מענה טבעי ומוקדם לחששות ולהתנגדויות הנפוצות של הקהל",
-        order: 6
-      },
-      {
-        id: generateId(),
-        title: "הצגת הפתרון",
-        description: "חשיפת המוצר או השירות כתשובה המושלמת לבעיה שהוצגה",
-        order: 7
-      },
-      {
-        id: generateId(),
-        title: "הוכחה חברתית",
-        description: "הצגת עדויות, מקרי הצלחה ולקוחות מרוצים לבניית אמינות",
-        order: 8
-      },
-      {
-        id: generateId(),
-        title: "יצירת דחיפות",
-        description: "הסבר מדוע חשוב לפעול עכשיו ולא לדחות את ההחלטה",
-        order: 9
-      },
-      {
-        id: generateId(),
-        title: "קריאה לפעולה",
-        description: "הנחיה ברורה ומפורטת על השלבים הבאים לעבודה משותפת",
-        order: 10
-      }
-    ];
-
+    const dummySalesProcess = Array.from({ length: 10 }, (_, index) => ({
+      id: generateId(),
+      title: `שלב מכירה ${index + 1}`,
+      description: `תיאור מפורט לשלב מכירה מספר ${index + 1}`,
+      order: index + 1
+    }));
+    
     set({ 
       chapters: dummyChapters,
       outline: {

@@ -86,6 +86,7 @@ async function generateOutlineContent(formData: PresentationFormData): Promise<a
 4. כל פרק חייב להתקשר ישירות לנושא הספציפי
 5. השתמש במושגים ובדוגמאות מהתחום הרלוונטי
 6. התייחס לחששות הספציפיים: "${formData.commonObjections}"
+7. חובה ליצור בדיוק 10 שלבי מכירה - לא פחות ולא יותר!
 
 החזר JSON תקין במבנה הבא:
 {
@@ -119,15 +120,237 @@ async function generateOutlineContent(formData: PresentationFormData): Promise<a
   "motivationalMessage": "הודעה מעודדת שמתייחסת לרקע ${formData.speakerBackground} ולנושא ${formData.idea}",
   "salesProcess": [
     {
-      "title": "שלב מכירה מותאם ל${formData.serviceOrProduct}",
+      "title": "שלב מכירה ראשון מותאם ל${formData.serviceOrProduct}",
       "description": "תיאור ספציפי לנושא ${formData.idea}",
       "order": 1
+    },
+    {
+      "title": "שלב מכירה שני",
+      "description": "תיאור שני",
+      "order": 2
+    },
+    {
+      "title": "שלב מכירה שלישי",
+      "description": "תיאור שלישי",
+      "order": 3
+    },
+    {
+      "title": "שלב מכירה רביעי",
+      "description": "תיאור רביעי",
+      "order": 4
+    },
+    {
+      "title": "שלב מכירה חמישי",
+      "description": "תיאור חמישי",
+      "order": 5
+    },
+    {
+      "title": "שלב מכירה שישי",
+      "description": "תיאור שישי",
+      "order": 6
+    },
+    {
+      "title": "שלב מכירה שביעי",
+      "description": "תיאור שביעי",
+      "order": 7
+    },
+    {
+      "title": "שלב מכירה שמיני",
+      "description": "תיאור שמיני",
+      "order": 8
+    },
+    {
+      "title": "שלב מכירה תשיעי",
+      "description": "תיאור תשיעי",
+      "order": 9
+    },
+    {
+      "title": "שלב מכירה עשירי",
+      "description": "תיאור עשירי - סיום וקריאה לפעולה",
+      "order": 10
     }
   ]
 }
 
 חשוב: כל התוכן חייב להיות ספציפי לנושא "${formData.idea}" ולא גנרי!
+חובה: בדיוק 10 שלבי מכירה ברשימת salesProcess!
   `;
+
+  return await callOpenAI(prompt);
+}
+
+async function generateSlidesContent(formData: PresentationFormData, outline: any): Promise<any> {
+  const prompt = `
+אתה מומחה ליצירת מצגות מקצועיות. צור מבנה שקפים מפורט ומותאם אישית.
+
+פרטי ההרצאה:
+- נושא: "${sanitizeText(formData.idea)}"
+- רקע המרצה: "${sanitizeText(formData.speakerBackground)}"
+- קהל יעד: "${sanitizeText(formData.audienceProfile)}"
+- משך: ${formData.duration} דקות
+- מוצר/שירות: "${sanitizeText(formData.serviceOrProduct)}"
+
+מבנה ההרצאה:
+${JSON.stringify(outline.chapters, null, 2)}
+
+צור מבנה שקפים מפורט ומותאם:
+
+{
+  "slides": [
+    {
+      "number": 1,
+      "section": "פתיחה",
+      "headline": "כותרת ספציפית לנושא ${formData.idea}",
+      "content": "תוכן מפורט לשקף זה שמתקשר לנושא ${formData.idea} ולקהל ${formData.audienceProfile}",
+      "visual": "תיאור מפורט של האלמנטים הויזואליים הרלוונטיים",
+      "notes": "הערות מפורטות למרצה לשקף זה",
+      "timeAllocation": "2 דקות",
+      "engagementTip": "טיפ ספציפי למעורבות הקהל בשקף זה",
+      "transitionPhrase": "משפט מעבר לשקף הבא"
+    }
+  ]
+}
+
+צור לפחות 15-20 שקפים מפורטים המכסים את כל ההרצאה.
+`;
+
+  return await callOpenAI(prompt);
+}
+
+async function generateEmailContent(formData: PresentationFormData, outline: any): Promise<any> {
+  const prompt = `
+אתה מומחה שיווק B2B. צור דוא"ל מותאם אישית לקידום ההרצאה.
+
+פרטי ההרצאה:
+- נושא: "${sanitizeText(formData.idea)}"
+- רקע המרצה: "${sanitizeText(formData.speakerBackground)}"
+- קהל יעד: "${sanitizeText(formData.audienceProfile)}"
+- מוצר/שירות: "${sanitizeText(formData.serviceOrProduct)}"
+- קריאה לפעולה: "${sanitizeText(formData.callToAction)}"
+
+צור דוא"ל B2B מקצועי ומעורר עניין:
+
+{
+  "emailContent": "תוכן דוא"ל מלא ומפורט שכולל נושא, פתיחה מעוררת עניין, תיאור ההרצאה, היתרונות לקהל היעד, קריאה לפעולה ברורה וחתימה מקצועית"
+}
+
+הדוא"ל חייב להיות ספציפי לנושא "${formData.idea}" ומותאם לקהל "${formData.audienceProfile}".
+`;
+
+  const result = await callOpenAI(prompt);
+  return result.emailContent || result;
+}
+
+async function generateStrategyContent(formData: PresentationFormData, outline: any): Promise<any> {
+  const prompt = `
+אתה יועץ שיווק ומכירות מומחה. צור אסטרטגיית שיווק ומכירות מקיפה.
+
+פרטי ההרצאה:
+- נושא: "${sanitizeText(formData.idea)}"
+- רקע המרצה: "${sanitizeText(formData.speakerBackground)}"
+- קהל יעד: "${sanitizeText(formData.audienceProfile)}"
+- מוצר/שירות: "${sanitizeText(formData.serviceOrProduct)}"
+
+צור אסטרטגיה מקיפה:
+
+{
+  "targetAudiences": ["קהל יעד ראשון ספציפי", "קהל יעד שני ספציפי", "קהל יעד שלישי ספציפי"],
+  "marketingChannels": [
+    {
+      "channel": "שם הערוץ",
+      "strategy": "אסטרטגיה ספציפית לערוץ זה",
+      "timeline": "ציר זמן מפורט",
+      "budget": "הערכת תקציב"
+    }
+  ],
+  "pricingStrategy": {
+    "basicTicket": "מחיר כרטיס בסיסי עם הנמקה",
+    "vipTicket": "מחיר כרטיס VIP עם הנמקה",
+    "premiumTicket": "מחיר כרטיס פרימיום עם הנמקה",
+    "corporatePackage": "מחיר חבילה ארגונית עם הנמקה"
+  },
+  "collaborationOpportunities": ["הזדמנות שיתוף פעולה ראשונה", "הזדמנות שיתוף פעולה שנייה"],
+  "contentMarketing": ["רעיון תוכן ראשון", "רעיון תוכן שני"],
+  "followUpStrategy": "אסטרטגיית מעקב מפורטת אחרי ההרצאה"
+}
+
+כל התוכן חייב להיות ספציפי לנושא "${formData.idea}" ומותאם לתחום.
+`;
+
+  return await callOpenAI(prompt);
+}
+
+async function generateToolsContent(formData: PresentationFormData, outline: any): Promise<any> {
+  const prompt = `
+אתה מומחה הדרכות וכלים למרצים. צור ארגז כלים מקיף למרצה.
+
+פרטי ההרצאה:
+- נושא: "${sanitizeText(formData.idea)}"
+- רקע המרצה: "${sanitizeText(formData.speakerBackground)}"
+- קהל יעד: "${sanitizeText(formData.audienceProfile)}"
+
+צור ארגז כלים מקיף:
+
+{
+  "openingSuggestions": [
+    {
+      "type": "סוג פתיחה ראשון",
+      "script": "סקריפט מפורט לפתיחה זו",
+      "tips": "טיפים לביצוע מוצלח"
+    }
+  ],
+  "chapterQuestions": {
+    "פרק 1": [
+      {
+        "question": "שאלה מעוררת מחשבה",
+        "purpose": "מטרת השאלה",
+        "expectedAnswers": ["תשובה אפשרית ראשונה", "תשובה אפשרית שנייה"],
+        "followUp": "איך להמשיך אחרי התשובות"
+      }
+    ]
+  },
+  "interactiveActivities": [
+    {
+      "activity": "שם הפעילות",
+      "timing": "מתי לבצע",
+      "duration": "כמה זמן",
+      "instructions": "הוראות מפורטות",
+      "materials": "חומרים נדרשים"
+    }
+  ],
+  "transitionPhrases": [
+    {
+      "from": "מנושא X",
+      "to": "לנושא Y",
+      "phrase": "משפט מעבר חלק ומקצועי"
+    }
+  ],
+  "engagementTechniques": [
+    {
+      "technique": "שם הטכניקה",
+      "when": "מתי להשתמש",
+      "howTo": "איך לבצע",
+      "benefits": "מה התועלת"
+    }
+  ],
+  "troubleshooting": [
+    {
+      "problem": "בעיה שעלולה להתרחש",
+      "solution": "פתרון מיידי",
+      "prevention": "איך למנוע מראש"
+    }
+  ],
+  "closingTechniques": [
+    {
+      "type": "סוג סיום",
+      "script": "סקריפט לסיום",
+      "callToAction": "קריאה לפעולה ספציפית"
+    }
+  ]
+}
+
+כל הכלים חייבים להיות ספציפיים לנושא "${formData.idea}" ומותאמים לקהל.
+`;
 
   return await callOpenAI(prompt);
 }
@@ -193,6 +416,18 @@ serve(async (req) => {
     switch (type) {
       case 'outline':
         result = await generateOutlineContent(formData);
+        break;
+      case 'slides':
+        result = await generateSlidesContent(formData, outline);
+        break;
+      case 'email':
+        result = await generateEmailContent(formData, outline);
+        break;
+      case 'strategy':
+        result = await generateStrategyContent(formData, outline);
+        break;
+      case 'tools':
+        result = await generateToolsContent(formData, outline);
         break;
       default:
         throw new Error(`Unsupported generation type: ${type}`);
