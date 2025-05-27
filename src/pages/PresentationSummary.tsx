@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -66,7 +65,7 @@ const PresentationSummary = () => {
       // Stage 2: Generate slides
       setCurrentStage(1);
       console.log('🎯 Starting slides generation...');
-      const slidesResponse = await generateSlideStructure(formData, outline);
+      const slidesResponse: any = await generateSlideStructure(formData, outline);
       console.log('🎯 Slides response:', slidesResponse);
       
       // Handle slides data with proper typing
@@ -75,7 +74,7 @@ const PresentationSummary = () => {
       if (Array.isArray(slidesResponse)) {
         slidesToSet = slidesResponse;
         console.log('✅ Set slides (direct array):', slidesToSet.length, 'slides');
-      } else if (slidesResponse && typeof slidesResponse === 'object' && 'slides' in slidesResponse && Array.isArray(slidesResponse.slides)) {
+      } else if (slidesResponse && typeof slidesResponse === 'object' && slidesResponse.slides && Array.isArray(slidesResponse.slides)) {
         slidesToSet = slidesResponse.slides;
         console.log('✅ Set slides (from object):', slidesToSet.length, 'slides');
       } else {
