@@ -398,7 +398,7 @@ export async function generateDynamicSlideStructure(formData: PresentationFormDa
     const threadId = await createThread();
     
     const durationMinutes = parseInt(formData.duration);
-    const estimatedSlides = Math.min(Math.floor(durationMinutes * 0.8), 25);
+    const estimatedSlides = Math.min(Math.floor(durationMinutes * 0.8), 35);
     
     const prompt = `
 אתה מומחה ליצירת מצגות מותאמות אישית. עליך ליצור מבנה שקפים מפורט המשקף בדיוק את המומחיות של המרצה ואת הצרכים של הקהל.
