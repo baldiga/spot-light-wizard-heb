@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -20,7 +21,7 @@ const OutlineConfirmation = () => {
     loadingMessage, 
     loadingProgress,
     error, 
-    generateOutlineFromAPI, 
+    generateBasicOutline, 
     generateDummyOutline,
     resetError
   } = usePresentationStore();
@@ -49,16 +50,16 @@ const OutlineConfirmation = () => {
 
     // Only generate outline if we haven't attempted yet and don't have chapters
     if (!apiAttempted && chapters.length === 0 && !isLoading) {
-      console.log('Starting outline generation...');
+      console.log('Starting basic outline generation...');
       generateOutline();
     }
-  }, [formData, navigate, toast, generateOutlineFromAPI, apiAttempted, chapters.length, isLoading]);
+  }, [formData, navigate, toast, generateBasicOutline, apiAttempted, chapters.length, isLoading]);
 
   const generateOutline = async () => {
     console.log('generateOutline called, setting apiAttempted to true');
     setApiAttempted(true);
     resetError(); // Clear any previous errors
-    await generateOutlineFromAPI();
+    await generateBasicOutline();
   };
 
   const handleConfirm = () => {
@@ -70,7 +71,7 @@ const OutlineConfirmation = () => {
     console.log('Retrying outline generation, attempt:', retryCount + 1);
     setRetryCount(prev => prev + 1);
     resetError();
-    await generateOutlineFromAPI();
+    await generateBasicOutline();
   };
 
   const handleFallbackToDummy = () => {
@@ -98,7 +99,7 @@ const OutlineConfirmation = () => {
           {loadingMessage}
         </h2>
         <p className="text-gray-600 mb-6 text-center max-w-lg">
-          המערכת שלנו יוצרת עבורך תוכן שיווקי מקצועי ומותאם אישית
+          המערכת שלנו יוצרת עבורך מבנה הרצאה בסיסי
         </p>
         <div className="w-64 mb-4">
           <div className="bg-gray-200 rounded-full h-3">
@@ -113,7 +114,7 @@ const OutlineConfirmation = () => {
         </div>
         <div className="flex items-center gap-2">
           <Loader2 className="h-8 w-8 animate-spin text-whiskey" />
-          <span className="text-whiskey font-medium">יוצרים תוכן מקצועי...</span>
+          <span className="text-whiskey font-medium">יוצרים מבנה הרצאה...</span>
         </div>
         {retryCount > 0 && (
           <p className="text-sm text-gray-500 mt-4">
@@ -202,32 +203,6 @@ const OutlineConfirmation = () => {
                   />
                 ))}
               </div>
-            )}
-
-            {/* Sales Process Section */}
-            {outline?.salesProcess && outline.salesProcess.length > 0 && (
-              <Card className="mb-8 border-whiskey/20" dir="rtl">
-                <CardHeader className="bg-whiskey/5 text-right">
-                  <CardTitle className="text-xl text-gray-dark text-right">מהלך המכירה בהרצאה</CardTitle>
-                </CardHeader>
-                <CardContent className="pt-6" dir="rtl">
-                  <div className="space-y-6 text-right">
-                    {outline.salesProcess
-                      .sort((a, b) => a.order - b.order)
-                      .map((step, index) => (
-                        <div key={step.id} className="text-right">
-                          <div className="flex items-center mb-3 justify-start">
-                            <div className="w-8 h-8 rounded-full bg-whiskey text-white flex items-center justify-center text-sm font-bold ml-3">
-                              {index + 1}
-                            </div>
-                            <h3 className="text-lg font-bold text-gray-800 text-right">{step.title}</h3>
-                          </div>
-                          <p className="text-gray-600 pr-11 text-right">{step.description}</p>
-                        </div>
-                      ))}
-                  </div>
-                </CardContent>
-              </Card>
             )}
           </>
         )}
