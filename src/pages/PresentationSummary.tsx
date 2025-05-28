@@ -10,55 +10,50 @@ import SpotlightLogo from '@/components/SpotlightLogo';
 import ExportDialog from '@/components/ExportDialog';
 import { Loader2, FileText, Users, Target, DollarSign, Presentation, Lightbulb, Home, Mail } from 'lucide-react';
 import { generateSlideStructure, generateSalesStrategy, generateEngagementContent, generateSocialMediaContent, generateEmailContent, generateMarketingPlanContent } from '@/services/presentationService';
-
 interface LoadingStage {
   name: string;
   message: string;
   progress: number;
 }
-
-const loadingStages: LoadingStage[] = [
-  {
-    name: 'outline',
-    message: 'יצירת מבנה ההרצאה הושלמה...',
-    progress: 15
-  },
-  {
-    name: 'slides',
-    message: 'יוצר מבנה שקפים מפורט...',
-    progress: 30
-  },
-  {
-    name: 'engagement',
-    message: 'יוצר תוכן מעורבות אינטראקטיבי...',
-    progress: 45
-  },
-  {
-    name: 'strategy',
-    message: 'מפתח אסטרטגיית שיווק ומכירות...',
-    progress: 60
-  },
-  {
-    name: 'social-media',
-    message: 'יוצר תוכן לרשתות חברתיות...',
-    progress: 75
-  },
-  {
-    name: 'email-content',
-    message: 'יוצר אימייל שיווקי...',
-    progress: 85
-  },
-  {
-    name: 'marketing-plan',
-    message: 'יוצר אסטרטגיית שיווק מותאמת... 95% הושלם',
-    progress: 100
-  }
-];
-
+const loadingStages: LoadingStage[] = [{
+  name: 'outline',
+  message: 'יצירת מבנה ההרצאה הושלמה...',
+  progress: 15
+}, {
+  name: 'slides',
+  message: 'יוצר מבנה שקפים מפורט...',
+  progress: 30
+}, {
+  name: 'engagement',
+  message: 'יוצר תוכן מעורבות אינטראקטיבי...',
+  progress: 45
+}, {
+  name: 'strategy',
+  message: 'מפתח אסטרטגיית שיווק ומכירות...',
+  progress: 60
+}, {
+  name: 'social-media',
+  message: 'יוצר תוכן לרשתות חברתיות...',
+  progress: 75
+}, {
+  name: 'email-content',
+  message: 'יוצר אימייל שיווקי...',
+  progress: 85
+}, {
+  name: 'marketing-plan',
+  message: 'יוצר אסטרטגיית שיווק מותאמת... 95% הושלם',
+  progress: 100
+}];
 const PresentationSummary = () => {
   const navigate = useNavigate();
-  const { toast } = useToast();
-  const { formData, chapters, outline } = usePresentationStore();
+  const {
+    toast
+  } = useToast();
+  const {
+    formData,
+    chapters,
+    outline
+  } = usePresentationStore();
   const [isGenerating, setIsGenerating] = useState(true);
   const [currentStage, setCurrentStage] = useState(0);
   const [dynamicSlides, setDynamicSlides] = useState<any[]>([]);
@@ -69,7 +64,6 @@ const PresentationSummary = () => {
   const [marketingPlanContent, setMarketingPlanContent] = useState<any>(null);
   const [activeTab, setActiveTab] = useState("main");
   const [showExportDialog, setShowExportDialog] = useState(false);
-
   useEffect(() => {
     if (!formData || !outline) {
       toast({
@@ -82,7 +76,6 @@ const PresentationSummary = () => {
     }
     generateAllContent();
   }, [formData, outline, navigate, toast]);
-
   const generateAllContent = async () => {
     if (!formData || !outline) return;
     try {
@@ -163,19 +156,15 @@ const PresentationSummary = () => {
       setIsGenerating(false);
     }
   };
-
   const handleRestart = () => {
     navigate('/');
   };
-
   const navigateToOverview = () => {
     setActiveTab("overview");
   };
-
   const handleExportClick = () => {
     setShowExportDialog(true);
   };
-
   const getSummaryData = () => {
     return {
       formData,
@@ -189,11 +178,9 @@ const PresentationSummary = () => {
       marketingPlanContent
     };
   };
-
   if (isGenerating) {
     const stage = loadingStages[currentStage];
-    return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50">
+    return <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50">
         <SpotlightLogo className="w-16 h-16 mb-6" />
         <h2 className="text-2xl font-bold text-gray-800 mb-4 text-center">
           יוצר תוכן מותאם אישית...
@@ -210,12 +197,9 @@ const PresentationSummary = () => {
           <p>יוצר תוכן מותאם אישית עבור: {formData?.idea}</p>
           <p className="mt-1">אנא המתן, התהליך יכול לקחת מספר דקות...</p>
         </div>
-      </div>
-    );
+      </div>;
   }
-
-  return (
-    <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+  return <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-6xl mx-auto">
         <div className="flex items-center justify-center mb-8">
           <SpotlightLogo className="w-12 h-12 mr-3" />
@@ -263,16 +247,24 @@ const PresentationSummary = () => {
               <CardContent className="pt-6" dir="rtl">
                 <div className="space-y-6 text-right">
                   <div>
-                    <h3 className="text-lg font-semibold text-gray-800 mb-2">נושא ההרצאה</h3>
-                    <p className="text-gray-700">{formData?.idea}</p>
+                    <h3 className="text-lg font-semibold text-gray-800 mb-2">זו הסקירה המקיפה והטובה ביותר שיכולתי לייצר עבורך
+אני ממליץ בחום רב, במידה ואהבת את הסיכום שיצרה המערכת,
+להשתמש בכפתור הכחול בתחתית הדף ולייצא את כלל המידע למייל. אחרי שהדף הזה יסגר המידע הזה לא ישמר</h3>
+                    
                   </div>
                   <div>
-                    <h3 className="text-lg font-semibold text-gray-800 mb-2">קהל יעד</h3>
-                    <p className="text-gray-700">{formData?.audienceProfile}</p>
+                    <h3 className="text-lg font-semibold text-gray-800 mb-2">אם יש לך שאלות, התייחסויות, הצעות לשיפור -
+אפשר ליצור קשר מהיר באמצעות הכפתור הירוק בתחתית הדף</h3>
+                    
                   </div>
                   <div>
-                    <h3 className="text-lg font-semibold text-gray-800 mb-2">משך ההרצאה</h3>
-                    <p className="text-gray-700">{formData?.duration} דקות</p>
+                    <h3 className="text-lg font-semibold text-gray-800 mb-2">והכי חשוב: עצם הפירוק לגורמים של ההרצאה שלך זה רק הצעד הראשון
+אני מצפה לקבל בקרוב את ההזמנה לכנס/סדנה/הרצאה שלך 
+
+
+ואם יש בך אש להוציא את זה לפועל אבל לא ברור לך איך
+אפשר ליצור איתי קשר לקבל ייעוץ ראשוני ללא עלות באמצעות הכפתור הירוק בתחתית הדף</h3>
+                    
                   </div>
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-8">
                     <Button onClick={() => setActiveTab("overview")} variant="outline" className="h-20">
@@ -312,8 +304,7 @@ const PresentationSummary = () => {
                 <CardTitle className="text-2xl text-gray-dark text-right">מבט כללי על ההרצאה</CardTitle>
               </CardHeader>
               <CardContent className="pt-6" dir="rtl">
-                {outline && (
-                  <div className="space-y-6 text-right">
+                {outline && <div className="space-y-6 text-right">
                     <div>
                       <h3 className="text-lg font-semibold text-gray-800 mb-4">מבנה ההרצאה</h3>
                       <p className="text-gray-700 mb-4">{outline.presentationStructure}</p>
@@ -326,8 +317,7 @@ const PresentationSummary = () => {
                       <h3 className="text-lg font-semibold text-gray-800 mb-4">הודעה מעודדת</h3>
                       <p className="text-gray-700">{outline.motivationalMessage}</p>
                     </div>
-                  </div>
-                )}
+                  </div>}
               </CardContent>
             </Card>
           </TabsContent>
@@ -339,20 +329,14 @@ const PresentationSummary = () => {
                 <CardTitle className="text-2xl text-gray-dark text-right">מבנה ההרצאה</CardTitle>
               </CardHeader>
               <CardContent className="pt-6" dir="rtl">
-                {chapters && chapters.length > 0 && (
-                  <div className="space-y-6 text-right">
-                    {chapters.map((chapter, index) => (
-                      <div key={index} className="border-b border-gray-200 pb-4">
+                {chapters && chapters.length > 0 && <div className="space-y-6 text-right">
+                    {chapters.map((chapter, index) => <div key={index} className="border-b border-gray-200 pb-4">
                         <h3 className="text-lg font-semibold text-gray-800 mb-3">פרק {index + 1}: {chapter.title}</h3>
                         <ul className="space-y-2">
-                          {chapter.points.map((point, pointIndex) => (
-                            <li key={pointIndex} className="text-gray-700 mr-4">• {point.content}</li>
-                          ))}
+                          {chapter.points.map((point, pointIndex) => <li key={pointIndex} className="text-gray-700 mr-4">• {point.content}</li>)}
                         </ul>
-                      </div>
-                    ))}
-                  </div>
-                )}
+                      </div>)}
+                  </div>}
               </CardContent>
             </Card>
           </TabsContent>
@@ -364,31 +348,23 @@ const PresentationSummary = () => {
                 <CardTitle className="text-2xl text-gray-dark text-right">מבנה השקפים</CardTitle>
               </CardHeader>
               <CardContent className="pt-6" dir="rtl">
-                {dynamicSlides && dynamicSlides.length > 0 && (
-                  <div className="space-y-6 text-right">
-                    {dynamicSlides.map((slide, index) => (
-                      <div key={index} className="border border-gray-200 rounded-lg p-4">
+                {dynamicSlides && dynamicSlides.length > 0 && <div className="space-y-6 text-right">
+                    {dynamicSlides.map((slide, index) => <div key={index} className="border border-gray-200 rounded-lg p-4">
                         <div className="flex justify-between items-center mb-3">
                           <span className="text-sm text-gray-500">{slide.section}</span>
                           <span className="text-sm font-medium">שקף {slide.number}</span>
                         </div>
                         <h3 className="text-lg font-semibold text-gray-800 mb-2">{slide.headline}</h3>
                         <p className="text-gray-700 mb-3">{slide.content}</p>
-                        {slide.timeAllocation && (
-                          <div className="text-sm text-gray-600">
+                        {slide.timeAllocation && <div className="text-sm text-gray-600">
                             <strong>זמן מוקצה:</strong> {slide.timeAllocation}
-                          </div>
-                        )}
-                        {slide.engagementTip && (
-                          <div className="mt-3 p-3 bg-blue-50 rounded">
+                          </div>}
+                        {slide.engagementTip && <div className="mt-3 p-3 bg-blue-50 rounded">
                             <strong className="text-blue-800">טיפ למעורבות:</strong>
                             <p className="text-blue-700 mt-1">{slide.engagementTip}</p>
-                          </div>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                )}
+                          </div>}
+                      </div>)}
+                  </div>}
               </CardContent>
             </Card>
           </TabsContent>
@@ -400,10 +376,8 @@ const PresentationSummary = () => {
                 <CardTitle className="text-2xl text-gray-dark text-right">תהליך המכירה</CardTitle>
               </CardHeader>
               <CardContent className="pt-6" dir="rtl">
-                {outline?.salesProcess && (
-                  <div className="space-y-4 text-right">
-                    {outline.salesProcess.map((step, index) => (
-                      <div key={index} className="flex items-start space-x-4 space-x-reverse">
+                {outline?.salesProcess && <div className="space-y-4 text-right">
+                    {outline.salesProcess.map((step, index) => <div key={index} className="flex items-start space-x-4 space-x-reverse">
                         <div className="flex-shrink-0 w-8 h-8 bg-whiskey text-white rounded-full flex items-center justify-center text-sm font-medium">
                           {step.order}
                         </div>
@@ -411,10 +385,8 @@ const PresentationSummary = () => {
                           <h4 className="text-lg font-medium text-gray-800">{step.title}</h4>
                           <p className="text-gray-600 mt-1">{step.description}</p>
                         </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
+                      </div>)}
+                  </div>}
               </CardContent>
             </Card>
           </TabsContent>
@@ -426,22 +398,18 @@ const PresentationSummary = () => {
                 <CardTitle className="text-2xl text-gray-dark text-right">כלי פתיחה</CardTitle>
               </CardHeader>
               <CardContent className="pt-6" dir="rtl">
-                {outline?.openingStyles && (
-                  <div className="space-y-4 text-right">
+                {outline?.openingStyles && <div className="space-y-4 text-right">
                     <h3 className="text-lg font-semibold text-gray-800 mb-4">סגנונות פתיחה מוצעים</h3>
                     <div className="grid gap-4">
-                      {outline.openingStyles.map((style, index) => (
-                        <div key={index} className="p-4 bg-gray-50 rounded-lg">
+                      {outline.openingStyles.map((style, index) => <div key={index} className="p-4 bg-gray-50 rounded-lg">
                           <div className="flex items-center mb-2">
                             <Lightbulb className="w-5 h-5 text-whiskey ml-2" />
                             <span className="font-medium text-gray-800">אפשרות {index + 1}</span>
                           </div>
                           <p className="text-gray-700">{style}</p>
-                        </div>
-                      ))}
+                        </div>)}
                     </div>
-                  </div>
-                )}
+                  </div>}
               </CardContent>
             </Card>
           </TabsContent>
@@ -456,8 +424,7 @@ const PresentationSummary = () => {
                 <div className="space-y-8 text-right">
                   
                   {/* Social Media Content Section */}
-                  {socialMediaContent && (
-                    <div className="mb-8">
+                  {socialMediaContent && <div className="mb-8">
                       <h3 className="text-xl font-bold text-gray-800 mb-6">תוכן לרשתות חברתיות</h3>
                       
                       {/* Facebook Short Post */}
@@ -480,12 +447,10 @@ const PresentationSummary = () => {
                       <div className="mb-6">
                         <h4 className="text-lg font-semibold text-gray-700 mb-3">סדרת סטוריז לאינסטגרם</h4>
                         <div className="space-y-3">
-                          {socialMediaContent.instagramStories?.map((story: string, index: number) => (
-                            <div key={index} className="p-4 bg-purple-50 rounded-lg">
+                          {socialMediaContent.instagramStories?.map((story: string, index: number) => <div key={index} className="p-4 bg-purple-50 rounded-lg">
                               <h5 className="font-semibold text-purple-800 mb-2">סטורי {index + 1}</h5>
                               <p className="text-gray-700">{story}</p>
-                            </div>
-                          ))}
+                            </div>)}
                         </div>
                       </div>
 
@@ -493,8 +458,7 @@ const PresentationSummary = () => {
                       <div className="mb-8">
                         <h4 className="text-lg font-semibold text-gray-700 mb-3">סקריפט לטיקטוק</h4>
                         <div className="space-y-3">
-                          {socialMediaContent.tiktokScript && Object.entries(socialMediaContent.tiktokScript).map(([key, value]) => (
-                            <div key={key} className="p-4 bg-yellow-50 rounded-lg">
+                          {socialMediaContent.tiktokScript && Object.entries(socialMediaContent.tiktokScript).map(([key, value]) => <div key={key} className="p-4 bg-yellow-50 rounded-lg">
                               <h5 className="font-semibold text-yellow-800 mb-2">
                                 {key === 'disrupt' && 'פתיחה מושכת תשומת לב'}
                                 {key === 'hook' && 'הוק - למה להמשיך לצפות'}
@@ -504,138 +468,102 @@ const PresentationSummary = () => {
                                 {key === 'callToAction' && 'קריאה לפעולה'}
                               </h5>
                               <p className="text-gray-700">{value as string}</p>
-                            </div>
-                          ))}
+                            </div>)}
                         </div>
                       </div>
-                    </div>
-                  )}
+                    </div>}
 
                   {/* Email Marketing Section */}
-                  {emailContent && (
-                    <div className="mb-8">
+                  {emailContent && <div className="mb-8">
                       <h3 className="text-xl font-bold text-gray-800 mb-6">שיווק באימייל</h3>
                       <div className="p-4 bg-green-50 rounded-lg">
                         <h4 className="font-semibold text-green-800 mb-2">נושא: {emailContent.storytellingEmail?.subject}</h4>
                         <div className="text-gray-700 whitespace-pre-line">{emailContent.storytellingEmail?.body}</div>
                       </div>
-                    </div>
-                  )}
+                    </div>}
 
                   {/* 4-Week Marketing Plan Section */}
-                  {marketingPlanContent && (
-                    <div className="mb-8">
+                  {marketingPlanContent && <div className="mb-8">
                       <h3 className="text-xl font-bold text-gray-800 mb-6">תוכנית שיווק 4 שבועות</h3>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        {marketingPlanContent.fourWeekPlan && Object.entries(marketingPlanContent.fourWeekPlan).map(([weekKey, weekData]: [string, any]) => (
-                          <div key={weekKey} className="p-4 bg-blue-50 rounded-lg">
+                        {marketingPlanContent.fourWeekPlan && Object.entries(marketingPlanContent.fourWeekPlan).map(([weekKey, weekData]: [string, any]) => <div key={weekKey} className="p-4 bg-blue-50 rounded-lg">
                             <h4 className="text-lg font-bold text-blue-800 mb-3">{weekData.title}</h4>
                             
                             <div className="mb-3">
                               <h5 className="font-semibold text-blue-700 mb-2">מטרות:</h5>
                               <ul className="space-y-1">
-                                {weekData.goals?.map((goal: string, index: number) => (
-                                  <li key={index} className="text-gray-700 text-sm">• {goal}</li>
-                                ))}
+                                {weekData.goals?.map((goal: string, index: number) => <li key={index} className="text-gray-700 text-sm">• {goal}</li>)}
                               </ul>
                             </div>
 
                             <div className="mb-3">
                               <h5 className="font-semibold text-blue-700 mb-2">פעילויות:</h5>
                               <ul className="space-y-1">
-                                {weekData.activities?.map((activity: string, index: number) => (
-                                  <li key={index} className="text-gray-700 text-sm">• {activity}</li>
-                                ))}
+                                {weekData.activities?.map((activity: string, index: number) => <li key={index} className="text-gray-700 text-sm">• {activity}</li>)}
                               </ul>
                             </div>
 
                             <div>
                               <h5 className="font-semibold text-blue-700 mb-2">רעיונות לתוכן:</h5>
                               <ul className="space-y-1">
-                                {weekData.contentIdeas?.map((idea: string, index: number) => (
-                                  <li key={index} className="text-gray-700 text-sm">• {idea}</li>
-                                ))}
+                                {weekData.contentIdeas?.map((idea: string, index: number) => <li key={index} className="text-gray-700 text-sm">• {idea}</li>)}
                               </ul>
                             </div>
-                          </div>
-                        ))}
+                          </div>)}
                       </div>
 
                       {/* Budget Considerations */}
-                      {marketingPlanContent.budgetConsiderations && (
-                        <div className="mt-6">
+                      {marketingPlanContent.budgetConsiderations && <div className="mt-6">
                           <h4 className="text-lg font-semibold text-gray-800 mb-4">שיקולי תקציב</h4>
                           <div className="space-y-2">
-                            {marketingPlanContent.budgetConsiderations.map((consideration: string, index: number) => (
-                              <div key={index} className="p-3 bg-yellow-50 rounded">
+                            {marketingPlanContent.budgetConsiderations.map((consideration: string, index: number) => <div key={index} className="p-3 bg-yellow-50 rounded">
                                 <p className="text-gray-700">• {consideration}</p>
-                              </div>
-                            ))}
+                              </div>)}
                           </div>
-                        </div>
-                      )}
+                        </div>}
 
                       {/* Key Metrics */}
-                      {marketingPlanContent.keyMetrics && (
-                        <div className="mt-6">
+                      {marketingPlanContent.keyMetrics && <div className="mt-6">
                           <h4 className="text-lg font-semibold text-gray-800 mb-4">מדדי מפתח למעקב</h4>
                           <div className="space-y-2">
-                            {marketingPlanContent.keyMetrics.map((metric: string, index: number) => (
-                              <div key={index} className="p-3 bg-green-50 rounded">
+                            {marketingPlanContent.keyMetrics.map((metric: string, index: number) => <div key={index} className="p-3 bg-green-50 rounded">
                                 <p className="text-gray-700">• {metric}</p>
-                              </div>
-                            ))}
+                              </div>)}
                           </div>
-                        </div>
-                      )}
-                    </div>
-                  )}
+                        </div>}
+                    </div>}
 
                   {/* Existing dynamic strategy content */}
-                  {dynamicStrategy && (
-                    <div className="mb-8">
+                  {dynamicStrategy && <div className="mb-8">
                       <h3 className="text-xl font-bold text-gray-800 mb-6">אסטרטגיית מכירות מתקדמת</h3>
                       {/* Display Dynamic Strategy Content */}
-                      {dynamicStrategy.salesProcess && (
-                        <div className="mb-6">
+                      {dynamicStrategy.salesProcess && <div className="mb-6">
                           <h4 className="text-lg font-semibold text-gray-700 mb-3">תהליך מכירה</h4>
                           <ul className="list-decimal pl-6">
-                            {dynamicStrategy.salesProcess.map((step: any, index: number) => (
-                              <li key={index} className="text-gray-700 mb-2">
+                            {dynamicStrategy.salesProcess.map((step: any, index: number) => <li key={index} className="text-gray-700 mb-2">
                                 <span className="font-semibold">{step.step}:</span> {step.description}
-                              </li>
-                            ))}
+                              </li>)}
                           </ul>
-                        </div>
-                      )}
+                        </div>}
 
-                      {dynamicStrategy.customerEngagement && (
-                        <div className="mb-6">
+                      {dynamicStrategy.customerEngagement && <div className="mb-6">
                           <h4 className="text-lg font-semibold text-gray-700 mb-3">מעורבות לקוחות</h4>
                           <ul className="list-disc pl-6">
-                            {dynamicStrategy.customerEngagement.map((engagement: any, index: number) => (
-                              <li key={index} className="text-gray-700 mb-2">
+                            {dynamicStrategy.customerEngagement.map((engagement: any, index: number) => <li key={index} className="text-gray-700 mb-2">
                                 <span className="font-semibold">{engagement.technique}:</span> {engagement.description}
-                              </li>
-                            ))}
+                              </li>)}
                           </ul>
-                        </div>
-                      )}
+                        </div>}
 
-                      {dynamicStrategy.closingTechniques && (
-                        <div>
+                      {dynamicStrategy.closingTechniques && <div>
                           <h4 className="text-lg font-semibold text-gray-700 mb-3">טכניקות סגירה</h4>
                           <ul className="list-disc pl-6">
-                            {dynamicStrategy.closingTechniques.map((technique: any, index: number) => (
-                              <li key={index} className="text-gray-700 mb-2">
+                            {dynamicStrategy.closingTechniques.map((technique: any, index: number) => <li key={index} className="text-gray-700 mb-2">
                                 <span className="font-semibold">{technique.technique}:</span> {technique.description}
-                              </li>
-                            ))}
+                              </li>)}
                           </ul>
-                        </div>
-                      )}
-                    </div>
-                  )}
+                        </div>}
+                    </div>}
 
                 </div>
               </CardContent>
@@ -648,10 +576,7 @@ const PresentationSummary = () => {
         <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mt-12">
           <Button onClick={handleRestart} className="bg-whiskey hover:bg-whiskey-dark text-white px-8 py-3 text-lg">סיום ויצירת הרצאה חדשה</Button>
           
-          <Button 
-            onClick={handleExportClick}
-            className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 text-lg"
-          >
+          <Button onClick={handleExportClick} className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 text-lg">
             <Mail className="w-4 h-4 mr-2" />
             ייצוא לאימייל
           </Button>
@@ -661,14 +586,8 @@ const PresentationSummary = () => {
           </div>
         </div>
 
-        <ExportDialog 
-          open={showExportDialog} 
-          onOpenChange={setShowExportDialog}
-          summaryData={getSummaryData()}
-        />
+        <ExportDialog open={showExportDialog} onOpenChange={setShowExportDialog} summaryData={getSummaryData()} />
       </div>
-    </div>
-  );
+    </div>;
 };
-
 export default PresentationSummary;
