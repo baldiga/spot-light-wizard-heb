@@ -314,7 +314,7 @@ const PresentationSummary = () => {
                       <p className="text-gray-700 mb-4">{outline.timeDistribution}</p>
                     </div>
                     <div>
-                      <h3 className="text-lg font-semibold text-gray-800 mb-4">הודעה מעודדת</h3>
+                      <h3 className="text-lg font-semibold text-gray-800 mb-4">המסר שחשוב לשדר לקהל</h3>
                       <p className="text-gray-700">{outline.motivationalMessage}</p>
                     </div>
                   </div>}
