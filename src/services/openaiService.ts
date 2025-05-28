@@ -1,9 +1,9 @@
-import { PresentationFormData, PresentationOutline, Chapter, SlideStructure, DynamicSalesStrategy, PresentationTools } from '@/types/presentation';
+import { PresentationFormData, PresentationOutline } from '@/types/presentation';
 import { generateId } from '@/utils/helpers';
 
 // OpenAI API configuration
-const OPENAI_API_KEY = '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';
-const OPENAI_ORG_ID = 'org-fdnj54f725C7rUNxPVyt8jEA';
+const OPENAI_API_KEY = Deno.env.get('OPENAI_API_KEY');
+const OPENAI_ORG_ID = Deno.env.get('OPENAI_ORG_ID');
 
 // Custom assistant ID
 const ASSISTANT_ID = 'asst_etLDYkL7Oj3ggr9IKpwmGE76';
@@ -66,219 +66,6 @@ function cleanAndParseJSON(response: string): any {
 }
 
 /**
- * Validates response against expected schema
- */
-function validateOutlineResponse(data: any): boolean {
-  return (
-    data &&
-    Array.isArray(data.chapters) &&
-    data.chapters.length > 0 &&
-    Array.isArray(data.openingStyles) &&
-    typeof data.timeDistribution === 'string' &&
-    Array.isArray(data.interactiveActivities) &&
-    typeof data.presentationStructure === 'string' &&
-    typeof data.salesGuide === 'string'
-  );
-}
-
-/**
- * Validates slide structure response
- */
-function validateSlideResponse(data: any): boolean {
-  return (
-    Array.isArray(data) &&
-    data.length > 0 &&
-    data.every(slide => 
-      typeof slide.number === 'number' &&
-      typeof slide.headline === 'string' &&
-      typeof slide.content === 'string' &&
-      typeof slide.visual === 'string'
-    )
-  );
-}
-
-/**
- * Creates a thread for assistant conversation with retry logic
- */
-async function createThread(): Promise<string> {
-  const maxRetries = 3;
-  
-  for (let attempt = 1; attempt <= maxRetries; attempt++) {
-    try {
-      console.log(`Creating thread, attempt ${attempt}`);
-      
-      const response = await fetch('https://api.openai.com/v1/threads', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${OPENAI_API_KEY}`,
-          'OpenAI-Organization': OPENAI_ORG_ID,
-          'OpenAI-Beta': 'assistants=v2'
-        }
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-      }
-
-      const data = await response.json();
-      console.log('Thread created successfully:', data.id);
-      return data.id;
-    } catch (error) {
-      console.error(`Thread creation attempt ${attempt} failed:`, error);
-      if (attempt === maxRetries) throw error;
-      await new Promise(resolve => setTimeout(resolve, 1000 * attempt)); // Exponential backoff
-    }
-  }
-  
-  throw new Error('Failed to create thread after all retries');
-}
-
-/**
- * Adds a message to the thread with retry logic
- */
-async function addMessageToThread(threadId: string, content: string): Promise<void> {
-  const maxRetries = 3;
-  
-  for (let attempt = 1; attempt <= maxRetries; attempt++) {
-    try {
-      console.log(`Adding message to thread ${threadId}, attempt ${attempt}`);
-      
-      const response = await fetch(`https://api.openai.com/v1/threads/${threadId}/messages`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${OPENAI_API_KEY}`,
-          'OpenAI-Organization': OPENAI_ORG_ID,
-          'OpenAI-Beta': 'assistants=v2'
-        },
-        body: JSON.stringify({
-          role: 'user',
-          content: content.substring(0, 8000) // Limit message size
-        })
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-      }
-      
-      console.log('Message added successfully');
-      return;
-    } catch (error) {
-      console.error(`Add message attempt ${attempt} failed:`, error);
-      if (attempt === maxRetries) throw error;
-      await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
-    }
-  }
-}
-
-/**
- * Runs the assistant and waits for completion with enhanced error handling
- */
-async function runAssistant(threadId: string): Promise<string> {
-  const maxRetries = 3;
-  
-  for (let attempt = 1; attempt <= maxRetries; attempt++) {
-    try {
-      console.log(`Running assistant for thread ${threadId}, attempt ${attempt}`);
-      
-      // Start the run
-      const runResponse = await fetch(`https://api.openai.com/v1/threads/${threadId}/runs`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${OPENAI_API_KEY}`,
-          'OpenAI-Organization': OPENAI_ORG_ID,
-          'OpenAI-Beta': 'assistants=v2'
-        },
-        body: JSON.stringify({
-          assistant_id: ASSISTANT_ID,
-          max_prompt_tokens: 4000,
-          max_completion_tokens: 4000
-        })
-      });
-
-      if (!runResponse.ok) {
-        throw new Error(`HTTP ${runResponse.status}: ${runResponse.statusText}`);
-      }
-
-      const runData = await runResponse.json();
-      const runId = runData.id;
-      console.log('Assistant run started:', runId);
-
-      // Poll for completion with timeout
-      let status = 'queued';
-      let pollCount = 0;
-      const maxPolls = 90; // 90 seconds timeout
-      
-      while ((status === 'queued' || status === 'in_progress') && pollCount < maxPolls) {
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        pollCount++;
-        
-        if (pollCount % 10 === 0) {
-          console.log(`Assistant run status check ${pollCount}: ${status}`);
-        }
-        
-        const statusResponse = await fetch(`https://api.openai.com/v1/threads/${threadId}/runs/${runId}`, {
-          headers: {
-            'Authorization': `Bearer ${OPENAI_API_KEY}`,
-            'OpenAI-Organization': OPENAI_ORG_ID,
-            'OpenAI-Beta': 'assistants=v2'
-          }
-        });
-
-        if (!statusResponse.ok) {
-          throw new Error(`HTTP ${statusResponse.status}: ${statusResponse.statusText}`);
-        }
-
-        const statusData = await statusResponse.json();
-        status = statusData.status;
-        
-        if (status === 'failed') {
-          console.error('Assistant run failed:', statusData.last_error);
-          throw new Error(`Assistant run failed: ${statusData.last_error?.message || 'Unknown error'}`);
-        }
-      }
-
-      if (pollCount >= maxPolls) {
-        throw new Error('Assistant run timed out after 90 seconds');
-      }
-
-      if (status !== 'completed') {
-        throw new Error(`Assistant run failed with status: ${status}`);
-      }
-
-      console.log('Assistant run completed successfully');
-
-      // Get the assistant's response
-      const messagesResponse = await fetch(`https://api.openai.com/v1/threads/${threadId}/messages`, {
-        headers: {
-          'Authorization': `Bearer ${OPENAI_API_KEY}`,
-          'OpenAI-Organization': OPENAI_ORG_ID,
-          'OpenAI-Beta': 'assistants=v2'
-        }
-      });
-
-      if (!messagesResponse.ok) {
-        throw new Error(`HTTP ${messagesResponse.status}: ${messagesResponse.statusText}`);
-      }
-
-      const messagesData = await messagesResponse.json();
-      const lastMessage = messagesData.data[0];
-      
-      console.log('Retrieved assistant response, length:', lastMessage.content[0].text.value.length);
-      return lastMessage.content[0].text.value;
-    } catch (error) {
-      console.error(`Assistant run attempt ${attempt} failed:`, error);
-      if (attempt === maxRetries) throw error;
-      await new Promise(resolve => setTimeout(resolve, 2000 * attempt)); // Longer backoff for assistant runs
-    }
-  }
-  
-  throw new Error('Failed to run assistant after all retries');
-}
-
-/**
  * Generates presentation outline using the custom assistant with enhanced personalization
  */
 export async function generatePresentationOutline(formData: PresentationFormData): Promise<PresentationOutline> {
@@ -287,89 +74,141 @@ export async function generatePresentationOutline(formData: PresentationFormData
     const threadId = await createThread();
     
     const prompt = `
-אתה יועץ מקצועי ליצירת הרצאות מותאמות אישית. המשימה שלך היא ליצור מבנה הרצאה מפורט ומדויק שמשקף בדיוק את המומחיות של המרצה ואת הצרכים הספציפיים של הקהל.
+אתה אדריכל הרצאות מומחה המתמחה בפסיכולוגיה של שכנוע, נוירו-מרקטינג וניהול תודעה. המשימה שלך היא ליצור אדריכלות הרצאה מתקדמת המבוססת על עקרונות מדעיים של השפעה ושכנוע.
 
-פרטי ההרצאה שעליך לבסס עליהם את התוכן:
-- נושא מרכזי: "${sanitizeText(formData.idea)}" 
-- רקע המרצה: "${sanitizeText(formData.speakerBackground)}"
-- פרופיל הקהל: "${sanitizeText(formData.audienceProfile)}"
-- משך ההרצאה: ${formData.duration} דקות
-- התנגדויות נפוצות: "${sanitizeText(formData.commonObjections)}"
-- מוצר/שירות לקידום: "${sanitizeText(formData.serviceOrProduct)}"
-- קריאה לפעולה: "${sanitizeText(formData.callToAction)}"
+=== ניתוח מתקדם של פרמטרי קלט ===
+נושא מרכזי: "${sanitizeText(formData.idea)}"
+רקע והתמחות המרצה: "${sanitizeText(formData.speakerBackground)}"
+פרופיל קהל מטרה: "${sanitizeText(formData.audienceProfile)}"
+משך הרצאה: ${formData.duration} דקות
+התנגדויות פסיכולוגיות צפויות: "${sanitizeText(formData.commonObjections)}"
+מוצר/שירות לקידום: "${sanitizeText(formData.serviceOrProduct)}"
+קריאה לפעולה מבוקשת: "${sanitizeText(formData.callToAction)}"
 
-הוראות מדויקות ליצירת תוכן מותאם:
+=== מסגרת עבודה פסיכולוגית מתקדמת ===
 
-1. השתמש ברקע המרצה כדי לקבוע:
-   - עומק הידע הטכני שיוצג
-   - סגנון הדיבור והמושגים שיפוצו
-   - סוג הדוגמאות והניסיון שיוזכר
-   - רמת המקצועיות והאמינות
+**מודול ניתוח פסיכו-דמוגרפי עמוק:**
+1. **מיפוי כאבים רגשיים**: חפש מעבר לבעיות הטכניות את הכאבים הרגשיים העמוקים
+2. **ניתוח דפוסי התנגדות**: הבן את המנגנונים הפסיכולוגיים מאחורי ההתנגדויות
+3. **זיהוי טריגרי פעולה**: מצא מה באמת מניע את הקהל הזה לקבלת החלטות
+4. **מיפוי מצבים רגשיים**: תכנן את המסע הרגשי האופטימלי לאורך ההרצאה
+5. **הירארכיית ערכים אמיתית**: חשוף מה באמת חשוב לקהל במעמקי תודעתו
 
-2. התאם את התוכן לקהל הספציפי:
-   - השתמש בשפה ומושגים מתאימים לרמת הקהל
-   - צור דוגמאות רלוונטיות לתחום עיסוקם
-   - התייחס לאתגרים הספציפיים שלהם
-   - התאם את סגנון ההצגה לציפיות הקהל
+**אדריכלות סמכותיות מרצה:**
+1. **בניית סמכות מדעית**: הפוך את הרקע המקצועי לסמכות בלתי מעורערת
+2. **נקודות חיבור רגשי**: יצר קשרים רגשיים עמוקים מתוך הניסיון האישי
+3. **סיפורי הוכחה אישיים**: בנה נרטיבים שמוכיחים מומחיות בצורה משכנעת
+4. **רגעי פגיעות מחושבים**: תכנן רגעי חשיפה שבונים אמון והזדהות
+5. **הדרגת אמינות**: צור עלייה מתמדת ומתוכננת באמינות
 
-3. בנה תוכן ייחודי לנושא:
-   - כל פרק חייב להתקדם לוגית לעבר המטרה העיסקית
-   - התייחס ישירות לנושא ולא לכללים
-   - צור תוכן שרק מומחה בתחום יכול לספק
-   - הימנע מתוכן גנרי או משותף
+**פסיכולוגיית הצגה נוירו-מבוססת:**
+1. **ניהול עומס קוגניטיבי**: חלק מידע באופן שמייעל קליטה ועיבוד
+2. **עוגני זיכרון אסטרטגיים**: צור נקודות זיכרון שישארו לטווח ארוך
+3. **רצף שכנוע מדעי**: בנה רצף לוגי-רגשי מבוסס מחקר שמוביל לפעולה
+4. **מעברים רגשיים מתוכננים**: נהל את המצבים הרגשיים לאורך ההרצאה
+5. **נקודות התעוררות נוירולוגיות**: מקם רגעים שמעוררים את המוח ומגבירים קשב
 
-4. שלב את התנגדויות והפתרונות:
-   - התייחס ישירות לחששות שהוזכרו
-   - בנה תשובות מבוססות ידע מהרקע של המרצה
-   - הראה איך הניסיון של המרצה פותר בעיות אלו
+**ארכיטקטורת מכירות משולבת:**
+1. **סולם ערכים הדרגתי**: בנה בנייה הדרגתית של ערך שמובילה טבעית למוצר
+2. **ניטרול התנגדויות יזום**: פתור התנגדויות לפני שהן מתעוררות בתודעה
+3. **הוכחה חברתית אסטרטגית**: מקם עדויות ותוצאות בנקודות השפעה מקסימלית
+4. **דחיפות טבעית אמיתית**: בנה תחושת דחיפות מתוך צורך אמיתי ולא מלאכותי
+5. **מעברים זורמים**: צור מעברים טבעיים מהערך החינמי לערך בתשלום
 
-5. קשר טבעי למוצר/שירות:
-   - אל תעשה מכירה ישירה בפרקים
-   - צור זרימה טבעית שמובילה לפתרון
-   - הראה איך המומחיות מתרגמת לערך מעשי
+**מדע המעורבות המתקדם:**
+1. **טריגרים נוירולוגיים**: השתמש בטכניקות שמפעילות את מרכזי ההנאה במוח
+2. **אופטימיזציה אינטראקטיבית**: תכנן פעילויות שמקסימות מעורבות ושמירת מידע
+3. **ניהול אנרגיה דינמי**: שמור על רמת אנרגיה אופטימלית לאורך כל ההרצאה
+4. **טכניקות שינוי מצב**: עזור לקהל לעבור ממצבי התנגדות למצבי קבלה
+5. **מקסום רטנציה**: וודא שהמסרים המרכזיים נשמרים בזיכרון ארוך טווח
 
-יש להחזיר JSON תקין במבנה הבא בלבד:
+**הוראות ליצירת תוכן מתקדם:**
+
+יש ליצור מבנה הרצאה שכולל:
+- **בדיוק 4 פרקים** עם מטרה פסיכולוגית ספציפית לכל פרק
+- **10 שלבי מכירה** משולבים באופן טבעי ולא פולשני
+- **טכניקות מעורבות מדעיות** בכל שלב
+- **אסטרטגיית ניטרול התנגדויות** מובנית
+- **מסלול רגשי מתוכנן** מהתעוררות ועד לפעולה
+
+עבור כל פרק, חובה לכלול:
+- מטרה פסיכולוגית מדויקת (איך זה משפיע על התודעה)
+- טכניקת מעורבות מדעית (איך לשמור על קשב מקסימלי)
+- נקודת מכירה טבעית (איך זה מקדם למוצר באופן זורם)
+- ניטרול התנגדות ספציפית (איך זה פותר חששות)
+- מעבר רגשי אסטרטגי (איך זה מכין לשלב הבא)
+
+החזר JSON תקין במבנה המדויק הבא:
 {
   "chapters": [
     {
-      "title": "כותרת פרק מותאמת לנושא הספציפי",
+      "title": "כותרת מושכת שמתחברת לכאב הרגשי העמוק של הקהל",
+      "psychologyGoal": "המטרה הפסיכולוגית הספציפית של הפרק",
+      "emotionalState": "המצב הרגשי הרצוי שנרצה ליצור",
       "points": [
-        {"content": "נקודה מקצועית המבוססת על רקע המרצה"},
-        {"content": "תובנה מעשית רלוונטית לקהל היעד"},
-        {"content": "דוגמה ספציפית מהתחום"}
-      ]
+        {
+          "content": "נקודה מבוססת מחקר התנהגותי שנוגעת לכאב אמיתי ועמוק",
+          "engagementTechnique": "טכניקה מדעית למעורבות (שאלה נוירולוגית, סיפור רגשי, אינטראקציה)",
+          "psychologyBehind": "העיקרון הפסיכולוגי/נוירולוגי שפועל בנקודה זו",
+          "salesElement": "איך הנקודה מקדמת טבעית למוצר/שירות ללא יבש או פולשני"
+        }
+      ],
+      "transitionStrategy": "האסטרטגיה הרגשית למעבר לפרק הבא",
+      "objectionHandled": "איזו התנגדות פסיכולוגית נפתרת/מנוטרלת בפרק זה"
     }
   ],
   "openingStyles": [
-    "פתיחה המתאימה לסגנון המרצה ולקהל הספציפי",
-    "אפשרות שנייה המבוססת על הניסיון המקצועי",
-    "גישה שלישית המותאמת לנושא הייחודי"
+    "פתיחה מבוססת נוירופסיכולוגיה שיוצרת התעוררות מיידית ותחושת דחיפות אמיתית",
+    "פתיחה המתבססת על הכאב הרגשי העמוק ביותר של הקהל ויוצרת חיבור מיידי",
+    "פתיחה שמציבה את המרצה כסמכות עליונה ויוצרת אמון ואמינות מיידיים"
   ],
-  "timeDistribution": "חלוקת זמנים מותאמת למשך ההרצאה ולתוכן הספציפי",
+  "timeDistribution": "חלוקת זמנים אסטרטגית המבוססת על עקומת קשב ומעורבות נוירולוגית",
   "interactiveActivities": [
-    "פעילות מעורבות רלוונטית לקהל היעד",
-    "אינטראקציה המתאימה לנושא הספציפי",
-    "משימה מעשית המבוססת על התוכן"
+    "פעילות מעורבות נוירופסיכולוגית רלוונטית לקהל היעד",
+    "אינטראקציה המתאימה לנושא הספציפי ומפעילה מרכזי עניין במוח",
+    "משימה מעשית המבוססת על התוכן ויוצרת קשירה רגשית"
   ],
-  "presentationStructure": "מבנה מפורט המותאם לסגנון המרצה ולמטרות ההרצאה",
+  "presentationStructure": "מבנה מדעי מבוסס מחקר שמוביל לשינוי התנהגות מדיד ובר קיימא",
   "discussionQuestions": {
-    "פרק 1": ["שאלה ספציפית לתוכן", "שאלה נוספת המתאימה לקהל"],
-    "פרק 2": ["שאלה מעמיקה בנושא", "שאלה מעשית יותר"],
-    "פרק 3": ["שאלה מסכמת", "שאלה המובילה לפעולה"]
+    "פרק 1": ["שאלה שחושפת כאבים עמוקים", "שאלה שמעמיקה הבנה עצמית"],
+    "פרק 2": ["שאלה מתקדמת בנושא", "שאלה שבונה אמון ומתודעת"],
+    "פרק 3": ["שאלה מסכמת ומחברת", "שאלה המובילה לפעולה"]
   },
-  "salesGuide": "מדריך מכירות מותאם שמתבסס על האמינות והמומחיות של המרצה",
-  "postPresentationPlan": "תוכנית מעקב מותאמת לסוג הקהל ולמטרות המרצה",
-  "motivationalMessage": "הודעה מעודדת אישית המתייחסת לחוזקות המרצה",
+  "salesGuide": "מדריך מכירות פסיכולוגי מותאם שמתבסס על הבנת דפוסי קנייה וקבלת החלטות של הקהל הספציפי",
+  "postPresentationPlan": "תוכנית מעקב מתקדמת המבוססת על עקרונות שכנוע ובניית יחסי אמון ארוכי טווח",
+  "motivationalMessage": "הודעה מעודדת ומעצימה המתייחסת לחוזקות הייחודיות של המרצה ולפוטנציאל ההשפעה שלו",
   "salesProcess": [
     {
-      "title": "שלב מכירה המותאם לסגנון המרצה",
-      "description": "תיאור מפורט שמתבסס על הרקע המקצועי",
+      "title": "שלב מכירה מבוסס על טריגר פסיכולוגי מדויק ומחקרי",
+      "description": "תיאור מפורט ומדעי שמתבסס על מחקר התנהגותי ועקרונות שכנוע מתקדמים",
+      "psychologyPrinciple": "העיקרון הפסיכולוגי/נוירולוגי הספציפי שפועל בשלב זה",
+      "implementationTip": "איך ליישם בצורה טבעית, אותנטית ולא מניפולטיבית",
       "order": 1
     }
-  ]
+  ],
+  "advancedEngagement": {
+    "attentionCurveManagement": "מפת ניהול קשב מדעית לאורך ההרצאה",
+    "energyOptimization": "אסטרטגיית ניהול אנרגיה המבוססת על ביולוגיה",
+    "neurologicalInteractionPoints": "נקודות אינטראקציה שמפעילות מרכזי עניין במוח",
+    "longTermMemoryAnchors": "עוגנים מדעיים לזיכרון ארוך טווח"
+  },
+  "persuasionFramework": {
+    "scientificPersuasionSequence": "הרצף המדעי של השכנוע שנבנה בהרצאה",
+    "psychologicalResistanceManagement": "נטרול התנגדויות",
+    "trustArchitecture": "האדריכלות של בניית אמון מדרגתי לאורך ההרצאה",
+    "neurologicalActionTriggers": "הטריגרים הנוירולוגיים שמניעים לפעולה אמיתית"
+  }
 }
 
-חשוב מאוד: אל תיצור תוכן גנרי! כל משפט חייב להיות רלוונטי לנושא הספציפי, לרקע המרצה ולקהל היעד.
+הוראות קריטיות לביצוע:
+- בדיוק 4 פרקים ו-10 שלבי מכירה - זה חובה מוחלטת!
+- כל אלמנט חייב להיות מבוסס על מחקר פסיכולוגי ונוירולוגי אמיתי
+- המבנה חייב לזרום בצורה טבעית מבחינה רגשית ולוגית
+- טכניקות המכירה חייבות להיות משולבות באופן טבעי ואותנטי
+- הטיפול בהתנגדויות חייב להיות יזום ומקצועי, לא תגובתי
+- כל פרק חייב לבנות על הקודם ולהכין בצורה אסטרטגית לבא אחריו
+- השפה והגישה חייבים להיות מותאמים מושלם לרמת הקהל הספציפי
+- התוכן חייב להיות ייחודי ואישי לנושא ולמרצה, לא גנרי
     `;
 
     await addMessageToThread(threadId, prompt);
@@ -381,7 +220,7 @@ export async function generatePresentationOutline(formData: PresentationFormData
       throw new Error('Invalid response structure from AI assistant');
     }
     
-    console.log('Presentation outline generated successfully');
+    console.log('Enhanced presentation outline generated successfully');
     return parseApiResponse(JSON.stringify(parsedData));
   } catch (error) {
     console.error("Error generating presentation outline:", error);
@@ -392,7 +231,7 @@ export async function generatePresentationOutline(formData: PresentationFormData
 /**
  * Generates dynamic slide structure with deep personalization
  */
-export async function generateDynamicSlideStructure(formData: PresentationFormData, outline: PresentationOutline): Promise<SlideStructure[]> {
+export async function generateDynamicSlideStructure(formData: PresentationFormData, outline: PresentationOutline): Promise<any> {
   try {
     console.log('Generating dynamic slide structure...');
     const threadId = await createThread();
@@ -514,7 +353,7 @@ export async function generateDynamicB2BEmail(formData: PresentationFormData, ou
 /**
  * Generates dynamic sales strategy with deep customization
  */
-export async function generateDynamicSalesStrategy(formData: PresentationFormData, outline: PresentationOutline): Promise<DynamicSalesStrategy> {
+export async function generateDynamicSalesStrategy(formData: PresentationFormData, outline: PresentationOutline): Promise<any> {
   try {
     console.log('Generating dynamic sales strategy...');
     const threadId = await createThread();

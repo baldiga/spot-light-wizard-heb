@@ -68,112 +68,123 @@ function cleanAndParseJSON(response: string): any {
 
 async function generateOutlineContent(formData: PresentationFormData): Promise<any> {
   const prompt = `
-אתה יועץ מקצועי ליצירת הרצאות מותאמות אישית. צור מבנה הרצאה מפורט ומותאם אישית.
+אתה אדריכל הרצאות מומחה המתמחה בפסיכולוגיה של שכנוע וניהול תודעה. המשימה שלך היא ליצור אדריכלות הרצאה מתקדמת המבוססת על עקרונות נוירופסיכולוגיים, מחקר התנהגותי, ועקרונות מכירות משולבים.
 
-פרטי ההרצאה:
-- נושא: "${sanitizeText(formData.idea)}"
-- רקע המרצה: "${sanitizeText(formData.speakerBackground)}"
-- קהל יעד: "${sanitizeText(formData.audienceProfile)}"
-- משך: ${formData.duration} דקות
-- התנגדויות: "${sanitizeText(formData.commonObjections)}"
-- מוצר/שירות: "${sanitizeText(formData.serviceOrProduct)}"
-- קריאה לפעולה: "${sanitizeText(formData.callToAction)}"
+=== ניתוח פרמטרי הקלט ===
+נושא מרכזי: "${sanitizeText(formData.idea)}"
+רקע המרצה: "${sanitizeText(formData.speakerBackground)}"
+פרופיל קהל: "${sanitizeText(formData.audienceProfile)}"
+משך הרצאה: ${formData.duration} דקות
+התנגדויות צפויות: "${sanitizeText(formData.commonObjections)}"
+מוצר/שירות: "${sanitizeText(formData.serviceOrProduct)}"
+קריאה לפעולה: "${sanitizeText(formData.callToAction)}"
 
-הוראות חשובות:
-1. צור תוכן ספציפי לנושא "${formData.idea}" - לא תוכן גנרי
-2. התבסס על רקע המרצה: "${formData.speakerBackground}"
-3. התאם לקהל: "${formData.audienceProfile}"
-4. כל פרק חייב להתקשר ישירות לנושא הספציפי
-5. השתמש במושגים ובדוגמאות מהתחום הרלוונטי
-6. התייחס לחששות הספציפיים: "${formData.commonObjections}"
-7. חובה ליצור בדיוק 10 שלבי מכירה - לא פחות ולא יותר!
+=== מסגרת עבודה מתקדמת ===
 
-החזר JSON תקין במבנה הבא:
+**מודול ניתוח פסיכו-דמוגרפי:**
+- מיפוי כאבים רגשיים עמוקים מעבר לבעיות טכניות
+- ניתוח דפוסי התנגדות פסיכולוגיים
+- זיהוי טריגרים של קבלת החלטות
+- תכנון מסלול רגשי אסטרטגי
+- הבנת היררכיית ערכים אמיתית
+
+**אדריכלות סמכותיות מרצה:**
+- בניית סמכות בלתי מעורערת מהרקע המקצועי
+- יצירת נקודות חיבור רגשי עמוק
+- תכנון סיפורי הוכחה חזקים
+- ניהול רגעי פגיעות לבניית אמון
+- הדרגת אמינות מתמדת
+
+**פסיכולוגיית הצגה מדעית:**
+- ניהול עומס קוגניטיבי אופטימלי
+- יצירת עוגני זיכרון בלתי נמחקים
+- בניית רצף שכנוע מדעי
+- תכנון מעברים רגשיים אסטרטגיים
+- מיקום נקודות התעוררות מחושבות
+
+**מכירות משולבת טבעית:**
+- בניית סולם ערכים הדרגתי
+- טיפול יזום בהתנגדויות
+- מיקום הוכחה חברתית אסטרטגי
+- יצירת דחיפות טבעית אמיתית
+- מעברים חלקים מתוכן למכירה
+
+**מדע המעורבות:**
+- טריגרים נוירולוגיים מוכחים
+- אופטימיזציה של אינטראקציות
+- ניהול אנרגיה מתמשך
+- טכניקות שינוי מצב מוח
+- מקסום שמירת מידע
+
+צור מבנה הרצאה עם 4 פרקים ו-10 שלבי מכירה משולבים:
+
+החזר JSON במבנה:
 {
   "chapters": [
     {
-      "title": "כותרת פרק ספציפית לנושא ${formData.idea}",
+      "title": "כותרת מבוססת פסיכולוגיה ומותאמת לכאב העמוק",
+      "psychologyGoal": "מטרה פסיכולוגית מדויקת",
+      "emotionalJourney": "המסלול הרגשי המתוכנן",
       "points": [
-        {"content": "נקודה ספציפית הקשורה ל${formData.idea} ולרקע ${formData.speakerBackground}"},
-        {"content": "תובנה מעשית לקהל ${formData.audienceProfile}"},
-        {"content": "דוגמה קונקרטית מהתחום"}
-      ]
+        {
+          "content": "תוכן מבוסס מחקר התנהגותי ונוגע לכאב אמיתי",
+          "engagementTechnique": "טכניקה מעורבות מדעית",
+          "psychologyPrinciple": "עיקרון פסיכולוגי שפועל",
+          "salesConnection": "חיבור טבעי למוצר/שירות"
+        }
+      ],
+      "objectionResolution": "פתרון התנגדות ספציפית",
+      "transitionStrategy": "אסטרטגיית מעבר רגשי"
     }
   ],
   "openingStyles": [
-    "פתיחה ספציפית לנושא ${formData.idea}",
-    "פתיחה המתאימה לקהל ${formData.audienceProfile}",
-    "פתיחה המבוססת על ${formData.speakerBackground}"
+    "פתיחה פסיכולוגית שיוצרת התעוררות ודחיפות מיידית",
+    "פתיחה מבוססת כאב עמוק וחיבור רגשי",
+    "פתיחה מבססת סמכות ואמון מיידי"
   ],
-  "timeDistribution": "חלוקת זמנים ל${formData.duration} דקות עבור ${formData.idea}",
+  "timeDistribution": "חלוקה אסטרטגית מבוססת עקומת קשב",
   "interactiveActivities": [
-    "פעילות רלוונטית לנושא ${formData.idea}",
-    "אינטראקציה מתאימה לקהל ${formData.audienceProfile}"
+    "פעילות נוירופסיכולוגית למעורבות עמוקה",
+    "אינטראקציה למיפוי כאבים אישיים"
   ],
-  "presentationStructure": "מבנה מותאם לנושא ${formData.idea} ולקהל ${formData.audienceProfile}",
+  "presentationStructure": "מבנה מדעי למוטיבציה ושינוי התנהגות",
   "discussionQuestions": {
-    "פרק 1": ["שאלה ספציפית לנושא ${formData.idea}"],
-    "פרק 2": ["שאלה נוספת על ${formData.idea}"]
+    "פרק 1": ["שאלות שחושפות כאבים עמוקים ויוצרות חיבור"],
+    "פרק 2": ["שאלות שמעמיקות הבנה ובונות אמון"]
   },
-  "salesGuide": "מדריך מכירות עבור ${formData.serviceOrProduct} בהקשר של ${formData.idea}",
-  "postPresentationPlan": "תוכנית מעקב לקהל ${formData.audienceProfile} עבור ${formData.serviceOrProduct}",
-  "motivationalMessage": "הודעה מעודדת שמתייחסת לרקע ${formData.speakerBackground} ולנושא ${formData.idea}",
+  "salesGuide": "מדריך מכירות פסיכולוגי מבוסס דפוסי קנייה",
+  "postPresentationPlan": "תוכנית מעקב מבוססת עקרונות שכנוע",
+  "motivationalMessage": "הודעה מעצימה לחיזוק ביטחון המרצה",
   "salesProcess": [
     {
-      "title": "שלב מכירה ראשון מותאם ל${formData.serviceOrProduct}",
-      "description": "תיאור ספציפי לנושא ${formData.idea}",
+      "title": "שלב מבוסס טריגר פסיכולוגי מדויק",
+      "description": "תיאור מבוסס מחקר התנהגותי",
+      "psychologyPrinciple": "עיקרון פסיכולוגי פעיל",
+      "naturalImplementation": "יישום טבעי ולא פולשני",
       "order": 1
-    },
-    {
-      "title": "שלב מכירה שני",
-      "description": "תיאור שני",
-      "order": 2
-    },
-    {
-      "title": "שלב מכירה שלישי",
-      "description": "תיאור שלישי",
-      "order": 3
-    },
-    {
-      "title": "שלב מכירה רביעי",
-      "description": "תיאור רביעי",
-      "order": 4
-    },
-    {
-      "title": "שלב מכירה חמישי",
-      "description": "תיאור חמישי",
-      "order": 5
-    },
-    {
-      "title": "שלב מכירה שישי",
-      "description": "תיאור שישי",
-      "order": 6
-    },
-    {
-      "title": "שלב מכירה שביעי",
-      "description": "תיאור שביעי",
-      "order": 7
-    },
-    {
-      "title": "שלב מכירה שמיני",
-      "description": "תיאור שמיני",
-      "order": 8
-    },
-    {
-      "title": "שלב מכירה תשיעי",
-      "description": "תיאור תשיעי",
-      "order": 9
-    },
-    {
-      "title": "שלב מכירה עשירי",
-      "description": "תיאור עשירי - סיום וקריאה לפעולה",
-      "order": 10
     }
-  ]
+  ],
+  "advancedEngagement": {
+    "attentionManagement": "ניהול קשב מדעי",
+    "energyOptimization": "אופטימיזציה אנרגטית",
+    "interactionDesign": "עיצוב אינטראקציות אסטרטגי",
+    "memoryArchitecture": "ארכיטקטורת זיכרון"
+  },
+  "persuasionFramework": {
+    "scientificSequence": "רצף שכנוע מדעי",
+    "resistanceNeutralization": "נטרול התנגדויות",
+    "trustConstruction": "בניית אמון מדרגתי",
+    "actionActivation": "הפעלת טריגרי פעולה"
+  }
 }
 
-חשוב: כל התוכן חייב להיות ספציפי לנושא "${formData.idea}" ולא גנרי!
-חובה: בדיוק 10 שלבי מכירה ברשימת salesProcess!
+הוראות קריטיות:
+- בדיוק 4 פרקים ו-10 שלבי מכירה
+- כל אלמנט מבוסס מחקר פסיכולוגי
+- זרימה רגשית ולוגית מושלמת
+- מכירות משולבות טבעית
+- טיפול יזום בהתנגדויות
+- התאמה מלאה לקהל הספציפי
   `;
 
   return await callOpenAI(prompt);
