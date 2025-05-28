@@ -16,6 +16,7 @@ export type Database = {
           email: string
           expires_at: string
           id: string
+          last_sent_at: string | null
           used: boolean
         }
         Insert: {
@@ -24,6 +25,7 @@ export type Database = {
           email: string
           expires_at: string
           id?: string
+          last_sent_at?: string | null
           used?: boolean
         }
         Update: {
@@ -32,6 +34,7 @@ export type Database = {
           email?: string
           expires_at?: string
           id?: string
+          last_sent_at?: string | null
           used?: boolean
         }
         Relationships: []

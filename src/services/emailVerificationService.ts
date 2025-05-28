@@ -1,9 +1,6 @@
 
 import { supabase } from "@/integrations/supabase/client";
 
-// Simple email verification service using Supabase edge function and Resend
-// This replaces the localStorage-based mock implementation
-
 interface VerificationCode {
   email: string;
   code: string;
@@ -17,7 +14,7 @@ export const generateVerificationCode = (): string => {
   return Math.floor(100000 + Math.random() * 900000).toString();
 };
 
-export const sendVerificationCode = async (email: string): Promise<string> => {
+export const sendVerificationCode = async (email: string): Promise<{ success: boolean; code?: string; rateLimited?: boolean; remainingTime?: number }> => {
   try {
     // Call the Supabase edge function to send the verification email
     const { data, error } = await supabase.functions.invoke('send-verification-email', {
@@ -27,6 +24,15 @@ export const sendVerificationCode = async (email: string): Promise<string> => {
     if (error) {
       console.error('Error calling edge function:', error);
       throw new Error('Failed to send verification email');
+    }
+
+    // Check if rate limited
+    if (data.rateLimited) {
+      return {
+        success: false,
+        rateLimited: true,
+        remainingTime: data.remainingTime
+      };
     }
 
     if (!data.success) {
@@ -50,7 +56,7 @@ export const sendVerificationCode = async (email: string): Promise<string> => {
     
     console.log(`Verification code sent to ${email} via Resend`);
     
-    return code;
+    return { success: true, code };
   } catch (error) {
     console.error('Error sending verification code:', error);
     throw error;

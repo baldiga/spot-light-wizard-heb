@@ -41,18 +41,46 @@ const handler = async (req: Request): Promise<Response> => {
       });
     }
 
-    const code = generateVerificationCode();
-    
     // Initialize Supabase client
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    // Store verification code in database (we'll need to create this table)
-    const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes from now
-    
-    // For now, we'll use a simple approach and return the code
-    // In production, you'd store this in a verification_codes table
+    // Check rate limiting (exclude amirbaldiga@gmail.com)
+    if (email !== 'amirbaldiga@gmail.com') {
+      const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+      
+      const { data: recentVerification, error: checkError } = await supabase
+        .from('email_verifications')
+        .select('last_sent_at')
+        .eq('email', email)
+        .gte('last_sent_at', twentyFourHoursAgo.toISOString())
+        .order('last_sent_at', { ascending: false })
+        .limit(1);
+
+      if (checkError) {
+        console.error('Error checking rate limit:', checkError);
+      } else if (recentVerification && recentVerification.length > 0) {
+        const lastSentAt = new Date(recentVerification[0].last_sent_at);
+        const nextAllowedTime = new Date(lastSentAt.getTime() + 24 * 60 * 60 * 1000);
+        const remainingTime = nextAllowedTime.getTime() - Date.now();
+        
+        if (remainingTime > 0) {
+          return new Response(JSON.stringify({ 
+            error: "Rate limit exceeded", 
+            rateLimited: true,
+            remainingTime: remainingTime,
+            nextAllowedTime: nextAllowedTime.toISOString()
+          }), {
+            status: 429,
+            headers: { "Content-Type": "application/json", ...corsHeaders },
+          });
+        }
+      }
+    }
+
+    const code = generateVerificationCode();
+    const currentTime = new Date().toISOString();
     
     console.log(`Sending verification code ${code} to ${email}`);
 
@@ -93,8 +121,20 @@ const handler = async (req: Request): Promise<Response> => {
 
     console.log("Verification email sent successfully:", emailResponse);
 
-    // Store the code temporarily (in production, use a proper database table)
-    // For now, we'll return success and handle verification client-side with the code
+    // Store the verification record with last_sent_at timestamp
+    const { error: insertError } = await supabase
+      .from('email_verifications')
+      .insert({
+        email: email,
+        code: code,
+        expires_at: new Date(Date.now() + 10 * 60 * 1000).toISOString(),
+        last_sent_at: currentTime,
+        used: false
+      });
+
+    if (insertError) {
+      console.error('Error storing verification code:', insertError);
+    }
     
     return new Response(JSON.stringify({ 
       success: true, 

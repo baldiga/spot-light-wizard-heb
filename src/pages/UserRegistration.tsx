@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -10,6 +9,7 @@ import { UserRegistrationData } from '@/types/presentation';
 import { useToast } from '@/hooks/use-toast';
 import { usePresentationStore } from '@/store/presentationStore';
 import SpotlightLogo from '@/components/SpotlightLogo';
+import CountdownTimer from '@/components/CountdownTimer';
 import { sendVerificationCode, verifyCode } from '@/services/emailVerificationService';
 import { Mail, Check, Loader2 } from 'lucide-react';
 
@@ -30,6 +30,7 @@ const UserRegistration = () => {
   const [isCodeSent, setIsCodeSent] = useState(false);
   const [isSendingCode, setIsSendingCode] = useState(false);
   const [isVerifying, setIsVerifying] = useState(false);
+  const [rateLimitInfo, setRateLimitInfo] = useState<{ isLimited: boolean; remainingTime: number } | null>(null);
 
   React.useEffect(() => {
     if (!formData) {
@@ -54,6 +55,7 @@ const UserRegistration = () => {
     if (field === 'email') {
       setIsCodeSent(false);
       setVerificationCodeInput('');
+      setRateLimitInfo(null);
     }
   };
 
@@ -68,13 +70,28 @@ const UserRegistration = () => {
     }
 
     setIsSendingCode(true);
+    setRateLimitInfo(null);
+    
     try {
-      await sendVerificationCode(userData.email);
-      setIsCodeSent(true);
-      toast({
-        title: "קוד נשלח",
-        description: `קוד אימות נשלח לכתובת ${userData.email}. בדוק את תיבת הדואר שלך (ואת תיקיית הספאם)`,
-      });
+      const result = await sendVerificationCode(userData.email);
+      
+      if (result.rateLimited && result.remainingTime) {
+        setRateLimitInfo({
+          isLimited: true,
+          remainingTime: result.remainingTime
+        });
+        toast({
+          title: "הגבלת שליחה",
+          description: "ניתן לשלוח קוד אימות רק פעם אחת ב-24 שעות",
+          variant: "destructive",
+        });
+      } else if (result.success) {
+        setIsCodeSent(true);
+        toast({
+          title: "קוד נשלח",
+          description: `קוד אימות נשלח לכתובת ${userData.email}. בדוק את תיבת הדואר שלך (ואת תיקיית הספאם)`,
+        });
+      }
     } catch (error) {
       toast({
         title: "שגיאה בשליחת קוד",
@@ -121,6 +138,10 @@ const UserRegistration = () => {
     } finally {
       setIsVerifying(false);
     }
+  };
+
+  const handleCountdownExpire = () => {
+    setRateLimitInfo(null);
   };
 
   const validateForm = () => {
@@ -224,27 +245,34 @@ const UserRegistration = () => {
                 </div>
               ) : (
                 <div className="space-y-3">
-                  <div className="flex gap-2">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={handleSendVerificationCode}
-                      disabled={!userData.email || isSendingCode}
-                      className="border-whiskey text-whiskey hover:bg-whiskey/10"
-                    >
-                      {isSendingCode ? (
-                        <>
-                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                          שולח...
-                        </>
-                      ) : (
-                        <>
-                          <Mail className="w-4 h-4 mr-2" />
-                          שלח קוד אימות
-                        </>
-                      )}
-                    </Button>
-                  </div>
+                  {rateLimitInfo?.isLimited ? (
+                    <CountdownTimer 
+                      remainingTime={rateLimitInfo.remainingTime}
+                      onExpire={handleCountdownExpire}
+                    />
+                  ) : (
+                    <div className="flex gap-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={handleSendVerificationCode}
+                        disabled={!userData.email || isSendingCode}
+                        className="border-whiskey text-whiskey hover:bg-whiskey/10"
+                      >
+                        {isSendingCode ? (
+                          <>
+                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                            שולח...
+                          </>
+                        ) : (
+                          <>
+                            <Mail className="w-4 h-4 mr-2" />
+                            שלח קוד אימות
+                          </>
+                        )}
+                      </Button>
+                    </div>
+                  )}
                   
                   {isCodeSent && (
                     <div className="space-y-2">

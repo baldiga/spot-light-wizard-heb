@@ -9,7 +9,7 @@ import { useToast } from '@/hooks/use-toast';
 import SpotlightLogo from '@/components/SpotlightLogo';
 import { 
   Loader2, FileText, Users, Target, DollarSign, 
-  Presentation, Lightbulb, Zap 
+  Presentation, Lightbulb, Zap, Home
 } from 'lucide-react';
 import { 
   generateSlideStructure, 
@@ -39,6 +39,7 @@ const PresentationSummary = () => {
   const [dynamicSlides, setDynamicSlides] = useState<any[]>([]);
   const [dynamicStrategy, setDynamicStrategy] = useState<any>(null);
   const [engagementData, setEngagementData] = useState<any>(null);
+  const [activeTab, setActiveTab] = useState("main");
 
   useEffect(() => {
     if (!formData || !outline) {
@@ -119,6 +120,10 @@ const PresentationSummary = () => {
     navigate('/');
   };
 
+  const navigateToOverview = () => {
+    setActiveTab("overview");
+  };
+
   if (isGenerating) {
     const stage = loadingStages[currentStage];
     return (
@@ -151,8 +156,12 @@ const PresentationSummary = () => {
           <h1 className="text-3xl font-bold text-gray-dark text-center">סיכום מלא של ההרצאה</h1>
         </div>
 
-        <Tabs defaultValue="overview" className="w-full" dir="rtl">
-          <TabsList className="grid w-full grid-cols-7 mb-8 text-xs">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full" dir="rtl">
+          <TabsList className="grid w-full grid-cols-8 mb-8 text-xs">
+            <TabsTrigger value="main" className="flex items-center gap-1">
+              <Home className="w-3 h-3" />
+              <span className="hidden sm:inline">ראשי</span>
+            </TabsTrigger>
             <TabsTrigger value="overview" className="flex items-center gap-1">
               <FileText className="w-3 h-3" />
               <span className="hidden sm:inline">סקירה</span>
@@ -182,6 +191,52 @@ const PresentationSummary = () => {
               <span className="hidden sm:inline">שיווק</span>
             </TabsTrigger>
           </TabsList>
+
+          {/* New Main Tab */}
+          <TabsContent value="main" className="space-y-6">
+            <Card className="border-whiskey/20" dir="rtl">
+              <CardHeader className="bg-whiskey/5 text-right">
+                <CardTitle className="text-2xl text-gray-dark text-right">ברוכים הבאים לסיכום ההרצאה שלכם</CardTitle>
+              </CardHeader>
+              <CardContent className="pt-6" dir="rtl">
+                <div className="text-center space-y-6">
+                  <h1 className="text-4xl font-bold text-gray-900 mb-4">
+                    ההרצאה שלכם מוכנה!
+                  </h1>
+                  
+                  <h2 className="text-2xl text-gray-700 mb-8">
+                    כל מה שאתם צריכים כדי להציג הרצאה מקצועית ומרשימה
+                  </h2>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6 py-8">
+                    <div className="bg-white p-6 rounded-lg shadow-md border border-gray-100">
+                      <h3 className="text-xl font-semibold mb-3 text-gray-dark">תוכן מקצועי</h3>
+                      <p className="text-gray-600">מבנה הרצאה מפורט עם שקפים, פתיחות ותוכן אינטראקטיבי</p>
+                    </div>
+                    
+                    <div className="bg-white p-6 rounded-lg shadow-md border border-gray-100">
+                      <h3 className="text-xl font-semibold mb-3 text-gray-dark">אסטרטגיית מכירה</h3>
+                      <p className="text-gray-600">מהלך מכירה מובנה ומותאם לקהל היעד שלכם</p>
+                    </div>
+                    
+                    <div className="bg-white p-6 rounded-lg shadow-md border border-gray-100">
+                      <h3 className="text-xl font-semibold mb-3 text-gray-dark">תוכנית שיווק</h3>
+                      <p className="text-gray-600">אסטרטגיה מלאה לקידום ההרצאה ומכירת השירותים</p>
+                    </div>
+                  </div>
+                  
+                  <div className="pt-6">
+                    <Button 
+                      onClick={navigateToOverview}
+                      className="bg-whiskey hover:bg-whiskey-dark text-white px-8 py-3 text-lg"
+                    >
+                      התחילו לסקור את ההרצאה
+                    </Button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
 
           {/* Overview Tab */}
           <TabsContent value="overview" className="space-y-6">
