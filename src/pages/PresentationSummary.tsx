@@ -7,57 +7,60 @@ import { Progress } from '@/components/ui/progress';
 import { usePresentationStore } from '@/store/presentationStore';
 import { useToast } from '@/hooks/use-toast';
 import SpotlightLogo from '@/components/SpotlightLogo';
-import { 
-  Loader2, FileText, Users, Target, DollarSign, 
-  Presentation, Lightbulb, Zap, Home
-} from 'lucide-react';
-import { 
-  generateSlideStructure, 
-  generateSalesStrategy, 
-  generateEngagementContent
-} from '@/services/presentationService';
-
+import { Loader2, FileText, Users, Target, DollarSign, Presentation, Lightbulb, Zap, Home } from 'lucide-react';
+import { generateSlideStructure, generateSalesStrategy, generateEngagementContent } from '@/services/presentationService';
 interface LoadingStage {
   name: string;
   message: string;
   progress: number;
 }
-
-const loadingStages: LoadingStage[] = [
-  { name: 'outline', message: 'יצירת מבנה ההרצאה הושלמה...', progress: 25 },
-  { name: 'slides', message: 'יוצר מבנה שקפים מפורט...', progress: 50 },
-  { name: 'engagement', message: 'יוצר תוכן מעורבות אינטראקטיבי...', progress: 75 },
-  { name: 'strategy', message: 'מפתח אסטרטגיית שיווק ומכירות...', progress: 100 }
-];
-
+const loadingStages: LoadingStage[] = [{
+  name: 'outline',
+  message: 'יצירת מבנה ההרצאה הושלמה...',
+  progress: 25
+}, {
+  name: 'slides',
+  message: 'יוצר מבנה שקפים מפורט...',
+  progress: 50
+}, {
+  name: 'engagement',
+  message: 'יוצר תוכן מעורבות אינטראקטיבי...',
+  progress: 75
+}, {
+  name: 'strategy',
+  message: 'מפתח אסטרטגיית שיווק ומכירות...',
+  progress: 100
+}];
 const PresentationSummary = () => {
   const navigate = useNavigate();
-  const { toast } = useToast();
-  const { formData, chapters, outline } = usePresentationStore();
+  const {
+    toast
+  } = useToast();
+  const {
+    formData,
+    chapters,
+    outline
+  } = usePresentationStore();
   const [isGenerating, setIsGenerating] = useState(true);
   const [currentStage, setCurrentStage] = useState(0);
   const [dynamicSlides, setDynamicSlides] = useState<any[]>([]);
   const [dynamicStrategy, setDynamicStrategy] = useState<any>(null);
   const [engagementData, setEngagementData] = useState<any>(null);
   const [activeTab, setActiveTab] = useState("main");
-
   useEffect(() => {
     if (!formData || !outline) {
       toast({
         title: "מידע חסר",
         description: "אנא השלם את תהליך יצירת ההרצאה תחילה",
-        variant: "destructive",
+        variant: "destructive"
       });
       navigate('/create');
       return;
     }
-
     generateAllContent();
   }, [formData, outline, navigate, toast]);
-
   const generateAllContent = async () => {
     if (!formData || !outline) return;
-    
     try {
       // Stage 1: Outline already completed
       setCurrentStage(0);
@@ -68,10 +71,9 @@ const PresentationSummary = () => {
       console.log('🎯 Starting slides generation...');
       const slidesResponse: any = await generateSlideStructure(formData, outline);
       console.log('🎯 Slides response:', slidesResponse);
-      
+
       // Handle slides data with proper typing
       let slidesToSet: any[] = [];
-      
       if (Array.isArray(slidesResponse)) {
         slidesToSet = slidesResponse;
         console.log('✅ Set slides (direct array):', slidesToSet.length, 'slides');
@@ -82,7 +84,6 @@ const PresentationSummary = () => {
         console.warn('⚠️ Unexpected slides format:', slidesResponse);
         slidesToSet = [];
       }
-      
       setDynamicSlides(slidesToSet);
       await new Promise(resolve => setTimeout(resolve, 500));
 
@@ -100,34 +101,29 @@ const PresentationSummary = () => {
       const strategy = await generateSalesStrategy(formData, outline);
       console.log('🎯 Strategy response:', strategy);
       setDynamicStrategy(strategy);
-      
+
       // Complete loading
       await new Promise(resolve => setTimeout(resolve, 1000));
       setIsGenerating(false);
-      
     } catch (error) {
       console.error('❌ Error generating content:', error);
       toast({
         title: "שגיאה ביצירת תוכן",
         description: "אירעה שגיאה ביצירת התוכן הדינמי",
-        variant: "destructive",
+        variant: "destructive"
       });
       setIsGenerating(false);
     }
   };
-
   const handleRestart = () => {
     navigate('/');
   };
-
   const navigateToOverview = () => {
     setActiveTab("overview");
   };
-
   if (isGenerating) {
     const stage = loadingStages[currentStage];
-    return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50">
+    return <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50">
         <SpotlightLogo className="w-16 h-16 mb-6" />
         <h2 className="text-2xl font-bold text-gray-800 mb-4 text-center">
           יוצר תוכן מותאם אישית...
@@ -144,12 +140,9 @@ const PresentationSummary = () => {
           <p>יוצר תוכן מותאם אישית עבור: {formData?.idea}</p>
           <p className="mt-1">אנא המתן, התהליך יכול לקחת מספר דקות...</p>
         </div>
-      </div>
-    );
+      </div>;
   }
-
-  return (
-    <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+  return <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-6xl mx-auto">
         <div className="flex items-center justify-center mb-8">
           <SpotlightLogo className="w-12 h-12 mr-3" />
@@ -195,43 +188,38 @@ const PresentationSummary = () => {
           {/* New Main Tab */}
           <TabsContent value="main" className="space-y-6">
             <Card className="border-whiskey/20" dir="rtl">
-              <CardHeader className="bg-whiskey/5 text-right">
-                <CardTitle className="text-2xl text-gray-dark text-right">ברוכים הבאים לסיכום ההרצאה שלכם</CardTitle>
-              </CardHeader>
+              
               <CardContent className="pt-6" dir="rtl">
                 <div className="text-center space-y-6">
-                  <h1 className="text-4xl font-bold text-gray-900 mb-4">
-                    ההרצאה שלכם מוכנה!
-                  </h1>
+                  <h1 className="text-4xl font-bold text-gray-900 mb-4">ההרצאה שלך מוכנה!</h1>
                   
-                  <h2 className="text-2xl text-gray-700 mb-8">
-                    כל מה שאתם צריכים כדי להציג הרצאה מקצועית ומרשימה
-                  </h2>
+                  <h2 className="text-2xl text-gray-700 mb-8">שימו לב
+כל התכנים כאן נוצרו ע"י סוכן מאומן
+ועם זאת אני מזמין אתכם ואתכן להשתמש במידע הזה
+כבסיס להצלחה שלכם, להתאים אותה לאופי והאישיות שלכם
+וכמובן, להשתמש בזה כדלק ולהוציא את ההרצאה לפועל</h2>
                   
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-6 py-8">
                     <div className="bg-white p-6 rounded-lg shadow-md border border-gray-100">
-                      <h3 className="text-xl font-semibold mb-3 text-gray-dark">תוכן מקצועי</h3>
-                      <p className="text-gray-600">מבנה הרצאה מפורט עם שקפים, פתיחות ותוכן אינטראקטיבי</p>
+                      <h3 className="text-xl font-semibold mb-3 text-gray-dark">צריכים עזרה מקצועית?</h3>
+                      <p className="text-gray-600">השתמשו בכפתור הירוק בתחתית הדף ליצירת הקשר הישיר איתי דרך הוואטצאפ</p>
                     </div>
                     
                     <div className="bg-white p-6 rounded-lg shadow-md border border-gray-100">
-                      <h3 className="text-xl font-semibold mb-3 text-gray-dark">אסטרטגיית מכירה</h3>
-                      <p className="text-gray-600">מהלך מכירה מובנה ומותאם לקהל היעד שלכם</p>
+                      <h3 className="text-xl font-semibold mb-3 text-gray-dark">זה הדליק בכם ניצוץ
+ורוצים שזה יהפוך לאש?!</h3>
+                      <p className="text-gray-600">מכירה על הבמה זה לא רק ההרצאה הכי טובה אלא מכלול של חווית לקוח והצעה נכונה.
+אל תפסיקו להשחיז</p>
                     </div>
                     
                     <div className="bg-white p-6 rounded-lg shadow-md border border-gray-100">
-                      <h3 className="text-xl font-semibold mb-3 text-gray-dark">תוכנית שיווק</h3>
-                      <p className="text-gray-600">אסטרטגיה מלאה לקידום ההרצאה ומכירת השירותים</p>
+                      <h3 className="text-xl font-semibold mb-3 text-gray-dark">יש לכם כבר תקופה חלום להוציא לדרך כנס עסקי גדול משלכם?</h3>
+                      <p className="text-gray-600">השתמשו בכפתור הירוק ליצירת קשר ישיר איתי דרך הוואטצאפ וקבלו פרטים נוספים על תוכנית חיית כנסים בליווי אישי ויחד ניצור לך כנס עסקי שמכניס 6-7 ספרות בערב אחד!</p>
                     </div>
                   </div>
                   
                   <div className="pt-6">
-                    <Button 
-                      onClick={navigateToOverview}
-                      className="bg-whiskey hover:bg-whiskey-dark text-white px-8 py-3 text-lg"
-                    >
-                      התחילו לסקור את ההרצאה
-                    </Button>
+                    <Button onClick={navigateToOverview} className="bg-whiskey hover:bg-whiskey-dark text-white px-8 py-3 text-lg">עברו לסיכום המלא</Button>
                   </div>
                 </div>
               </CardContent>
@@ -274,27 +262,19 @@ const PresentationSummary = () => {
                 <CardTitle className="text-2xl text-gray-dark text-right">מבנה ההרצאה (4 פרקים)</CardTitle>
               </CardHeader>
               <CardContent className="pt-6" dir="rtl">
-                {chapters.length > 0 ? (
-                  <div className="space-y-6 text-right">
-                    {chapters.slice(0, 4).map((chapter, index) => (
-                      <div key={chapter.id} className="border rounded-lg p-4 bg-gray-50">
+                {chapters.length > 0 ? <div className="space-y-6 text-right">
+                    {chapters.slice(0, 4).map((chapter, index) => <div key={chapter.id} className="border rounded-lg p-4 bg-gray-50">
                         <h3 className="text-xl font-bold text-gray-800 text-right mb-3">
                           פרק {index + 1}: {chapter.title}
                         </h3>
                         <ul className="space-y-2">
-                          {chapter.points.map((point) => (
-                            <li key={point.id} className="flex items-start text-right">
+                          {chapter.points.map(point => <li key={point.id} className="flex items-start text-right">
                               <span className="w-2 h-2 bg-whiskey rounded-full mt-2 ml-3 flex-shrink-0"></span>
                               <span className="text-gray-600">{point.content}</span>
-                            </li>
-                          ))}
+                            </li>)}
                         </ul>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="text-gray-500 text-center text-right">לא נוצר מבנה הרצאה</p>
-                )}
+                      </div>)}
+                  </div> : <p className="text-gray-500 text-center text-right">לא נוצר מבנה הרצאה</p>}
               </CardContent>
             </Card>
           </TabsContent>
@@ -307,10 +287,8 @@ const PresentationSummary = () => {
                 <p className="text-gray-600 text-right">סה"כ {dynamicSlides?.length || 0} שקפים</p>
               </CardHeader>
               <CardContent className="pt-6" dir="rtl">
-                {dynamicSlides && dynamicSlides.length > 0 ? (
-                  <div className="space-y-6">
-                    {dynamicSlides.map((slide, index) => (
-                      <div key={index} className="border rounded-lg p-4 bg-white shadow-sm">
+                {dynamicSlides && dynamicSlides.length > 0 ? <div className="space-y-6">
+                    {dynamicSlides.map((slide, index) => <div key={index} className="border rounded-lg p-4 bg-white shadow-sm">
                         <div className="flex items-center justify-between mb-3">
                           <div className="flex items-center">
                             <div className="w-8 h-8 bg-whiskey text-white rounded-full flex items-center justify-center text-sm font-bold ml-3">
@@ -321,9 +299,7 @@ const PresentationSummary = () => {
                               {slide?.section && <span className="text-sm text-gray-500 bg-gray-100 px-2 py-1 rounded">{slide.section}</span>}
                             </div>
                           </div>
-                          {slide?.timeAllocation && (
-                            <span className="text-sm text-whiskey font-medium">{slide.timeAllocation}</span>
-                          )}
+                          {slide?.timeAllocation && <span className="text-sm text-whiskey font-medium">{slide.timeAllocation}</span>}
                         </div>
                         
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-right">
@@ -337,35 +313,25 @@ const PresentationSummary = () => {
                           </div>
                         </div>
                         
-                        {slide?.notes && (
-                          <div className="mt-4 p-3 bg-yellow-50 rounded">
+                        {slide?.notes && <div className="mt-4 p-3 bg-yellow-50 rounded">
                             <h4 className="font-semibold text-yellow-800 mb-1">הערות למרצה:</h4>
                             <p className="text-yellow-700 text-sm">{slide.notes}</p>
-                          </div>
-                        )}
+                          </div>}
                         
-                        {slide?.engagementTip && (
-                          <div className="mt-3 p-3 bg-blue-50 rounded">
+                        {slide?.engagementTip && <div className="mt-3 p-3 bg-blue-50 rounded">
                             <h4 className="font-semibold text-blue-800 mb-1">טיפ למעורבות:</h4>
                             <p className="text-blue-700 text-sm">{slide.engagementTip}</p>
-                          </div>
-                        )}
+                          </div>}
                         
-                        {slide?.transitionPhrase && (
-                          <div className="mt-3 p-3 bg-green-50 rounded">
+                        {slide?.transitionPhrase && <div className="mt-3 p-3 bg-green-50 rounded">
                             <h4 className="font-semibold text-green-800 mb-1">משפט מעבר:</h4>
                             <p className="text-green-700 text-sm">{slide.transitionPhrase}</p>
-                          </div>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="text-center py-8">
+                          </div>}
+                      </div>)}
+                  </div> : <div className="text-center py-8">
                     <p className="text-gray-500 text-right">מבנה השקפים בתהליך יצירה...</p>
                     <p className="text-gray-400 text-sm text-right mt-2">אנא המתן, התוכן נטען</p>
-                  </div>
-                )}
+                  </div>}
               </CardContent>
             </Card>
           </TabsContent>
@@ -377,13 +343,8 @@ const PresentationSummary = () => {
                 <CardTitle className="text-2xl text-gray-dark text-right">מהלך מכירה בהרצאה (10 שלבים)</CardTitle>
               </CardHeader>
               <CardContent className="pt-6" dir="rtl">
-                {outline?.salesProcess && outline.salesProcess.length > 0 ? (
-                  <div className="space-y-6 text-right">
-                    {outline.salesProcess
-                      .sort((a, b) => a.order - b.order)
-                      .slice(0, 10)
-                      .map((step, index) => (
-                        <div key={step.id} className="border rounded-lg p-4 bg-white shadow-sm">
+                {outline?.salesProcess && outline.salesProcess.length > 0 ? <div className="space-y-6 text-right">
+                    {outline.salesProcess.sort((a, b) => a.order - b.order).slice(0, 10).map((step, index) => <div key={step.id} className="border rounded-lg p-4 bg-white shadow-sm">
                           <div className="flex items-start justify-end">
                             <div className="text-right flex-1">
                               <h3 className="text-lg font-bold text-gray-800 text-right mb-2">{step.title}</h3>
@@ -393,12 +354,8 @@ const PresentationSummary = () => {
                               {index + 1}
                             </div>
                           </div>
-                        </div>
-                      ))}
-                  </div>
-                ) : (
-                  <p className="text-gray-500 text-center text-right">לא נוצר מהלך מכירה עבור הרצאה זו</p>
-                )}
+                        </div>)}
+                  </div> : <p className="text-gray-500 text-center text-right">לא נוצר מהלך מכירה עבור הרצאה זו</p>}
               </CardContent>
             </Card>
           </TabsContent>
@@ -410,10 +367,8 @@ const PresentationSummary = () => {
                 <CardTitle className="text-2xl text-gray-dark text-right">רעיונות לפתיחת ההרצאה</CardTitle>
               </CardHeader>
               <CardContent className="pt-6" dir="rtl">
-                {outline?.openingStyles && Array.isArray(outline.openingStyles) && outline.openingStyles.length > 0 ? (
-                  <div className="space-y-4 text-right">
-                    {outline.openingStyles.map((style, index) => (
-                      <div key={index} className="border rounded-lg p-4 bg-white shadow-sm">
+                {outline?.openingStyles && Array.isArray(outline.openingStyles) && outline.openingStyles.length > 0 ? <div className="space-y-4 text-right">
+                    {outline.openingStyles.map((style, index) => <div key={index} className="border rounded-lg p-4 bg-white shadow-sm">
                         <div className="flex items-start justify-end">
                           <div className="text-right flex-1">
                             <p className="text-gray-700">{typeof style === 'string' ? style : JSON.stringify(style)}</p>
@@ -422,12 +377,8 @@ const PresentationSummary = () => {
                             {index + 1}
                           </div>
                         </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="text-gray-500 text-center text-right">לא נוצרו רעיונות לפתיחה</p>
-                )}
+                      </div>)}
+                  </div> : <p className="text-gray-500 text-center text-right">לא נוצרו רעיונות לפתיחה</p>}
               </CardContent>
             </Card>
           </TabsContent>
@@ -439,63 +390,43 @@ const PresentationSummary = () => {
                 <CardTitle className="text-2xl text-gray-dark text-right">כלי מעורבות אינטראקטיביים</CardTitle>
               </CardHeader>
               <CardContent className="pt-6" dir="rtl">
-                {engagementData ? (
-                  <div className="space-y-6 text-right">
-                    {engagementData.interactiveActivities && Array.isArray(engagementData.interactiveActivities) && engagementData.interactiveActivities.length > 0 && (
-                      <div className="mb-6">
+                {engagementData ? <div className="space-y-6 text-right">
+                    {engagementData.interactiveActivities && Array.isArray(engagementData.interactiveActivities) && engagementData.interactiveActivities.length > 0 && <div className="mb-6">
                         <h3 className="text-xl font-bold text-gray-800 mb-4">פעילויות אינטראקטיביות</h3>
                         <div className="space-y-3">
-                          {engagementData.interactiveActivities.map((activity: any, index: number) => (
-                            <div key={index} className="p-4 bg-blue-50 rounded-lg">
+                          {engagementData.interactiveActivities.map((activity: any, index: number) => <div key={index} className="p-4 bg-blue-50 rounded-lg">
                               <p className="text-gray-700">{typeof activity === 'string' ? activity : JSON.stringify(activity)}</p>
-                            </div>
-                          ))}
+                            </div>)}
                         </div>
-                      </div>
-                    )}
+                      </div>}
 
-                    {engagementData.discussionQuestions && typeof engagementData.discussionQuestions === 'object' && Object.keys(engagementData.discussionQuestions).length > 0 && (
-                      <div className="mb-6">
+                    {engagementData.discussionQuestions && typeof engagementData.discussionQuestions === 'object' && Object.keys(engagementData.discussionQuestions).length > 0 && <div className="mb-6">
                         <h3 className="text-xl font-bold text-gray-800 mb-4">שאלות לדיון</h3>
-                        {Object.entries(engagementData.discussionQuestions).map(([chapter, questions]) => (
-                          <div key={chapter} className="mb-4">
+                        {Object.entries(engagementData.discussionQuestions).map(([chapter, questions]) => <div key={chapter} className="mb-4">
                             <h4 className="font-semibold text-gray-700 mb-2">{chapter}</h4>
                             <div className="space-y-2">
-                              {Array.isArray(questions) && questions.map((question: any, index: number) => (
-                                <div key={index} className="p-3 bg-green-50 rounded">
+                              {Array.isArray(questions) && questions.map((question: any, index: number) => <div key={index} className="p-3 bg-green-50 rounded">
                                   <p className="text-gray-700">{typeof question === 'string' ? question : JSON.stringify(question)}</p>
-                                </div>
-                              ))}
+                                </div>)}
                             </div>
-                          </div>
-                        ))}
-                      </div>
-                    )}
+                          </div>)}
+                      </div>}
 
-                    {engagementData.engagementMetrics && (
-                      <div>
+                    {engagementData.engagementMetrics && <div>
                         <h3 className="text-xl font-bold text-gray-800 mb-4">כלים נוספים למעורבות</h3>
-                        {engagementData.engagementMetrics.pollQuestions && Array.isArray(engagementData.engagementMetrics.pollQuestions) && (
-                          <div className="mb-4">
+                        {engagementData.engagementMetrics.pollQuestions && Array.isArray(engagementData.engagementMetrics.pollQuestions) && <div className="mb-4">
                             <h4 className="font-semibold text-gray-800 mb-2">שאלות סקר</h4>
                             <div className="space-y-2">
-                              {engagementData.engagementMetrics.pollQuestions.map((poll: any, index: number) => (
-                                <div key={index} className="p-3 bg-yellow-50 rounded">
+                              {engagementData.engagementMetrics.pollQuestions.map((poll: any, index: number) => <div key={index} className="p-3 bg-yellow-50 rounded">
                                   <p className="text-gray-700">{typeof poll === 'string' ? poll : JSON.stringify(poll)}</p>
-                                </div>
-                              ))}
+                                </div>)}
                             </div>
-                          </div>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                ) : (
-                  <div className="text-center py-8">
+                          </div>}
+                      </div>}
+                  </div> : <div className="text-center py-8">
                     <p className="text-gray-500 text-right">תוכן מעורבות בתהליך יצירה...</p>
                     <p className="text-gray-400 text-sm text-right mt-2">אנא המתן, התוכן נטען</p>
-                  </div>
-                )}
+                  </div>}
               </CardContent>
             </Card>
           </TabsContent>
@@ -507,165 +438,105 @@ const PresentationSummary = () => {
                 <CardTitle className="text-2xl text-gray-dark text-right">אסטרטגיית שיווק ומכירות</CardTitle>
               </CardHeader>
               <CardContent className="pt-6" dir="rtl">
-                {dynamicStrategy ? (
-                  <div className="space-y-6 text-right">
+                {dynamicStrategy ? <div className="space-y-6 text-right">
                     {/* 4 Week Plan Section */}
-                    {dynamicStrategy.fourWeekPlan && (
-                      <div className="mb-8">
+                    {dynamicStrategy.fourWeekPlan && <div className="mb-8">
                         <h3 className="text-xl font-bold text-gray-800 mb-4">תוכנית 4 שבועות</h3>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          {Object.entries(dynamicStrategy.fourWeekPlan).map(([week, data]: [string, any]) => (
-                            <div key={week} className="p-4 bg-blue-50 rounded-lg">
+                          {Object.entries(dynamicStrategy.fourWeekPlan).map(([week, data]: [string, any]) => <div key={week} className="p-4 bg-blue-50 rounded-lg">
                               <h4 className="font-semibold text-blue-800 mb-2">{week}</h4>
-                              {data.goals && Array.isArray(data.goals) && (
-                                <ul className="space-y-1">
-                                  {data.goals.map((goal: string, index: number) => (
-                                    <li key={index} className="text-gray-700 text-sm">• {goal}</li>
-                                  ))}
-                                </ul>
-                              )}
-                            </div>
-                          ))}
+                              {data.goals && Array.isArray(data.goals) && <ul className="space-y-1">
+                                  {data.goals.map((goal: string, index: number) => <li key={index} className="text-gray-700 text-sm">• {goal}</li>)}
+                                </ul>}
+                            </div>)}
                         </div>
-                      </div>
-                    )}
+                      </div>}
 
-                    {dynamicStrategy.targetAudiences && Array.isArray(dynamicStrategy.targetAudiences) && dynamicStrategy.targetAudiences.length > 0 && (
-                      <div className="mb-6">
+                    {dynamicStrategy.targetAudiences && Array.isArray(dynamicStrategy.targetAudiences) && dynamicStrategy.targetAudiences.length > 0 && <div className="mb-6">
                         <h3 className="text-xl font-bold text-gray-800 mb-4">קהלי יעד</h3>
                         <div className="space-y-3">
-                          {dynamicStrategy.targetAudiences.map((audience: string, index: number) => (
-                            <div key={index} className="p-4 bg-blue-50 rounded-lg">
+                          {dynamicStrategy.targetAudiences.map((audience: string, index: number) => <div key={index} className="p-4 bg-blue-50 rounded-lg">
                               <p className="text-gray-700">{audience}</p>
-                            </div>
-                          ))}
+                            </div>)}
                         </div>
-                      </div>
-                    )}
+                      </div>}
 
-                    {dynamicStrategy.marketingChannels && Array.isArray(dynamicStrategy.marketingChannels) && dynamicStrategy.marketingChannels.length > 0 && (
-                      <div className="mb-6">
+                    {dynamicStrategy.marketingChannels && Array.isArray(dynamicStrategy.marketingChannels) && dynamicStrategy.marketingChannels.length > 0 && <div className="mb-6">
                         <h3 className="text-xl font-bold text-gray-800 mb-4">ערוצי שיווק</h3>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          {dynamicStrategy.marketingChannels.map((channel: any, index: number) => (
-                            <div key={index} className="p-4 bg-green-50 rounded-lg">
+                          {dynamicStrategy.marketingChannels.map((channel: any, index: number) => <div key={index} className="p-4 bg-green-50 rounded-lg">
                               <h4 className="font-semibold text-green-800 mb-2">{channel?.channel || `ערוץ ${index + 1}`}</h4>
                               <p className="text-gray-700 text-sm mb-2">{channel?.strategy || ''}</p>
                               <p className="text-gray-600 text-xs"><strong>לוח זמנים:</strong> {channel?.timeline || ''}</p>
                               <p className="text-gray-600 text-xs"><strong>תקציב:</strong> {channel?.budget || ''}</p>
-                            </div>
-                          ))}
+                            </div>)}
                         </div>
-                      </div>
-                    )}
+                      </div>}
 
-                    {dynamicStrategy.pricingStrategy && typeof dynamicStrategy.pricingStrategy === 'object' && Object.keys(dynamicStrategy.pricingStrategy).length > 0 && (
-                      <div className="mb-6">
+                    {dynamicStrategy.pricingStrategy && typeof dynamicStrategy.pricingStrategy === 'object' && Object.keys(dynamicStrategy.pricingStrategy).length > 0 && <div className="mb-6">
                         <h3 className="text-xl font-bold text-gray-800 mb-4">אסטרטגיית תמחור</h3>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          {Object.entries(dynamicStrategy.pricingStrategy).map(([key, value]) => (
-                            <div key={key} className="p-4 bg-yellow-50 rounded-lg">
+                          {Object.entries(dynamicStrategy.pricingStrategy).map(([key, value]) => <div key={key} className="p-4 bg-yellow-50 rounded-lg">
                               <p className="text-gray-700">{typeof value === 'string' ? value : JSON.stringify(value)}</p>
-                            </div>
-                          ))}
+                            </div>)}
                         </div>
-                      </div>
-                    )}
+                      </div>}
 
                     {/* Enhanced Collaboration Section */}
-                    {dynamicStrategy.collaborationOpportunities && (
-                      <div className="mb-6">
+                    {dynamicStrategy.collaborationOpportunities && <div className="mb-6">
                         <h3 className="text-xl font-bold text-gray-800 mb-4">הזדמנויות שיתוף פעולה</h3>
                         <div className="space-y-3">
-                          {(Array.isArray(dynamicStrategy.collaborationOpportunities) ? dynamicStrategy.collaborationOpportunities : [dynamicStrategy.collaborationOpportunities]).map((opportunity: any, index: number) => (
-                            <div key={index} className="p-4 bg-purple-50 rounded-lg">
-                              {typeof opportunity === 'object' ? (
-                                <div>
+                          {(Array.isArray(dynamicStrategy.collaborationOpportunities) ? dynamicStrategy.collaborationOpportunities : [dynamicStrategy.collaborationOpportunities]).map((opportunity: any, index: number) => <div key={index} className="p-4 bg-purple-50 rounded-lg">
+                              {typeof opportunity === 'object' ? <div>
                                   <h4 className="font-semibold text-purple-800 mb-2">{opportunity.title || 'שיתוף פעולה'}</h4>
                                   <p className="text-gray-700 text-sm">{opportunity.description || opportunity}</p>
-                                  {opportunity.implementation && (
-                                    <p className="text-gray-600 text-xs mt-2"><strong>יישום:</strong> {opportunity.implementation}</p>
-                                  )}
-                                </div>
-                              ) : (
-                                <p className="text-gray-700">{opportunity}</p>
-                              )}
-                            </div>
-                          ))}
+                                  {opportunity.implementation && <p className="text-gray-600 text-xs mt-2"><strong>יישום:</strong> {opportunity.implementation}</p>}
+                                </div> : <p className="text-gray-700">{opportunity}</p>}
+                            </div>)}
                         </div>
-                      </div>
-                    )}
+                      </div>}
 
                     {/* Enhanced Content Marketing Section */}
-                    {dynamicStrategy.contentMarketing && (
-                      <div className="mb-6">
+                    {dynamicStrategy.contentMarketing && <div className="mb-6">
                         <h3 className="text-xl font-bold text-gray-800 mb-4">שיווק תוכן</h3>
                         <div className="space-y-3">
-                          {(Array.isArray(dynamicStrategy.contentMarketing) ? dynamicStrategy.contentMarketing : [dynamicStrategy.contentMarketing]).map((content: any, index: number) => (
-                            <div key={index} className="p-4 bg-orange-50 rounded-lg">
-                              {typeof content === 'object' ? (
-                                <div>
+                          {(Array.isArray(dynamicStrategy.contentMarketing) ? dynamicStrategy.contentMarketing : [dynamicStrategy.contentMarketing]).map((content: any, index: number) => <div key={index} className="p-4 bg-orange-50 rounded-lg">
+                              {typeof content === 'object' ? <div>
                                   <h4 className="font-semibold text-orange-800 mb-2">{content.title || 'תוכן שיווקי'}</h4>
                                   <p className="text-gray-700 text-sm">{content.description || content}</p>
-                                  {content.actionItems && Array.isArray(content.actionItems) && (
-                                    <ul className="mt-2 space-y-1">
-                                      {content.actionItems.map((item: string, itemIndex: number) => (
-                                        <li key={itemIndex} className="text-gray-600 text-xs">• {item}</li>
-                                      ))}
-                                    </ul>
-                                  )}
-                                </div>
-                              ) : (
-                                <p className="text-gray-700">{content}</p>
-                              )}
-                            </div>
-                          ))}
+                                  {content.actionItems && Array.isArray(content.actionItems) && <ul className="mt-2 space-y-1">
+                                      {content.actionItems.map((item: string, itemIndex: number) => <li key={itemIndex} className="text-gray-600 text-xs">• {item}</li>)}
+                                    </ul>}
+                                </div> : <p className="text-gray-700">{content}</p>}
+                            </div>)}
                         </div>
-                      </div>
-                    )}
+                      </div>}
 
                     {/* Enhanced Tracking Section */}
-                    {dynamicStrategy.followUpStrategy && (
-                      <div>
+                    {dynamicStrategy.followUpStrategy && <div>
                         <h3 className="text-xl font-bold text-gray-800 mb-4">אסטרטגיית מעקב ומדידה</h3>
                         <div className="p-4 bg-gray-50 rounded-lg">
-                          {typeof dynamicStrategy.followUpStrategy === 'object' ? (
-                            <div>
+                          {typeof dynamicStrategy.followUpStrategy === 'object' ? <div>
                               <p className="text-gray-700 mb-3">{dynamicStrategy.followUpStrategy.description || 'אסטרטגיית מעקב מותאמת'}</p>
-                              {dynamicStrategy.followUpStrategy.metrics && Array.isArray(dynamicStrategy.followUpStrategy.metrics) && (
-                                <div>
+                              {dynamicStrategy.followUpStrategy.metrics && Array.isArray(dynamicStrategy.followUpStrategy.metrics) && <div>
                                   <h4 className="font-semibold text-gray-800 mb-2">מדדי מעקב:</h4>
                                   <ul className="space-y-1">
-                                    {dynamicStrategy.followUpStrategy.metrics.map((metric: string, index: number) => (
-                                      <li key={index} className="text-gray-600 text-sm">• {metric}</li>
-                                    ))}
+                                    {dynamicStrategy.followUpStrategy.metrics.map((metric: string, index: number) => <li key={index} className="text-gray-600 text-sm">• {metric}</li>)}
                                   </ul>
-                                </div>
-                              )}
-                              {dynamicStrategy.followUpStrategy.tools && Array.isArray(dynamicStrategy.followUpStrategy.tools) && (
-                                <div className="mt-3">
+                                </div>}
+                              {dynamicStrategy.followUpStrategy.tools && Array.isArray(dynamicStrategy.followUpStrategy.tools) && <div className="mt-3">
                                   <h4 className="font-semibold text-gray-800 mb-2">כלי מעקב:</h4>
                                   <ul className="space-y-1">
-                                    {dynamicStrategy.followUpStrategy.tools.map((tool: string, index: number) => (
-                                      <li key={index} className="text-gray-600 text-sm">• {tool}</li>
-                                    ))}
+                                    {dynamicStrategy.followUpStrategy.tools.map((tool: string, index: number) => <li key={index} className="text-gray-600 text-sm">• {tool}</li>)}
                                   </ul>
-                                </div>
-                              )}
-                            </div>
-                          ) : (
-                            <p className="text-gray-700">{dynamicStrategy.followUpStrategy}</p>
-                          )}
+                                </div>}
+                            </div> : <p className="text-gray-700">{dynamicStrategy.followUpStrategy}</p>}
                         </div>
-                      </div>
-                    )}
-                  </div>
-                ) : (
-                  <div className="text-center py-8">
+                      </div>}
+                  </div> : <div className="text-center py-8">
                     <p className="text-gray-500 text-right">אסטרטגיית השיווק בתהליך יצירה...</p>
                     <p className="text-gray-400 text-sm text-right mt-2">אנא המתן, התוכן נטען</p>
-                  </div>
-                )}
+                  </div>}
               </CardContent>
             </Card>
           </TabsContent>
@@ -674,28 +545,14 @@ const PresentationSummary = () => {
 
         {/* Action buttons section */}
         <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mt-12">
-          <Button 
-            onClick={handleRestart}
-            className="bg-whiskey hover:bg-whiskey-dark text-white px-8 py-3 text-lg"
-          >
-            סיום והתחלה מחדש
-          </Button>
+          <Button onClick={handleRestart} className="bg-whiskey hover:bg-whiskey-dark text-white px-8 py-3 text-lg">סיום ויצירת הרצאה חדשה</Button>
           
           <div className="text-center">
-            <p className="text-gray-700 mb-3 max-w-md">
-              רוצים להוציא את ההרצאה לפועל ולמכור מהבמה? לחצו ליצירת קשר וקבלת ייעוץ ראשוני ללא עלות
-            </p>
-            <Button 
-              onClick={() => window.open('https://wa.link/47lii7', '_blank')}
-              className="bg-green-600 hover:bg-green-700 text-white px-6 py-2"
-            >
-              יצירת קשר וייעוץ חינם
-            </Button>
+            
+            <Button onClick={() => window.open('https://wa.link/47lii7', '_blank')} className="bg-green-600 hover:bg-green-700 text-white px-6 py-2 text-2xl">יצירת קשר וייעוץ ראשוני חינם</Button>
           </div>
         </div>
       </div>
-    </div>
-  );
+    </div>;
 };
-
 export default PresentationSummary;
