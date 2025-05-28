@@ -99,19 +99,19 @@ export async function generateEngagementContent(formData: PresentationFormData, 
 /**
  * Generates email content using Supabase Edge Function
  */
-export async function generateEmailContent(formData: PresentationFormData, outline: any): Promise<string> {
+export async function generateEmailContent(formData: PresentationFormData, outline: any): Promise<any> {
   try {
     console.log('Generating email content...');
     
-    const { data, error } = await supabase.functions.invoke('generate-email', {
+    const { data, error } = await supabase.functions.invoke('generate-email-image', {
       body: { formData: formData, outline: outline }
     });
 
     if (error) {
-      throw new Error(`Failed to generate email: ${error.message}`);
+      throw new Error(`Failed to generate email content: ${error.message}`);
     }
 
-    return data || '';
+    return data || null;
   } catch (error) {
     console.error("Error generating email content:", error);
     throw error;
@@ -158,28 +158,6 @@ export async function generateSocialMediaContent(formData: PresentationFormData,
     return data || null;
   } catch (error) {
     console.error("Error generating social media content:", error);
-    throw error;
-  }
-}
-
-/**
- * Generates email and image content using Supabase Edge Function
- */
-export async function generateEmailImageContent(formData: PresentationFormData, outline: any): Promise<any> {
-  try {
-    console.log('Generating email and image content...');
-    
-    const { data, error } = await supabase.functions.invoke('generate-email-image', {
-      body: { formData: formData, outline: outline }
-    });
-
-    if (error) {
-      throw new Error(`Failed to generate email/image content: ${error.message}`);
-    }
-
-    return data || null;
-  } catch (error) {
-    console.error("Error generating email/image content:", error);
     throw error;
   }
 }

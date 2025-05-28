@@ -19,98 +19,98 @@ serve(async (req) => {
     
     console.log('Generating marketing plan for topic:', formData.idea);
 
-    const prompt = `You are a marketing strategist. Create a comprehensive 4-week marketing strategy for promoting a lecture/presentation.
+    const prompt = `אתה אסטרטג שיווק. צור אסטרטגיית שיווק מקיפה ל-4 שבועות לקידום הרצאה/מצגת. כל התוכן חייב להיות בעברית בלבד.
 
-LECTURE DETAILS:
-- Topic: ${formData.idea}
-- Speaker Background: ${formData.speakerBackground}
-- Target Audience: ${formData.audienceProfile}
-- Duration: ${formData.duration} minutes
-- Service/Product: ${formData.serviceOrProduct}
-- Call to Action: ${formData.callToAction}
+פרטי ההרצאה:
+- נושא: ${formData.idea}
+- רקע המרצה: ${formData.speakerBackground}
+- קהל יעד: ${formData.audienceProfile}
+- משך זמן: ${formData.duration} דקות
+- שירות/מוצר: ${formData.serviceOrProduct}
+- קריאה לפעולה: ${formData.callToAction}
 
-Generate a 4-week marketing plan as a JSON object with this EXACT structure (return ONLY the JSON, no markdown formatting):
+צור תוכנית שיווק ל-4 שבועות כאובייקט JSON עם המבנה המדויק הזה (החזר רק את ה-JSON, ללא עיצוב markdown):
 
 {
   "fourWeekPlan": {
     "week1": {
-      "title": "Week 1: Soft Launch & Awareness",
+      "title": "שבוע 1: השקה רכה ובניית מודעות",
       "goals": [
-        "Goal 1 for week 1",
-        "Goal 2 for week 1",
-        "Goal 3 for week 1"
+        "מטרה 1 לשבוע 1",
+        "מטרה 2 לשבוע 1",
+        "מטרה 3 לשבוע 1"
       ],
       "activities": [
-        "Activity 1",
-        "Activity 2", 
-        "Activity 3"
+        "פעילות 1",
+        "פעילות 2", 
+        "פעילות 3"
       ],
       "contentIdeas": [
-        "Content idea 1",
-        "Content idea 2"
+        "רעיון תוכן 1",
+        "רעיון תוכן 2"
       ]
     },
     "week2": {
-      "title": "Week 2: Value & Engagement",
+      "title": "שבוע 2: ערך ומעורבות",
       "goals": [
-        "Goal 1 for week 2",
-        "Goal 2 for week 2",
-        "Goal 3 for week 2"
+        "מטרה 1 לשבוע 2",
+        "מטרה 2 לשבוע 2",
+        "מטרה 3 לשבוע 2"
       ],
       "activities": [
-        "Activity 1",
-        "Activity 2",
-        "Activity 3"
+        "פעילות 1",
+        "פעילות 2",
+        "פעילות 3"
       ],
       "contentIdeas": [
-        "Content idea 1",
-        "Content idea 2"
+        "רעיון תוכן 1",
+        "רעיון תוכן 2"
       ]
     },
     "week3": {
-      "title": "Week 3: Building Momentum",
+      "title": "שבוע 3: בניית מומנטום",
       "goals": [
-        "Goal 1 for week 3",
-        "Goal 2 for week 3",
-        "Goal 3 for week 3"
+        "מטרה 1 לשבוע 3",
+        "מטרה 2 לשבוע 3",
+        "מטרה 3 לשבוע 3"
       ],
       "activities": [
-        "Activity 1",
-        "Activity 2",
-        "Activity 3"
+        "פעילות 1",
+        "פעילות 2",
+        "פעילות 3"
       ],
       "contentIdeas": [
-        "Content idea 1",
-        "Content idea 2"
+        "רעיון תוכן 1",
+        "רעיון תוכן 2"
       ]
     },
     "week4": {
-      "title": "Week 4: Sales Push & Urgency",
+      "title": "שבוע 4: דחיפת מכירות ויצירת דחיפות",
       "goals": [
-        "Goal 1 for week 4",
-        "Goal 2 for week 4",
-        "Goal 3 for week 4"
+        "מטרה 1 לשבוע 4",
+        "מטרה 2 לשבוע 4",
+        "מטרה 3 לשבוע 4"
       ],
       "activities": [
-        "Activity 1",
-        "Activity 2",
-        "Activity 3"
+        "פעילות 1",
+        "פעילות 2",
+        "פעילות 3"
       ],
       "contentIdeas": [
-        "Content idea 1",
-        "Content idea 2"
+        "רעיון תוכן 1",
+        "רעיון תוכן 2"
       ]
     }
   },
   "budgetConsiderations": [
-    "Budget tip 1",
-    "Budget tip 2",
-    "Budget tip 3"
+    "טיפ תקציב 1",
+    "טיפ תקציב 2",
+    "טיפ תקציב 3"
   ],
   "keyMetrics": [
-    "Metric 1 to track",
-    "Metric 2 to track",
-    "Metric 3 to track"
+    "מדד 1 למעקב",
+    "מדד 2 למעקב",
+    "מדד 3 למעקב"
   ]
 }`;
 
@@ -123,7 +123,7 @@ Generate a 4-week marketing plan as a JSON object with this EXACT structure (ret
       body: JSON.stringify({
         model: 'gpt-4o',
         messages: [
-          { role: 'system', content: 'You are a marketing strategist. Return only valid JSON without any markdown formatting or code blocks.' },
+          { role: 'system', content: 'אתה אסטרטג שיווק. החזר רק JSON תקין בעברית ללא עיצוב markdown או בלוקי קוד.' },
           { role: 'user', content: prompt }
         ],
         temperature: 0.7,

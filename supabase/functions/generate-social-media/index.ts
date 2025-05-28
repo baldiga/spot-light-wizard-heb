@@ -19,33 +19,33 @@ serve(async (req) => {
     
     console.log('Generating social media content for topic:', formData.idea);
 
-    const prompt = `You are a marketing expert. Create comprehensive social media content for promoting a lecture/presentation. 
+    const prompt = `אתה מומחה שיווק. צור תוכן מקיף לרשתות חברתיות לקידום הרצאה/מצגת. כל התוכן חייב להיות בעברית בלבד.
 
-LECTURE DETAILS:
-- Topic: ${formData.idea}
-- Speaker Background: ${formData.speakerBackground}
-- Target Audience: ${formData.audienceProfile}
-- Duration: ${formData.duration} minutes
-- Service/Product: ${formData.serviceOrProduct}
-- Call to Action: ${formData.callToAction}
+פרטי ההרצאה:
+- נושא: ${formData.idea}
+- רקע המרצה: ${formData.speakerBackground}
+- קהל יעד: ${formData.audienceProfile}
+- משך זמן: ${formData.duration} דקות
+- שירות/מוצר: ${formData.serviceOrProduct}
+- קריאה לפעולה: ${formData.callToAction}
 
-Generate social media content as a JSON object with this EXACT structure (return ONLY the JSON, no markdown formatting):
+צור תוכן לרשתות חברתיות כאובייקט JSON עם המבנה המדויק הזה (החזר רק את ה-JSON, ללא עיצוב markdown):
 
 {
-  "facebookShortPost": "Short engaging Facebook post (2-3 sentences) to launch lecture sales",
-  "facebookStoryPost": "Longer narrative-driven Facebook/LinkedIn post with storytelling element (3-4 paragraphs)",
+  "facebookShortPost": "פוסט פייסבוק קצר ומעניין (2-3 משפטים) להשקת מכירת כרטיסים להרצאה",
+  "facebookStoryPost": "פוסט ארוך יותר מונע סיפור לפייסבוק/לינקדאין עם אלמנט סיפורי (3-4 פסקאות)",
   "instagramStories": [
-    "Story 1: Build anticipation",
-    "Story 2: Highlight value",
-    "Story 3: Call to action"
+    "סטורי 1: בניית ציפייה והתרגשות",
+    "סטורי 2: הדגשת הערך והתועלת",
+    "סטורי 3: קריאה לפעולה וקישור לרכישה"
   ],
   "tiktokScript": {
-    "disrupt": "Attention-grabbing opener (3-5 seconds)",
-    "hook": "Reason to keep watching (5-8 seconds)",
-    "issue": "Problem the lecture solves (10-15 seconds)",
-    "credibility": "Brief speaker credibility statement (5-8 seconds)",
-    "lectureDetails": "Key lecture information (10-15 seconds)",
-    "callToAction": "Prompt to learn more or buy tickets (5-8 seconds)"
+    "disrupt": "פתיחה מושכת תשומת לב (3-5 שניות)",
+    "hook": "סיבה להמשיך לצפות (5-8 שניות)",
+    "issue": "הבעיה שההרצאה פותרת (10-15 שניות)",
+    "credibility": "הצהרת אמינות קצרה על המרצה (5-8 שניות)",
+    "lectureDetails": "מידע מפתח על ההרצאה (10-15 שניות)",
+    "callToAction": "הנחיה ללמוד עוד או לקנות כרטיסים (5-8 שניות)"
   }
 }`;
 
@@ -58,7 +58,7 @@ Generate social media content as a JSON object with this EXACT structure (return
       body: JSON.stringify({
         model: 'gpt-4o',
         messages: [
-          { role: 'system', content: 'You are a marketing expert. Return only valid JSON without any markdown formatting or code blocks.' },
+          { role: 'system', content: 'אתה מומחה שיווק. החזר רק JSON תקין בעברית ללא עיצוב markdown או בלוקי קוד.' },
           { role: 'user', content: prompt }
         ],
         temperature: 0.7,

@@ -88,11 +88,6 @@ export interface EmailImageContent {
     subject: string;
     body: string;
   };
-  promotionalImage: {
-    description: string;
-    downloadNote: string;
-    canvaLink: string;
-  };
 }
 
 export interface MarketingPlan {

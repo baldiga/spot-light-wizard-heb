@@ -17,29 +17,24 @@ serve(async (req) => {
   try {
     const { formData, outline } = await req.json();
     
-    console.log('Generating email and image content for topic:', formData.idea);
+    console.log('Generating email content for topic:', formData.idea);
 
-    const prompt = `You are a marketing expert. Create email marketing content and image description for promoting a lecture/presentation.
+    const prompt = `אתה מומחה שיווק. צור תוכן אימייל שיווקי לקידום הרצאה/מצגת. כל התוכן חייב להיות בעברית בלבד.
 
-LECTURE DETAILS:
-- Topic: ${formData.idea}
-- Speaker Background: ${formData.speakerBackground}
-- Target Audience: ${formData.audienceProfile}
-- Duration: ${formData.duration} minutes
-- Service/Product: ${formData.serviceOrProduct}
-- Call to Action: ${formData.callToAction}
+פרטי ההרצאה:
+- נושא: ${formData.idea}
+- רקע המרצה: ${formData.speakerBackground}
+- קהל יעד: ${formData.audienceProfile}
+- משך זמן: ${formData.duration} דקות
+- שירות/מוצר: ${formData.serviceOrProduct}
+- קריאה לפעולה: ${formData.callToAction}
 
-Generate content as a JSON object with this EXACT structure (return ONLY the JSON, no markdown formatting):
+צור תוכן כאובייקט JSON עם המבנה המדויק הזה (החזר רק את ה-JSON, ללא עיצוב markdown):
 
 {
   "storytellingEmail": {
-    "subject": "Compelling email subject line",
-    "body": "Short narrative email (3-4 paragraphs) that tells a story and connects with the audience, ending with a clear call to action"
-  },
-  "promotionalImage": {
-    "description": "Detailed description for AI image generation: professional, eye-catching promotional image with blank space in center for text overlay, relevant to the lecture topic",
-    "downloadNote": "Download this image and add your lecture info in Canva",
-    "canvaLink": "https://canva.com"
+    "subject": "נושא אימייל מושך ומעניין",
+    "body": "אימייל סיפורי קצר (3-4 פסקאות) שמספר סיפור ונוצר קשר עם הקהל, מסתיים בקריאה ברורה לפעולה"
   }
 }`;
 
@@ -52,7 +47,7 @@ Generate content as a JSON object with this EXACT structure (return ONLY the JSO
       body: JSON.stringify({
         model: 'gpt-4o',
         messages: [
-          { role: 'system', content: 'You are a marketing expert. Return only valid JSON without any markdown formatting or code blocks.' },
+          { role: 'system', content: 'אתה מומחה שיווק. החזר רק JSON תקין בעברית ללא עיצוב markdown או בלוקי קוד.' },
           { role: 'user', content: prompt }
         ],
         temperature: 0.7,
@@ -80,15 +75,15 @@ Generate content as a JSON object with this EXACT structure (return ONLY the JSO
       cleanedResponse = cleanedResponse.replace(/^```\n?/, '').replace(/\n?```$/, '');
     }
 
-    const emailImageContent = JSON.parse(cleanedResponse);
-    console.log('Successfully parsed email/image JSON');
+    const emailContent = JSON.parse(cleanedResponse);
+    console.log('Successfully parsed email JSON');
 
-    return new Response(JSON.stringify(emailImageContent), {
+    return new Response(JSON.stringify(emailContent), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
 
   } catch (error) {
-    console.error('Error in generate-email-image function:', error);
+    console.error('Error in generate-email function:', error);
     return new Response(JSON.stringify({ error: error.message }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
