@@ -11,7 +11,7 @@ import { usePresentationStore } from '@/store/presentationStore';
 import SpotlightLogo from '@/components/SpotlightLogo';
 import CountdownTimer from '@/components/CountdownTimer';
 import { sendVerificationCode, verifyCode } from '@/services/emailVerificationService';
-import { Mail, Check, Loader2 } from 'lucide-react';
+import { Mail, Check, Loader2, Clock } from 'lucide-react';
 
 const UserRegistration = () => {
   const navigate = useNavigate();
@@ -237,6 +237,12 @@ const UserRegistration = () => {
                 className="rtl-form"
                 disabled={userData.emailVerified}
               />
+              
+              {/* Proactive notification about rate limit */}
+              <div className="flex items-center text-amber-600 text-sm bg-amber-50 p-3 rounded-lg">
+                <Clock className="w-4 h-4 mr-2" />
+                <span>ניתן לשלוח קוד אימות רק פעם אחת ב-24 שעות לכל כתובת אימייל</span>
+              </div>
               
               {userData.emailVerified ? (
                 <div className="flex items-center text-green-600 text-sm">

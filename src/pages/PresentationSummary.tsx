@@ -7,46 +7,51 @@ import { Progress } from '@/components/ui/progress';
 import { usePresentationStore } from '@/store/presentationStore';
 import { useToast } from '@/hooks/use-toast';
 import SpotlightLogo from '@/components/SpotlightLogo';
-import { Loader2, FileText, Users, Target, DollarSign, Presentation, Lightbulb, Zap, Home } from 'lucide-react';
+import ExportDialog from '@/components/ExportDialog';
+import { Loader2, FileText, Users, Target, DollarSign, Presentation, Lightbulb, Zap, Home, Mail } from 'lucide-react';
 import { generateSlideStructure, generateSalesStrategy, generateEngagementContent } from '@/services/presentationService';
+
 interface LoadingStage {
   name: string;
   message: string;
   progress: number;
 }
-const loadingStages: LoadingStage[] = [{
-  name: 'outline',
-  message: 'יצירת מבנה ההרצאה הושלמה...',
-  progress: 25
-}, {
-  name: 'slides',
-  message: 'יוצר מבנה שקפים מפורט...',
-  progress: 50
-}, {
-  name: 'engagement',
-  message: 'יוצר תוכן מעורבות אינטראקטיבי...',
-  progress: 75
-}, {
-  name: 'strategy',
-  message: 'מפתח אסטרטגיית שיווק ומכירות...',
-  progress: 100
-}];
+
+const loadingStages: LoadingStage[] = [
+  {
+    name: 'outline',
+    message: 'יצירת מבנה ההרצאה הושלמה...',
+    progress: 25
+  },
+  {
+    name: 'slides',
+    message: 'יוצר מבנה שקפים מפורט...',
+    progress: 50
+  },
+  {
+    name: 'engagement',
+    message: 'יוצר תוכן מעורבות אינטראקטיבי...',
+    progress: 75
+  },
+  {
+    name: 'strategy',
+    message: 'מפתח אסטרטגיית שיווק ומכירות...',
+    progress: 100
+  }
+];
+
 const PresentationSummary = () => {
   const navigate = useNavigate();
-  const {
-    toast
-  } = useToast();
-  const {
-    formData,
-    chapters,
-    outline
-  } = usePresentationStore();
+  const { toast } = useToast();
+  const { formData, chapters, outline } = usePresentationStore();
   const [isGenerating, setIsGenerating] = useState(true);
   const [currentStage, setCurrentStage] = useState(0);
   const [dynamicSlides, setDynamicSlides] = useState<any[]>([]);
   const [dynamicStrategy, setDynamicStrategy] = useState<any>(null);
   const [engagementData, setEngagementData] = useState<any>(null);
   const [activeTab, setActiveTab] = useState("main");
+  const [showExportDialog, setShowExportDialog] = useState(false);
+
   useEffect(() => {
     if (!formData || !outline) {
       toast({
@@ -59,6 +64,7 @@ const PresentationSummary = () => {
     }
     generateAllContent();
   }, [formData, outline, navigate, toast]);
+
   const generateAllContent = async () => {
     if (!formData || !outline) return;
     try {
@@ -115,15 +121,34 @@ const PresentationSummary = () => {
       setIsGenerating(false);
     }
   };
+
   const handleRestart = () => {
     navigate('/');
   };
+
   const navigateToOverview = () => {
     setActiveTab("overview");
   };
+
+  const handleExportClick = () => {
+    setShowExportDialog(true);
+  };
+
+  const getSummaryData = () => {
+    return {
+      formData,
+      chapters,
+      outline,
+      dynamicSlides,
+      dynamicStrategy,
+      engagementData
+    };
+  };
+
   if (isGenerating) {
     const stage = loadingStages[currentStage];
-    return <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50">
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50">
         <SpotlightLogo className="w-16 h-16 mb-6" />
         <h2 className="text-2xl font-bold text-gray-800 mb-4 text-center">
           יוצר תוכן מותאם אישית...
@@ -140,9 +165,12 @@ const PresentationSummary = () => {
           <p>יוצר תוכן מותאם אישית עבור: {formData?.idea}</p>
           <p className="mt-1">אנא המתן, התהליך יכול לקחת מספר דקות...</p>
         </div>
-      </div>;
+      </div>
+    );
   }
-  return <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+
+  return (
+    <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-6xl mx-auto">
         <div className="flex items-center justify-center mb-8">
           <SpotlightLogo className="w-12 h-12 mr-3" />
@@ -188,7 +216,6 @@ const PresentationSummary = () => {
           {/* New Main Tab */}
           <TabsContent value="main" className="space-y-6">
             <Card className="border-whiskey/20" dir="rtl">
-              
               <CardContent className="pt-6" dir="rtl">
                 <div className="text-center space-y-6">
                   <h1 className="text-4xl font-bold text-gray-900 mb-4">ההרצאה שלך מוכנה!</h1>
@@ -214,7 +241,7 @@ const PresentationSummary = () => {
                     
                     <div className="bg-white p-6 rounded-lg shadow-md border border-gray-100">
                       <h3 className="text-xl font-semibold mb-3 text-gray-dark">יש לכם כבר תקופה חלום להוציא לדרך כנס עסקי גדול משלכם?</h3>
-                      <p className="text-gray-600">השתמשו בכפתור הירוק ליצירת קשר ישיר איתי דרך הוואטצאפ וקבלו פרטים נוספים על תוכנית חיית כנסים בליווי אישי ויחד ניצור לך כנס עסקי שמכניס 6-7 ספרות בערב אחד!</p>
+                      <p className="text-gray-600">השתמשו בכפתור הירוק ליצירת קשר ישיר איתי דרך הוואטצאפ וקבלו פרטים נוספים על תוכנית חיית כנסים בליווי אישי ויחד ניצור לך כנס עסקי שמכניס 6-7 ספרות בערב אחד!</p>
                     </div>
                   </div>
                   
@@ -547,12 +574,27 @@ const PresentationSummary = () => {
         <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mt-12">
           <Button onClick={handleRestart} className="bg-whiskey hover:bg-whiskey-dark text-white px-8 py-3 text-lg">סיום ויצירת הרצאה חדשה</Button>
           
+          <Button 
+            onClick={handleExportClick}
+            className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 text-lg"
+          >
+            <Mail className="w-4 h-4 mr-2" />
+            ייצוא לאימייל
+          </Button>
+          
           <div className="text-center">
-            
             <Button onClick={() => window.open('https://wa.link/47lii7', '_blank')} className="bg-green-600 hover:bg-green-700 text-white px-6 py-2 text-2xl">יצירת קשר וייעוץ ראשוני חינם</Button>
           </div>
         </div>
+
+        <ExportDialog 
+          open={showExportDialog} 
+          onOpenChange={setShowExportDialog}
+          summaryData={getSummaryData()}
+        />
       </div>
-    </div>;
+    </div>
+  );
 };
+
 export default PresentationSummary;

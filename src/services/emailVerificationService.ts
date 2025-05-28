@@ -26,17 +26,17 @@ export const sendVerificationCode = async (email: string): Promise<{ success: bo
       throw new Error('Failed to send verification email');
     }
 
-    // Check if rate limited
-    if (data.rateLimited) {
+    // Check if rate limited - ensure we properly handle the response structure
+    if (data && data.rateLimited) {
       return {
         success: false,
         rateLimited: true,
-        remainingTime: data.remainingTime
+        remainingTime: data.remainingTime || 0
       };
     }
 
-    if (!data.success) {
-      throw new Error(data.error || 'Failed to send verification email');
+    if (!data || !data.success) {
+      throw new Error(data?.error || 'Failed to send verification email');
     }
 
     // Store the code locally for verification (in production, this would be handled server-side)
