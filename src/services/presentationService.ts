@@ -1,4 +1,3 @@
-
 import { PresentationFormData, PresentationOutline } from '@/types/presentation';
 import { supabase } from '@/integrations/supabase/client';
 import { generateId } from '@/utils/helpers';
@@ -137,6 +136,50 @@ export async function generatePresentationTools(formData: PresentationFormData, 
     return data || null;
   } catch (error) {
     console.error("Error generating presentation tools:", error);
+    throw error;
+  }
+}
+
+/**
+ * Generates marketing content using Supabase Edge Function
+ */
+export async function generateMarketingContent(formData: PresentationFormData): Promise<any> {
+  try {
+    console.log('Generating marketing content...');
+    
+    const { data, error } = await supabase.functions.invoke('generate-marketing-content', {
+      body: { formData: formData }
+    });
+
+    if (error) {
+      throw new Error(`Failed to generate marketing content: ${error.message}`);
+    }
+
+    return data || null;
+  } catch (error) {
+    console.error("Error generating marketing content:", error);
+    throw error;
+  }
+}
+
+/**
+ * Generates marketing visuals using Supabase Edge Function
+ */
+export async function generateMarketingVisuals(formData: PresentationFormData): Promise<any> {
+  try {
+    console.log('Generating marketing visuals...');
+    
+    const { data, error } = await supabase.functions.invoke('generate-marketing-visuals', {
+      body: { formData: formData }
+    });
+
+    if (error) {
+      throw new Error(`Failed to generate marketing visuals: ${error.message}`);
+    }
+
+    return data || null;
+  } catch (error) {
+    console.error("Error generating marketing visuals:", error);
     throw error;
   }
 }

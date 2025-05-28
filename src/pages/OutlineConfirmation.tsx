@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -19,6 +18,7 @@ const OutlineConfirmation = () => {
     outline,
     isLoading, 
     loadingMessage, 
+    loadingProgress,
     error, 
     generateOutlineFromAPI, 
     generateDummyOutline,
@@ -89,7 +89,7 @@ const OutlineConfirmation = () => {
     navigate('/create');
   };
 
-  // Show loading state
+  // Show loading state with progress
   if (isLoading) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50">
@@ -98,11 +98,22 @@ const OutlineConfirmation = () => {
           {loadingMessage}
         </h2>
         <p className="text-gray-600 mb-6 text-center max-w-lg">
-          המערכת שלנו משתמשת בבינה מלאכותית מתקדמת כדי ליצור תוכן מותאם במיוחד עבורך
+          המערכת שלנו יוצרת עבורך תוכן שיווקי מקצועי ומותאם אישית
         </p>
+        <div className="w-64 mb-4">
+          <div className="bg-gray-200 rounded-full h-3">
+            <div 
+              className="bg-whiskey h-3 rounded-full transition-all duration-1000 ease-out"
+              style={{ width: `${loadingProgress}%` }}
+            ></div>
+          </div>
+          <div className="text-center mt-2 text-sm text-gray-600">
+            {loadingProgress}% הושלם
+          </div>
+        </div>
         <div className="flex items-center gap-2">
           <Loader2 className="h-8 w-8 animate-spin text-whiskey" />
-          <span className="text-whiskey font-medium">אנא המתן...</span>
+          <span className="text-whiskey font-medium">יוצרים תוכן מקצועי...</span>
         </div>
         {retryCount > 0 && (
           <p className="text-sm text-gray-500 mt-4">

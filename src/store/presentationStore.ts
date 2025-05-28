@@ -1,8 +1,7 @@
-
 import { create } from 'zustand';
 import { PresentationFormData, PresentationOutline, Chapter, UserRegistrationData } from '@/types/presentation';
 import { generateId } from '@/utils/helpers';
-import { generatePresentationOutline } from '@/services/presentationService';
+import { generatePresentationOutline, generateMarketingContent, generateMarketingVisuals, generateSalesStrategy } from '@/services/presentationService';
 import { sendToZapierWebhook } from '@/services/webhookService';
 
 interface PresentationState {
@@ -12,6 +11,7 @@ interface PresentationState {
   chapters: Chapter[];
   isLoading: boolean;
   loadingMessage: string;
+  loadingProgress: number;
   error: string | null;
   setFormData: (data: PresentationFormData) => void;
   setUserRegistration: (data: UserRegistrationData) => void;
@@ -22,6 +22,7 @@ interface PresentationState {
   generateOutlineFromAPI: () => Promise<void>;
   generateDummyOutline: () => void;
   resetError: () => void;
+  setLoadingProgress: (progress: number) => void;
 }
 
 export const usePresentationStore = create<PresentationState>((set, get) => ({
@@ -31,6 +32,7 @@ export const usePresentationStore = create<PresentationState>((set, get) => ({
   chapters: [],
   isLoading: false,
   loadingMessage: "יוצרים את מבנה ההרצאה...",
+  loadingProgress: 0,
   error: null,
   
   setFormData: (data) => set({ formData: data }),
@@ -38,6 +40,7 @@ export const usePresentationStore = create<PresentationState>((set, get) => ({
   setOutline: (outline) => set({ outline }),
   setChapters: (chapters) => set({ chapters }),
   resetError: () => set({ error: null }),
+  setLoadingProgress: (progress) => set({ loadingProgress: progress }),
   
   updateChapter: (chapterId, title) => set((state) => ({
     chapters: state.chapters.map(chapter => 
@@ -67,63 +70,60 @@ export const usePresentationStore = create<PresentationState>((set, get) => ({
       return;
     }
     
-    // Store the formData to ensure it doesn't get lost during the process
     const currentFormData = { ...formData };
     
     set({ 
       isLoading: true, 
       error: null,
-      loadingMessage: "מתחברים לשירות הבינה המלאכותית ויוצרים תוכן מותאם אישית..."
+      loadingMessage: "מתחברים לשירות הבינה המלאכותית ויוצרים תוכן מותאם אישית...",
+      loadingProgress: 10
     });
     
     try {
       console.log('Starting outline generation for topic:', currentFormData.idea);
-      console.log('Speaker background:', currentFormData.speakerBackground);
-      console.log('Audience profile:', currentFormData.audienceProfile);
       
-      // Generate outline using the secure Edge Function
+      // Step 1: Generate outline (30% progress)
+      set({ loadingMessage: "יוצרים מבנה הרצאה מקצועי...", loadingProgress: 30 });
       const outlineData = await generatePresentationOutline(currentFormData);
       
-      console.log('Outline generated successfully with', outlineData.chapters.length, 'chapters');
-      console.log('Sales process steps:', outlineData.salesProcess?.length);
+      // Step 2: Generate marketing content (60% progress)
+      set({ loadingMessage: "יוצרים תוכן שיווקי מותאם אישית...", loadingProgress: 60 });
+      const marketingContent = await generateMarketingContent(currentFormData);
       
-      // Validate 10 sales process steps
-      if (outlineData.salesProcess && outlineData.salesProcess.length !== 10) {
-        console.warn(`Expected 10 sales process steps, got ${outlineData.salesProcess.length}`);
-      }
+      // Step 3: Generate marketing visuals (80% progress)
+      set({ loadingMessage: "יוצרים תמונות שיווקיות...", loadingProgress: 80 });
+      const marketingVisuals = await generateMarketingVisuals(currentFormData);
       
-      // Validate that we got real content, not dummy content
-      const hasPersonalizedContent = outlineData.chapters.some(chapter => 
-        chapter.title.toLowerCase().includes(currentFormData.idea.toLowerCase()) || 
-        chapter.points.some(point => 
-          point.content.toLowerCase().includes(currentFormData.speakerBackground.toLowerCase()) ||
-          point.content.toLowerCase().includes(currentFormData.audienceProfile.toLowerCase())
-        )
-      );
-
-      if (!hasPersonalizedContent) {
-        console.warn('Generated content may not be properly personalized');
-      }
+      // Step 4: Generate enhanced strategy (95% progress)
+      set({ loadingMessage: "יוצרים אסטרטגיית שיווק מתקדמת...", loadingProgress: 95 });
+      const enhancedStrategy = await generateSalesStrategy(currentFormData, outlineData);
       
-      // Ensure formData is restored even after successful generation
+      // Combine all data
+      const enhancedOutline = {
+        ...outlineData,
+        marketingContent: marketingContent,
+        marketingVisuals: marketingVisuals,
+        enhancedStrategy: enhancedStrategy
+      };
+      
       set({ 
-        formData: currentFormData, // Restore formData
-        outline: outlineData,
+        formData: currentFormData,
+        outline: enhancedOutline,
         chapters: outlineData.chapters,
         isLoading: false,
         loadingMessage: "יוצרים את מבנה ההרצאה...",
+        loadingProgress: 100,
         error: null
       });
 
-      // Send data to Zapier webhook after successful outline generation (non-blocking)
+      // Send data to webhook (non-blocking)
       if (userRegistration) {
         try {
           console.log('Sending data to webhook in background...');
-          // Make webhook call non-blocking so it doesn't affect the main flow
           sendToZapierWebhook({
             presentationData: currentFormData,
             userRegistration,
-            outline: outlineData
+            outline: enhancedOutline
           }).catch(webhookError => {
             console.error("Webhook failed but continuing with main flow:", webhookError);
           });
@@ -132,10 +132,9 @@ export const usePresentationStore = create<PresentationState>((set, get) => ({
         }
       }
     } catch (error) {
-      console.error("Failed to generate outline:", error);
+      console.error("Failed to generate content:", error);
       
-      // Provide more specific error messages based on error type
-      let errorMessage = "אירעה שגיאה ביצירת מבנה הרצאה. אנא נסה שנית.";
+      let errorMessage = "אירעה שגיאה ביצירת התוכן. אנא נסה שנית.";
       
       if (error.message.includes('API key')) {
         errorMessage = "בעיה במפתח ה-API של OpenAI. אנא בדוק את ההגדרות.";
@@ -143,18 +142,14 @@ export const usePresentationStore = create<PresentationState>((set, get) => ({
         errorMessage = "שגיאה בעיבוד תשובת הבינה המלאכותית. אנא נסה שנית.";
       } else if (error.message.includes('network') || error.message.includes('fetch')) {
         errorMessage = "בעיית תקשורת. בדוק את החיבור לאינטרנט ונסה שנית.";
-      } else if (error.message.includes('Invalid response')) {
-        errorMessage = "התקבלה תשובה לא תקינה מהשירות. אנא נסה שנית.";
-      } else if (error.message.includes('Failed to generate outline')) {
-        errorMessage = "השירות לא הצליח ליצור מבנה הרצאה. אנא נסה שנית או צור קשר עם התמיכה.";
       }
       
-      // Ensure formData is preserved even on error
       set({ 
-        formData: currentFormData, // Preserve formData
+        formData: currentFormData,
         error: errorMessage, 
         isLoading: false,
-        loadingMessage: "יוצרים את מבנה ההרצאה..."
+        loadingMessage: "יוצרים את מבנה ההרצאה...",
+        loadingProgress: 0
       });
     }
   },
