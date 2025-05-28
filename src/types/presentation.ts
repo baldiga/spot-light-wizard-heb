@@ -69,57 +69,6 @@ export interface SalesProcessStep {
   order: number;
 }
 
-export interface MarketingContent {
-  facebookLaunchPost: string;
-  storytellingPost: {
-    title: string;
-    content: string;
-  };
-  instagramStories: Array<{
-    storyNumber: number;
-    concept: string;
-    content: string;
-    callToAction: string;
-  }>;
-  tiktokScript: {
-    disrupt: string;
-    hook: string;
-    issue: string;
-    credibility: string;
-    aboutLecture: string;
-    callToAction: string;
-  };
-  emailCampaign: {
-    subject: string;
-    content: string;
-  };
-}
-
-export interface MarketingVisuals {
-  marketingImage: {
-    imageUrl: string | null;
-    downloadNote: string;
-    canvaLink: string;
-    instructions: string;
-  };
-}
-
-export interface EnhancedStrategy {
-  fourWeekPlan: Record<string, {
-    theme: string;
-    focus: string;
-    goals: string[];
-    activities: string[];
-    contentTypes: string[];
-  }>;
-  budgetAllocation: Record<string, string>;
-  successMetrics: string[];
-  contingencyPlans: Array<{
-    scenario: string;
-    solution: string;
-  }>;
-}
-
 export interface PresentationOutline {
   chapters: Chapter[];
   openingStyles: string[];
@@ -129,14 +78,12 @@ export interface PresentationOutline {
   discussionQuestions: Record<string, string[]>;
   salesGuide: string;
   postPresentationPlan: string;
+  // New dynamic content fields
   dynamicSlides?: SlideStructure[];
   dynamicB2BEmail?: string;
   dynamicSalesStrategy?: DynamicSalesStrategy;
   salesProcess?: SalesProcessStep[];
   motivationalMessage?: string;
-  marketingContent?: MarketingContent;
-  marketingVisuals?: MarketingVisuals;
-  enhancedStrategy?: EnhancedStrategy;
 }
 
 export interface OpeningSuggestion {

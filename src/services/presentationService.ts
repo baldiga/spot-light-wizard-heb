@@ -1,123 +1,203 @@
 
+import { PresentationFormData, PresentationOutline } from '@/types/presentation';
 import { supabase } from '@/integrations/supabase/client';
-import { PresentationFormData, PresentationOutline, MarketingContent, MarketingVisuals, EnhancedStrategy } from '@/types/presentation';
+import { generateId } from '@/utils/helpers';
 
-export const generatePresentationOutline = async (formData: PresentationFormData): Promise<PresentationOutline> => {
-  console.log('Calling generate-outline function...');
-  
-  const { data, error } = await supabase.functions.invoke('generate-outline', {
-    body: { formData }
-  });
+/**
+ * Generates presentation outline using Supabase Edge Function
+ */
+export async function generatePresentationOutline(formData: PresentationFormData): Promise<PresentationOutline> {
+  try {
+    console.log('Calling Supabase Edge Function for outline generation...');
+    
+    const { data, error } = await supabase.functions.invoke('generate-outline', {
+      body: { formData: formData }
+    });
 
-  if (error) {
-    console.error('Supabase function error:', error);
-    throw new Error(`Failed to generate outline: ${error.message}`);
+    if (error) {
+      console.error('Supabase function error:', error);
+      throw new Error(`Failed to generate outline: ${error.message}`);
+    }
+
+    if (!data) {
+      throw new Error('No data returned from outline generation');
+    }
+
+    console.log('Successfully generated outline via Edge Function');
+    return parseApiResponse(data);
+  } catch (error) {
+    console.error("Error generating presentation outline:", error);
+    throw error;
   }
+}
 
-  if (!data) {
-    throw new Error('No data returned from outline generation');
+/**
+ * Generates slide structure using Supabase Edge Function
+ */
+export async function generateSlideStructure(formData: PresentationFormData, outline: any): Promise<any[]> {
+  try {
+    console.log('Generating slide structure...');
+    
+    const { data, error } = await supabase.functions.invoke('generate-slides', {
+      body: { formData: formData, outline: outline }
+    });
+
+    if (error) {
+      throw new Error(`Failed to generate slides: ${error.message}`);
+    }
+
+    return data.slides || [];
+  } catch (error) {
+    console.error("Error generating slide structure:", error);
+    throw error;
   }
+}
 
-  console.log('Outline generated successfully');
-  return data;
-};
+/**
+ * Generates sales strategy using Supabase Edge Function
+ */
+export async function generateSalesStrategy(formData: PresentationFormData, outline: any): Promise<any> {
+  try {
+    console.log('Generating sales strategy...');
+    
+    const { data, error } = await supabase.functions.invoke('generate-strategy', {
+      body: { formData: formData, outline: outline }
+    });
 
-export const generateSlideStructure = async (formData: PresentationFormData, outline: PresentationOutline): Promise<any> => {
-  console.log('Calling generate-slides function...');
-  
-  const { data, error } = await supabase.functions.invoke('generate-slides', {
-    body: { formData, outline }
-  });
+    if (error) {
+      throw new Error(`Failed to generate strategy: ${error.message}`);
+    }
 
-  if (error) {
-    console.error('Slides generation error:', error);
-    throw new Error(`Failed to generate slides: ${error.message}`);
+    return data || null;
+  } catch (error) {
+    console.error("Error generating sales strategy:", error);
+    throw error;
   }
+}
 
-  if (!data) {
-    throw new Error('No slides data returned');
+/**
+ * Generates engagement content using Supabase Edge Function
+ */
+export async function generateEngagementContent(formData: PresentationFormData, outline: any): Promise<any> {
+  try {
+    console.log('Generating engagement content...');
+    
+    const { data, error } = await supabase.functions.invoke('generate-engagement', {
+      body: { formData: formData, outline: outline }
+    });
+
+    if (error) {
+      throw new Error(`Failed to generate engagement: ${error.message}`);
+    }
+
+    return data || null;
+  } catch (error) {
+    console.error("Error generating engagement content:", error);
+    throw error;
   }
+}
 
-  console.log('Slides generated successfully');
-  return data;
-};
+/**
+ * Generates email content using Supabase Edge Function
+ */
+export async function generateEmailContent(formData: PresentationFormData, outline: any): Promise<string> {
+  try {
+    console.log('Generating email content...');
+    
+    const { data, error } = await supabase.functions.invoke('generate-email', {
+      body: { formData: formData, outline: outline }
+    });
 
-export const generateEngagementContent = async (formData: PresentationFormData, outline: PresentationOutline): Promise<any> => {
-  console.log('Calling generate-engagement function...');
-  
-  const { data, error } = await supabase.functions.invoke('generate-engagement', {
-    body: { formData, outline }
-  });
+    if (error) {
+      throw new Error(`Failed to generate email: ${error.message}`);
+    }
 
-  if (error) {
-    console.error('Engagement content generation error:', error);
-    throw new Error(`Failed to generate engagement content: ${error.message}`);
+    return data || '';
+  } catch (error) {
+    console.error("Error generating email content:", error);
+    throw error;
   }
+}
 
-  if (!data) {
-    throw new Error('No engagement content data returned');
+/**
+ * Generates presentation tools using Supabase Edge Function
+ */
+export async function generatePresentationTools(formData: PresentationFormData, outline: any): Promise<any> {
+  try {
+    console.log('Generating presentation tools...');
+    
+    const { data, error } = await supabase.functions.invoke('generate-tools', {
+      body: { formData: formData, outline: outline }
+    });
+
+    if (error) {
+      throw new Error(`Failed to generate tools: ${error.message}`);
+    }
+
+    return data || null;
+  } catch (error) {
+    console.error("Error generating presentation tools:", error);
+    throw error;
   }
+}
 
-  console.log('Engagement content generated successfully');
-  return data;
-};
+/**
+ * Parses the API response and formats it to match our PresentationOutline interface
+ */
+function parseApiResponse(response: any): PresentationOutline {
+  try {
+    console.log('Parsing API response:', response);
+    
+    // Validate response structure
+    if (!response.chapters || !Array.isArray(response.chapters)) {
+      throw new Error('Invalid response: missing or invalid chapters array');
+    }
 
-export const generateMarketingContent = async (formData: PresentationFormData): Promise<MarketingContent> => {
-  console.log('Calling generate-marketing-content function...');
-  
-  const { data, error } = await supabase.functions.invoke('generate-marketing-content', {
-    body: { formData }
-  });
+    // Ensure exactly 4 chapters
+    const chapters = response.chapters.slice(0, 4);
+    
+    // Add IDs to chapters and points
+    const chaptersWithIds = chapters.map((chapter: any) => {
+      if (!chapter.title || !chapter.points || !Array.isArray(chapter.points)) {
+        throw new Error('Invalid chapter structure');
+      }
+      
+      return {
+        id: generateId(),
+        title: chapter.title,
+        points: chapter.points.map((point: any) => ({
+          id: generateId(),
+          content: point.content || point
+        }))
+      };
+    });
 
-  if (error) {
-    console.error('Marketing content generation error:', error);
-    throw new Error(`Failed to generate marketing content: ${error.message}`);
+    // Add IDs to sales process steps and ensure exactly 10 steps
+    const salesProcessWithIds = response.salesProcess ? 
+      response.salesProcess.slice(0, 10).map((step: any, index: number) => ({
+        id: generateId(),
+        title: step.title,
+        description: step.description,
+        order: step.order || index + 1
+      })) : [];
+    
+    const parsedOutline = {
+      chapters: chaptersWithIds,
+      openingStyles: response.openingStyles || [],
+      timeDistribution: response.timeDistribution || "",
+      interactiveActivities: response.interactiveActivities || [],
+      presentationStructure: response.presentationStructure || "",
+      discussionQuestions: response.discussionQuestions || {},
+      salesGuide: response.salesGuide || "",
+      postPresentationPlan: response.postPresentationPlan || "",
+      motivationalMessage: response.motivationalMessage || "",
+      salesProcess: salesProcessWithIds
+    };
+
+    console.log('Successfully parsed outline with', chaptersWithIds.length, 'chapters and', salesProcessWithIds.length, 'sales steps');
+    return parsedOutline;
+  } catch (error) {
+    console.error("Error parsing API response:", error);
+    throw new Error("Failed to parse the AI response. Please try again.");
   }
-
-  if (!data) {
-    throw new Error('No marketing content data returned');
-  }
-
-  console.log('Marketing content generated successfully');
-  return data;
-};
-
-export const generateMarketingVisuals = async (formData: PresentationFormData): Promise<MarketingVisuals> => {
-  console.log('Calling generate-marketing-visuals function...');
-  
-  const { data, error } = await supabase.functions.invoke('generate-marketing-visuals', {
-    body: { formData }
-  });
-
-  if (error) {
-    console.error('Marketing visuals generation error:', error);
-    throw new Error(`Failed to generate marketing visuals: ${error.message}`);
-  }
-
-  if (!data) {
-    throw new Error('No marketing visuals data returned');
-  }
-
-  console.log('Marketing visuals generated successfully');
-  return data;
-};
-
-export const generateSalesStrategy = async (formData: PresentationFormData, outline: PresentationOutline): Promise<EnhancedStrategy> => {
-  console.log('Calling generate-strategy function...');
-  
-  const { data, error } = await supabase.functions.invoke('generate-strategy', {
-    body: { formData, outline }
-  });
-
-  if (error) {
-    console.error('Strategy generation error:', error);
-    throw new Error(`Failed to generate strategy: ${error.message}`);
-  }
-
-  if (!data) {
-    throw new Error('No strategy data returned');
-  }
-
-  console.log('Strategy generated successfully');
-  return data;
-};
+}

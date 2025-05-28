@@ -2,7 +2,7 @@
 import { create } from 'zustand';
 import { PresentationFormData, PresentationOutline, Chapter, UserRegistrationData } from '@/types/presentation';
 import { generateId } from '@/utils/helpers';
-import { generatePresentationOutline, generateMarketingContent, generateMarketingVisuals, generateSalesStrategy } from '@/services/presentationService';
+import { generatePresentationOutline } from '@/services/presentationService';
 import { sendToZapierWebhook } from '@/services/webhookService';
 
 interface PresentationState {
@@ -12,22 +12,15 @@ interface PresentationState {
   chapters: Chapter[];
   isLoading: boolean;
   loadingMessage: string;
-  loadingProgress: number;
   error: string | null;
-  isGeneratingMarketing: boolean;
-  marketingLoadingMessage: string;
-  marketingLoadingProgress: number;
   setFormData: (data: PresentationFormData) => void;
   setUserRegistration: (data: UserRegistrationData) => void;
   setOutline: (outline: PresentationOutline) => void;
   setChapters: (chapters: Chapter[]) => void;
   updateChapter: (chapterId: string, title: string) => void;
   updatePoint: (chapterId: string, pointId: string, content: string) => void;
-  generateBasicOutline: () => Promise<void>;
-  generateEnhancedContent: () => Promise<void>;
+  generateOutlineFromAPI: () => Promise<void>;
   generateDummyOutline: () => void;
-  resetError: () => void;
-  setLoadingProgress: (progress: number) => void;
 }
 
 export const usePresentationStore = create<PresentationState>((set, get) => ({
@@ -37,18 +30,12 @@ export const usePresentationStore = create<PresentationState>((set, get) => ({
   chapters: [],
   isLoading: false,
   loadingMessage: "יוצרים את מבנה ההרצאה...",
-  loadingProgress: 0,
   error: null,
-  isGeneratingMarketing: false,
-  marketingLoadingMessage: "",
-  marketingLoadingProgress: 0,
   
   setFormData: (data) => set({ formData: data }),
   setUserRegistration: (data) => set({ userRegistration: data }),
   setOutline: (outline) => set({ outline }),
   setChapters: (chapters) => set({ chapters }),
-  resetError: () => set({ error: null }),
-  setLoadingProgress: (progress) => set({ loadingProgress: progress }),
   
   updateChapter: (chapterId, title) => set((state) => ({
     chapters: state.chapters.map(chapter => 
@@ -69,128 +56,73 @@ export const usePresentationStore = create<PresentationState>((set, get) => ({
     )
   })),
 
-  generateBasicOutline: async () => {
-    const { formData } = get();
+  generateOutlineFromAPI: async () => {
+    const { formData, userRegistration } = get();
     
     if (!formData) {
-      console.error('No form data available for outline generation');
       set({ error: "אין מידע זמין ליצירת מבנה הרצאה" });
       return;
     }
     
-    const currentFormData = { ...formData };
-    
     set({ 
       isLoading: true, 
       error: null,
-      loadingMessage: "יוצרים מבנה הרצאה בסיסי...",
-      loadingProgress: 10
+      loadingMessage: "מתחברים לשירות הבינה המלאכותית ויוצרים תוכן מותאם אישית..."
     });
     
     try {
-      console.log('Starting basic outline generation for topic:', currentFormData.idea);
+      console.log('Starting outline generation for topic:', formData.idea);
+      console.log('Speaker background:', formData.speakerBackground);
+      console.log('Audience profile:', formData.audienceProfile);
       
-      set({ loadingMessage: "יוצרים פרקים וכותרות...", loadingProgress: 50 });
-      const outlineData = await generatePresentationOutline(currentFormData);
+      // Generate outline using the secure Edge Function
+      const outlineData = await generatePresentationOutline(formData);
+      
+      console.log('Outline generated successfully with', outlineData.chapters.length, 'chapters');
+      console.log('Sales process steps:', outlineData.salesProcess?.length);
+      
+      // Validate 10 sales process steps
+      if (outlineData.salesProcess && outlineData.salesProcess.length !== 10) {
+        console.warn(`Expected 10 sales process steps, got ${outlineData.salesProcess.length}`);
+      }
+      
+      // Validate that we got real content, not dummy content
+      const hasPersonalizedContent = outlineData.chapters.some(chapter => 
+        chapter.title.includes(formData.idea) || 
+        chapter.points.some(point => 
+          point.content.includes(formData.speakerBackground) ||
+          point.content.includes(formData.audienceProfile)
+        )
+      );
+
+      if (!hasPersonalizedContent) {
+        console.warn('Generated content may not be properly personalized');
+      }
       
       set({ 
-        formData: currentFormData,
         outline: outlineData,
         chapters: outlineData.chapters,
         isLoading: false,
-        loadingMessage: "יוצרים את מבנה ההרצאה...",
-        loadingProgress: 100,
-        error: null
-      });
-    } catch (error) {
-      console.error("Failed to generate basic outline:", error);
-      
-      let errorMessage = "אירעה שגיאה ביצירת מבנה ההרצאה. אנא נסה שנית.";
-      
-      if (error.message.includes('API key')) {
-        errorMessage = "בעיה במפתח ה-API של OpenAI. אנא בדוק את ההגדרות.";
-      } else if (error.message.includes('parse') || error.message.includes('JSON')) {
-        errorMessage = "שגיאה בעיבוד תשובת הבינה המלאכותית. אנא נסה שנית.";
-      } else if (error.message.includes('network') || error.message.includes('fetch')) {
-        errorMessage = "בעיית תקשורת. בדוק את החיבור לאינטרנט ונסה שנית.";
-      }
-      
-      set({ 
-        formData: currentFormData,
-        error: errorMessage, 
-        isLoading: false,
-        loadingMessage: "יוצרים את מבנה ההרצאה...",
-        loadingProgress: 0
-      });
-    }
-  },
-
-  generateEnhancedContent: async () => {
-    const { formData, userRegistration, outline } = get();
-    
-    if (!formData || !outline) {
-      console.error('No form data or outline available for enhanced content generation');
-      set({ error: "אין מידע זמין ליצירת תוכן משופר" });
-      return;
-    }
-    
-    set({ 
-      isGeneratingMarketing: true, 
-      error: null,
-      marketingLoadingMessage: "יוצרים תוכן שיווקי מותאם אישית...",
-      marketingLoadingProgress: 10
-    });
-    
-    try {
-      console.log('Starting enhanced content generation...');
-      
-      // Step 1: Generate marketing content (40% progress)
-      set({ marketingLoadingMessage: "יוצרים פוסטים ותוכן לרשתות חברתיות...", marketingLoadingProgress: 40 });
-      const marketingContent = await generateMarketingContent(formData);
-      
-      // Step 2: Generate marketing visuals (70% progress)
-      set({ marketingLoadingMessage: "יוצרים תמונות שיווקיות...", marketingLoadingProgress: 70 });
-      const marketingVisuals = await generateMarketingVisuals(formData);
-      
-      // Step 3: Generate enhanced strategy (95% progress)
-      set({ marketingLoadingMessage: "יוצרים אסטרטגיית שיווק מתקדמת...", marketingLoadingProgress: 95 });
-      const enhancedStrategy = await generateSalesStrategy(formData, outline);
-      
-      // Combine all data
-      const enhancedOutline = {
-        ...outline,
-        marketingContent: marketingContent,
-        marketingVisuals: marketingVisuals,
-        enhancedStrategy: enhancedStrategy
-      };
-      
-      set({ 
-        outline: enhancedOutline,
-        isGeneratingMarketing: false,
-        marketingLoadingMessage: "",
-        marketingLoadingProgress: 100,
-        error: null
+        loadingMessage: "יוצרים את מבנה ההרצאה..."
       });
 
-      // Send data to webhook (non-blocking)
+      // Send data to Zapier webhook after successful outline generation
       if (userRegistration) {
         try {
-          console.log('Sending data to webhook in background...');
-          sendToZapierWebhook({
+          await sendToZapierWebhook({
             presentationData: formData,
             userRegistration,
-            outline: enhancedOutline
-          }).catch(webhookError => {
-            console.error("Webhook failed but continuing with main flow:", webhookError);
+            outline: outlineData
           });
         } catch (webhookError) {
-          console.error("Failed to initiate webhook call, but continuing:", webhookError);
+          console.error("Failed to send data to webhook:", webhookError);
         }
       }
     } catch (error) {
-      console.error("Failed to generate enhanced content:", error);
+      console.error("Failed to generate outline:", error);
       
-      let errorMessage = "אירעה שגיאה ביצירת התוכן המשופר. אנא נסה שנית.";
+      // Provide more specific error messages based on error type
+      let errorMessage = "אירעה שגיאה ביצירת מבנה הרצאה.";
       
       if (error.message.includes('API key')) {
         errorMessage = "בעיה במפתח ה-API של OpenAI. אנא בדוק את ההגדרות.";
@@ -198,23 +130,21 @@ export const usePresentationStore = create<PresentationState>((set, get) => ({
         errorMessage = "שגיאה בעיבוד תשובת הבינה המלאכותית. אנא נסה שנית.";
       } else if (error.message.includes('network') || error.message.includes('fetch')) {
         errorMessage = "בעיית תקשורת. בדוק את החיבור לאינטרנט ונסה שנית.";
+      } else if (error.message.includes('Invalid response')) {
+        errorMessage = "התקבלה תשובה לא תקינה מהשירות. אנא נסה שנית.";
+      } else if (error.message.includes('Failed to generate outline')) {
+        errorMessage = "השירות לא הצליח ליצור מבנה הרצאה. אנא נסה שנית או צור קשר עם התמיכה.";
       }
       
       set({ 
         error: errorMessage, 
-        isGeneratingMarketing: false,
-        marketingLoadingMessage: "",
-        marketingLoadingProgress: 0
+        isLoading: false,
+        loadingMessage: "יוצרים את מבנה ההרצאה..."
       });
     }
   },
 
   generateDummyOutline: () => {
-    const { formData } = get();
-    
-    // Ensure we don't lose formData when generating dummy outline
-    const currentFormData = formData ? { ...formData } : null;
-    
     const dummyChapters: Chapter[] = [
       {
         id: generateId(),
@@ -242,20 +172,17 @@ export const usePresentationStore = create<PresentationState>((set, get) => ({
           { id: generateId(), content: "שילוב השיטות בעבודה היומיומית" },
           { id: generateId(), content: "מדידת הצלחה ואופטימיזציה מתמשכת" }
         ]
-      },
-      {
-        id: generateId(),
-        title: "סיכום והמלצות",
-        points: [
-          { id: generateId(), content: "סיכום הנקודות המרכזיות" },
-          { id: generateId(), content: "המלצות ליישום מיידי" },
-          { id: generateId(), content: "צעדים הבאים והמשך הלמידה" }
-        ]
       }
     ];
+
+    const dummySalesProcess = Array.from({ length: 10 }, (_, index) => ({
+      id: generateId(),
+      title: `שלב מכירה ${index + 1}`,
+      description: `תיאור מפורט לשלב מכירה מספר ${index + 1}`,
+      order: index + 1
+    }));
     
     set({ 
-      formData: currentFormData,
       chapters: dummyChapters,
       outline: {
         chapters: dummyChapters,
@@ -264,13 +191,13 @@ export const usePresentationStore = create<PresentationState>((set, get) => ({
           "שאלה רטורית: 'האם אי פעם תהיתם כיצד החברות המובילות בתחום מצליחות להשיג תוצאות כה מרשימות?'",
           "עובדה מפתיעה: הצג סטטיסטיקה מפתיעה שתעורר את תשומת לב הקהל מיד בהתחלה"
         ],
-        timeDistribution: "פתיחה - 10%, פרק 1 - 25%, פרק 2 - 30%, פרק 3 - 25%, פרק 4 - 10%",
+        timeDistribution: "פתיחה - 10%, פרק 1 - 25%, פרק 2 - 35%, פרק 3 - 20%, סיכום וקריאה לפעולה - 10%",
         interactiveActivities: [
           "סקר מהיר: שאל את הקהל שאלה רלוונטית והצג את התוצאות על המסך",
           "תרגיל בזוגות: הנחה את המשתתפים לדון עם השכן שלהם בנקודה ספציפית למשך 2 דקות",
           "סיעור מוחות קצר: בקש מהקהל להציע פתרונות אפשריים לבעיה שהצגת"
         ],
-        presentationStructure: "שקף פתיחה, הצגה עצמית, מבנה ההרצאה, תוכן מרכזי (4 פרקים), הדגמה של המוצר/שירות, סיכום עם נקודות מפתח, קריאה לפעולה",
+        presentationStructure: "שקף פתיחה, הצגה עצמית, מבנה ההרצאה, תוכן מרכזי (3 פרקים), הדגמה של המוצר/שירות, סיכום עם נקודות מפתח, קריאה לפעולה",
         discussionQuestions: {
           "חלק 1": [
             "כיצד הידע הבסיסי שהוצג משתלב במציאות היומיומית שלכם?",
@@ -287,7 +214,8 @@ export const usePresentationStore = create<PresentationState>((set, get) => ({
         },
         salesGuide: "פתח בהצגת האתגר, הדגם כיצד המוצר/שירות שלך פותר אותו, הצג עדויות והצלחות קודמות, הסבר את התהליך בפשטות, הדגש את הערך והתועלת, הצג אפשרויות שונות והצעה מיוחדת למשתתפי ההרצאה.",
         postPresentationPlan: "שליחת מייל תודה עם סיכום הנקודות המרכזיות והצעה לפגישת המשך, שליחת סקר משוב קצר לאיסוף תובנות, מעקב טלפוני אישי עם משתתפים מעוניינים, הצעת חבילת התנסות בשירות במחיר מיוחד",
-        motivationalMessage: "כל הכבוד! יצרת מבנה הרצאה מקצועי ומותאם אישית. ההרצאה שלך בנויה על עקרונות מוכחים של הצגה יעילה ומכירה טבעית. עכשיו הגיע הזמן לסקור את התוכן ולוודא שהוא משקף בדיוק את החזון שלך."
+        motivationalMessage: "כל הכבוד! יצרת מבנה הרצאה מקצועי ומותאם אישית. ההרצאה שלך בנויה על עקרונות מוכחים של הצגה יעילה ומכירה טבעית. עכשיו הגיע הזמן לסקור את התוכן ולוודא שהוא משקף בדיוק את החזון שלך.",
+        salesProcess: dummySalesProcess
       },
       error: null,
       isLoading: false,
