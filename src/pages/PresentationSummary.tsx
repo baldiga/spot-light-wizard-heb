@@ -8,7 +8,7 @@ import { usePresentationStore } from '@/store/presentationStore';
 import { useToast } from '@/hooks/use-toast';
 import SpotlightLogo from '@/components/SpotlightLogo';
 import ExportDialog from '@/components/ExportDialog';
-import { Loader2, FileText, Users, Target, DollarSign, Presentation, Lightbulb, Zap, Home } from 'lucide-react';
+import { Loader2, FileText, Users, Target, DollarSign, Presentation, Lightbulb, Zap, Home, Mail } from 'lucide-react';
 import { generateSlideStructure, generateSalesStrategy, generateEngagementContent, generateSocialMediaContent, generateEmailContent, generateMarketingPlanContent } from '@/services/presentationService';
 
 interface LoadingStage {
@@ -258,7 +258,244 @@ const PresentationSummary = () => {
             </TabsTrigger>
           </TabsList>
 
-          {/* Updated Marketing Tab with all content */}
+          {/* Main Tab Content */}
+          <TabsContent value="main" className="space-y-6">
+            <Card className="border-whiskey/20" dir="rtl">
+              <CardHeader className="bg-whiskey/5 text-right">
+                <CardTitle className="text-2xl text-gray-dark text-right">סקירה כללית של ההרצאה</CardTitle>
+              </CardHeader>
+              <CardContent className="pt-6" dir="rtl">
+                <div className="space-y-6 text-right">
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-800 mb-2">נושא ההרצאה</h3>
+                    <p className="text-gray-700">{formData?.idea}</p>
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-800 mb-2">קהל יעד</h3>
+                    <p className="text-gray-700">{formData?.audienceProfile}</p>
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-800 mb-2">משך ההרצאה</h3>
+                    <p className="text-gray-700">{formData?.duration} דקות</p>
+                  </div>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-8">
+                    <Button onClick={() => setActiveTab("overview")} variant="outline" className="h-20">
+                      <div className="text-center">
+                        <FileText className="w-6 h-6 mx-auto mb-2" />
+                        <span>סקירה מפורטת</span>
+                      </div>
+                    </Button>
+                    <Button onClick={() => setActiveTab("slides")} variant="outline" className="h-20">
+                      <div className="text-center">
+                        <Presentation className="w-6 h-6 mx-auto mb-2" />
+                        <span>מבנה שקפים</span>
+                      </div>
+                    </Button>
+                    <Button onClick={() => setActiveTab("sales-process")} variant="outline" className="h-20">
+                      <div className="text-center">
+                        <Target className="w-6 h-6 mx-auto mb-2" />
+                        <span>תהליך מכירה</span>
+                      </div>
+                    </Button>
+                    <Button onClick={() => setActiveTab("marketing")} variant="outline" className="h-20">
+                      <div className="text-center">
+                        <DollarSign className="w-6 h-6 mx-auto mb-2" />
+                        <span>אסטרטגיית שיווק</span>
+                      </div>
+                    </Button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Overview Tab Content */}
+          <TabsContent value="overview" className="space-y-6">
+            <Card className="border-whiskey/20" dir="rtl">
+              <CardHeader className="bg-whiskey/5 text-right">
+                <CardTitle className="text-2xl text-gray-dark text-right">מבט כללי על ההרצאה</CardTitle>
+              </CardHeader>
+              <CardContent className="pt-6" dir="rtl">
+                {outline && (
+                  <div className="space-y-6 text-right">
+                    <div>
+                      <h3 className="text-lg font-semibold text-gray-800 mb-4">מבנה ההרצאה</h3>
+                      <p className="text-gray-700 mb-4">{outline.presentationStructure}</p>
+                    </div>
+                    <div>
+                      <h3 className="text-lg font-semibold text-gray-800 mb-4">חלוקת זמנים</h3>
+                      <p className="text-gray-700 mb-4">{outline.timeDistribution}</p>
+                    </div>
+                    <div>
+                      <h3 className="text-lg font-semibold text-gray-800 mb-4">הודעה מעודדת</h3>
+                      <p className="text-gray-700">{outline.motivationalMessage}</p>
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Structure Tab Content */}
+          <TabsContent value="structure" className="space-y-6">
+            <Card className="border-whiskey/20" dir="rtl">
+              <CardHeader className="bg-whiskey/5 text-right">
+                <CardTitle className="text-2xl text-gray-dark text-right">מבנה ההרצאה</CardTitle>
+              </CardHeader>
+              <CardContent className="pt-6" dir="rtl">
+                {chapters && chapters.length > 0 && (
+                  <div className="space-y-6 text-right">
+                    {chapters.map((chapter, index) => (
+                      <div key={index} className="border-b border-gray-200 pb-4">
+                        <h3 className="text-lg font-semibold text-gray-800 mb-3">פרק {index + 1}: {chapter.title}</h3>
+                        <ul className="space-y-2">
+                          {chapter.points.map((point, pointIndex) => (
+                            <li key={pointIndex} className="text-gray-700 mr-4">• {point.content}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Slides Tab Content */}
+          <TabsContent value="slides" className="space-y-6">
+            <Card className="border-whiskey/20" dir="rtl">
+              <CardHeader className="bg-whiskey/5 text-right">
+                <CardTitle className="text-2xl text-gray-dark text-right">מבנה השקפים</CardTitle>
+              </CardHeader>
+              <CardContent className="pt-6" dir="rtl">
+                {dynamicSlides && dynamicSlides.length > 0 && (
+                  <div className="space-y-6 text-right">
+                    {dynamicSlides.map((slide, index) => (
+                      <div key={index} className="border border-gray-200 rounded-lg p-4">
+                        <div className="flex justify-between items-center mb-3">
+                          <span className="text-sm text-gray-500">{slide.section}</span>
+                          <span className="text-sm font-medium">שקף {slide.number}</span>
+                        </div>
+                        <h3 className="text-lg font-semibold text-gray-800 mb-2">{slide.headline}</h3>
+                        <p className="text-gray-700 mb-3">{slide.content}</p>
+                        {slide.timeAllocation && (
+                          <div className="text-sm text-gray-600">
+                            <strong>זמן מוקצה:</strong> {slide.timeAllocation}
+                          </div>
+                        )}
+                        {slide.engagementTip && (
+                          <div className="mt-3 p-3 bg-blue-50 rounded">
+                            <strong className="text-blue-800">טיפ למעורבות:</strong>
+                            <p className="text-blue-700 mt-1">{slide.engagementTip}</p>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Sales Process Tab Content */}
+          <TabsContent value="sales-process" className="space-y-6">
+            <Card className="border-whiskey/20" dir="rtl">
+              <CardHeader className="bg-whiskey/5 text-right">
+                <CardTitle className="text-2xl text-gray-dark text-right">תהליך המכירה</CardTitle>
+              </CardHeader>
+              <CardContent className="pt-6" dir="rtl">
+                {outline?.salesProcess && (
+                  <div className="space-y-4 text-right">
+                    {outline.salesProcess.map((step, index) => (
+                      <div key={index} className="flex items-start space-x-4 space-x-reverse">
+                        <div className="flex-shrink-0 w-8 h-8 bg-whiskey text-white rounded-full flex items-center justify-center text-sm font-medium">
+                          {step.order}
+                        </div>
+                        <div className="flex-1">
+                          <h4 className="text-lg font-medium text-gray-800">{step.title}</h4>
+                          <p className="text-gray-600 mt-1">{step.description}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Opening Tools Tab Content */}
+          <TabsContent value="opening-tools" className="space-y-6">
+            <Card className="border-whiskey/20" dir="rtl">
+              <CardHeader className="bg-whiskey/5 text-right">
+                <CardTitle className="text-2xl text-gray-dark text-right">כלי פתיחה</CardTitle>
+              </CardHeader>
+              <CardContent className="pt-6" dir="rtl">
+                {outline?.openingStyles && (
+                  <div className="space-y-4 text-right">
+                    <h3 className="text-lg font-semibold text-gray-800 mb-4">סגנונות פתיחה מוצעים</h3>
+                    <div className="grid gap-4">
+                      {outline.openingStyles.map((style, index) => (
+                        <div key={index} className="p-4 bg-gray-50 rounded-lg">
+                          <div className="flex items-center mb-2">
+                            <Lightbulb className="w-5 h-5 text-whiskey ml-2" />
+                            <span className="font-medium text-gray-800">אפשרות {index + 1}</span>
+                          </div>
+                          <p className="text-gray-700">{style}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Engagement Tab Content */}
+          <TabsContent value="engagement" className="space-y-6">
+            <Card className="border-whiskey/20" dir="rtl">
+              <CardHeader className="bg-whiskey/5 text-right">
+                <CardTitle className="text-2xl text-gray-dark text-right">כלי מעורבות</CardTitle>
+              </CardHeader>
+              <CardContent className="pt-6" dir="rtl">
+                {engagementData && (
+                  <div className="space-y-6 text-right">
+                    {engagementData.interactiveActivities && (
+                      <div>
+                        <h3 className="text-lg font-semibold text-gray-800 mb-4">פעילויות אינטראקטיביות</h3>
+                        <div className="space-y-4">
+                          {engagementData.interactiveActivities.map((activity, index) => (
+                            <div key={index} className="p-4 bg-blue-50 rounded-lg">
+                              <h4 className="font-medium text-blue-800 mb-2">{activity.name}</h4>
+                              <p className="text-blue-700 mb-2">{activity.description}</p>
+                              <div className="text-sm text-blue-600">
+                                <strong>משך:</strong> {activity.duration} | <strong>זמן:</strong> {activity.timing}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    
+                    {engagementData.engagementTechniques && (
+                      <div>
+                        <h3 className="text-lg font-semibold text-gray-800 mb-4">טכניקות מעורבות</h3>
+                        <div className="space-y-3">
+                          {engagementData.engagementTechniques.map((technique, index) => (
+                            <div key={index} className="p-3 bg-green-50 rounded">
+                              <h5 className="font-medium text-green-800">{technique.name}</h5>
+                              <p className="text-green-700 text-sm mt-1">{technique.description}</p>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Marketing Tab Content - keep existing code */}
           <TabsContent value="marketing" className="space-y-6">
             <Card className="border-whiskey/20" dir="rtl">
               <CardHeader className="bg-whiskey/5 text-right">

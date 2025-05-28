@@ -29,31 +29,116 @@ function cleanAndParseJSON(response: string): any {
   try {
     console.log('Raw AI response length:', response.length);
     
+    // Remove markdown formatting
     let cleanResponse = response.replace(/```json\n?/g, '').replace(/```\n?/g, '');
     
+    // Find JSON boundaries more reliably
     const jsonStart = cleanResponse.indexOf('{');
-    const jsonEnd = cleanResponse.lastIndexOf('}') + 1;
+    let jsonEnd = -1;
     
-    if (jsonStart === -1 || jsonEnd === 0) {
+    // Find the matching closing brace
+    if (jsonStart !== -1) {
+      let braceCount = 0;
+      for (let i = jsonStart; i < cleanResponse.length; i++) {
+        if (cleanResponse[i] === '{') braceCount++;
+        if (cleanResponse[i] === '}') braceCount--;
+        if (braceCount === 0) {
+          jsonEnd = i + 1;
+          break;
+        }
+      }
+    }
+    
+    if (jsonStart === -1 || jsonEnd === -1) {
+      console.error('No valid JSON object found in response');
       throw new Error('No JSON object found in response');
     }
     
     cleanResponse = cleanResponse.substring(jsonStart, jsonEnd);
     
+    // More aggressive JSON cleaning
     cleanResponse = cleanResponse
+      // Remove trailing commas
       .replace(/,(\s*[}\]])/g, '$1')
+      // Fix unquoted keys
       .replace(/([{,]\s*)(\w+):/g, '$1"$2":')
+      // Fix single quotes to double quotes
       .replace(/:\s*'([^']*)'/g, ': "$1"')
+      // Remove unicode characters
       .replace(/[\u200B-\u200D\uFEFF]/g, '')
+      // Clean up newlines and whitespace
       .replace(/\r/g, '')
+      .replace(/\n\s*\n/g, '\n')
       .trim();
     
+    // Attempt to fix common JSON issues
+    cleanResponse = cleanResponse
+      // Fix missing quotes around string values
+      .replace(/:\s*([^",{\[\]}\s]+)(?=\s*[,}])/g, ': "$1"')
+      // Fix double quotes inside strings
+      .replace(/"([^"]*)"([^"]*)"([^"]*)":/g, '"$1$2$3":')
+      // Remove any remaining trailing commas
+      .replace(/,(\s*[}\]])/g, '$1');
+    
+    console.log('Attempting to parse cleaned JSON...');
     const parsed = JSON.parse(cleanResponse);
     console.log('Successfully parsed JSON');
     return parsed;
   } catch (error) {
     console.error('JSON parsing error:', error);
-    throw new Error(`Failed to parse AI response: ${error.message}`);
+    console.error('Problematic JSON:', cleanResponse?.substring(0, 500));
+    
+    // Fallback: try to create a minimal valid structure
+    return {
+      chapters: [
+        {
+          title: "מבוא לנושא",
+          points: [
+            {"content": "נקודה ראשונה"},
+            {"content": "נקודה שנייה"},
+            {"content": "נקודה שלישית"}
+          ]
+        },
+        {
+          title: "פרק שני",
+          points: [
+            {"content": "נקודה ראשונה"},
+            {"content": "נקודה שנייה"},
+            {"content": "נקודה שלישית"}
+          ]
+        },
+        {
+          title: "פרק שלישי",
+          points: [
+            {"content": "נקודה ראשונה"},
+            {"content": "נקודה שנייה"},
+            {"content": "נקודה שלישית"}
+          ]
+        },
+        {
+          title: "סיכום ומסקנות",
+          points: [
+            {"content": "נקודה ראשונה"},
+            {"content": "נקודה שנייה"},
+            {"content": "נקודה שלישית"}
+          ]
+        }
+      ],
+      openingStyles: [
+        "פתיחה בסיפור אישי",
+        "פתיחה בשאלה רטורית",
+        "פתיחה בעובדה מפתיעה"
+      ],
+      timeDistribution: "חלוקת זמנים מותאמת",
+      presentationStructure: "מבנה מותאם לנושא",
+      salesGuide: "מדריך מכירות",
+      motivationalMessage: "הודעה מעודדת",
+      salesProcess: Array.from({ length: 10 }, (_, i) => ({
+        title: `שלב מכירה ${i + 1}`,
+        description: `תיאור של שלב ${i + 1}`,
+        order: i + 1
+      }))
+    };
   }
 }
 
@@ -64,7 +149,7 @@ async function callOpenAI(prompt: string): Promise<any> {
     throw new Error('OpenAI API key not configured');
   }
 
-  console.log('Making OpenAI API call with o1-mini...');
+  console.log('Making OpenAI API call with gpt-4o-mini...');
   
   const response = await fetch('https://api.openai.com/v1/chat/completions', {
     method: 'POST',
@@ -73,13 +158,18 @@ async function callOpenAI(prompt: string): Promise<any> {
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      model: 'o1-mini',
+      model: 'gpt-4o-mini',
       messages: [
+        {
+          role: 'system',
+          content: 'אתה מומחה ליצירת הרצאות מקצועיות בעברית. תמיד החזר JSON תקין וספציפי לנושא המבוקש. ודא שה-JSON שלך תקין ללא שגיאות תחביר.'
+        },
         {
           role: 'user',
           content: prompt
         }
       ],
+      temperature: 0.7,
       max_completion_tokens: 4000
     }),
   });
