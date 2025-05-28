@@ -8,7 +8,7 @@ import { usePresentationStore } from '@/store/presentationStore';
 import { useToast } from '@/hooks/use-toast';
 import SpotlightLogo from '@/components/SpotlightLogo';
 import ExportDialog from '@/components/ExportDialog';
-import { Loader2, FileText, Users, Target, DollarSign, Presentation, Lightbulb, Zap, Home, Mail } from 'lucide-react';
+import { Loader2, FileText, Users, Target, DollarSign, Presentation, Lightbulb, Home, Mail } from 'lucide-react';
 import { generateSlideStructure, generateSalesStrategy, generateEngagementContent, generateSocialMediaContent, generateEmailContent, generateMarketingPlanContent } from '@/services/presentationService';
 
 interface LoadingStage {
@@ -223,7 +223,7 @@ const PresentationSummary = () => {
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full" dir="rtl">
-          <TabsList className="grid w-full grid-cols-8 mb-8 text-xs">
+          <TabsList className="grid w-full grid-cols-7 mb-8 text-xs">
             <TabsTrigger value="main" className="flex items-center gap-1">
               <Home className="w-3 h-3" />
               <span className="hidden sm:inline">ראשי</span>
@@ -247,10 +247,6 @@ const PresentationSummary = () => {
             <TabsTrigger value="opening-tools" className="flex items-center gap-1">
               <Lightbulb className="w-3 h-3" />
               <span className="hidden sm:inline">פתיחות</span>
-            </TabsTrigger>
-            <TabsTrigger value="engagement" className="flex items-center gap-1">
-              <Zap className="w-3 h-3" />
-              <span className="hidden sm:inline">מעורבות</span>
             </TabsTrigger>
             <TabsTrigger value="marketing" className="flex items-center gap-1">
               <DollarSign className="w-3 h-3" />
@@ -450,52 +446,7 @@ const PresentationSummary = () => {
             </Card>
           </TabsContent>
 
-          {/* Engagement Tab Content */}
-          <TabsContent value="engagement" className="space-y-6">
-            <Card className="border-whiskey/20" dir="rtl">
-              <CardHeader className="bg-whiskey/5 text-right">
-                <CardTitle className="text-2xl text-gray-dark text-right">כלי מעורבות</CardTitle>
-              </CardHeader>
-              <CardContent className="pt-6" dir="rtl">
-                {engagementData && (
-                  <div className="space-y-6 text-right">
-                    {engagementData.interactiveActivities && (
-                      <div>
-                        <h3 className="text-lg font-semibold text-gray-800 mb-4">פעילויות אינטראקטיביות</h3>
-                        <div className="space-y-4">
-                          {engagementData.interactiveActivities.map((activity, index) => (
-                            <div key={index} className="p-4 bg-blue-50 rounded-lg">
-                              <h4 className="font-medium text-blue-800 mb-2">{activity.name}</h4>
-                              <p className="text-blue-700 mb-2">{activity.description}</p>
-                              <div className="text-sm text-blue-600">
-                                <strong>משך:</strong> {activity.duration} | <strong>זמן:</strong> {activity.timing}
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                    
-                    {engagementData.engagementTechniques && (
-                      <div>
-                        <h3 className="text-lg font-semibold text-gray-800 mb-4">טכניקות מעורבות</h3>
-                        <div className="space-y-3">
-                          {engagementData.engagementTechniques.map((technique, index) => (
-                            <div key={index} className="p-3 bg-green-50 rounded">
-                              <h5 className="font-medium text-green-800">{technique.name}</h5>
-                              <p className="text-green-700 text-sm mt-1">{technique.description}</p>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          {/* Marketing Tab Content - keep existing code */}
+          {/* Marketing Tab Content */}
           <TabsContent value="marketing" className="space-y-6">
             <Card className="border-whiskey/20" dir="rtl">
               <CardHeader className="bg-whiskey/5 text-right">
@@ -644,7 +595,45 @@ const PresentationSummary = () => {
                   {dynamicStrategy && (
                     <div className="mb-8">
                       <h3 className="text-xl font-bold text-gray-800 mb-6">אסטרטגיית מכירות מתקדמת</h3>
-                      {/* ... keep existing code (dynamicStrategy display logic) */}
+                      {/* Display Dynamic Strategy Content */}
+                      {dynamicStrategy.salesProcess && (
+                        <div className="mb-6">
+                          <h4 className="text-lg font-semibold text-gray-700 mb-3">תהליך מכירה</h4>
+                          <ul className="list-decimal pl-6">
+                            {dynamicStrategy.salesProcess.map((step: any, index: number) => (
+                              <li key={index} className="text-gray-700 mb-2">
+                                <span className="font-semibold">{step.step}:</span> {step.description}
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+
+                      {dynamicStrategy.customerEngagement && (
+                        <div className="mb-6">
+                          <h4 className="text-lg font-semibold text-gray-700 mb-3">מעורבות לקוחות</h4>
+                          <ul className="list-disc pl-6">
+                            {dynamicStrategy.customerEngagement.map((engagement: any, index: number) => (
+                              <li key={index} className="text-gray-700 mb-2">
+                                <span className="font-semibold">{engagement.technique}:</span> {engagement.description}
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+
+                      {dynamicStrategy.closingTechniques && (
+                        <div>
+                          <h4 className="text-lg font-semibold text-gray-700 mb-3">טכניקות סגירה</h4>
+                          <ul className="list-disc pl-6">
+                            {dynamicStrategy.closingTechniques.map((technique: any, index: number) => (
+                              <li key={index} className="text-gray-700 mb-2">
+                                <span className="font-semibold">{technique.technique}:</span> {technique.description}
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
                     </div>
                   )}
 
