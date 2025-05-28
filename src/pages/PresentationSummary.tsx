@@ -1,9 +1,12 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Progress } from '@/components/ui/progress';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { usePresentationStore } from '@/store/presentationStore';
 import { useToast } from '@/hooks/use-toast';
 import SpotlightLogo from '@/components/SpotlightLogo';
@@ -312,22 +315,25 @@ const PresentationSummary = () => {
                 <CardTitle className="text-2xl text-gray-dark text-right">מבט כללי על ההרצאה</CardTitle>
               </CardHeader>
               <CardContent className="pt-6" dir="rtl">
-                {outline && (
-                  <div className="space-y-6 text-right">
+                <div className="space-y-6 text-center">
+                  <h1 className="text-4xl font-bold text-gray-800">כותרת ראשית</h1>
+                  <h2 className="text-2xl font-semibold text-gray-600">כותרת משנה</h2>
+                  
+                  <div className="space-y-4 max-w-md mx-auto">
                     <div>
-                      <h3 className="text-lg font-semibold text-gray-800 mb-4">מבנה ההרצאה</h3>
-                      <p className="text-gray-700 mb-4">{outline.presentationStructure}</p>
+                      <Input 
+                        placeholder="כותרת" 
+                        className="text-right"
+                      />
                     </div>
                     <div>
-                      <h3 className="text-lg font-semibold text-gray-800 mb-4">חלוקת זמנים</h3>
-                      <p className="text-gray-700 mb-4">{outline.timeDistribution}</p>
-                    </div>
-                    <div>
-                      <h3 className="text-lg font-semibold text-gray-800 mb-4">הודעה מעודדת</h3>
-                      <p className="text-gray-700">{outline.motivationalMessage}</p>
+                      <Textarea 
+                        placeholder="טקסט תיאור כללי..."
+                        className="text-right min-h-[120px]"
+                      />
                     </div>
                   </div>
-                )}
+                </div>
               </CardContent>
             </Card>
           </TabsContent>
