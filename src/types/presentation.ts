@@ -69,6 +69,50 @@ export interface SalesProcessStep {
   order: number;
 }
 
+export interface SocialMediaContent {
+  facebookShortPost: string;
+  facebookStoryPost: string;
+  instagramStories: string[];
+  tiktokScript: {
+    disrupt: string;
+    hook: string;
+    issue: string;
+    credibility: string;
+    lectureDetails: string;
+    callToAction: string;
+  };
+}
+
+export interface EmailImageContent {
+  storytellingEmail: {
+    subject: string;
+    body: string;
+  };
+  promotionalImage: {
+    description: string;
+    downloadNote: string;
+    canvaLink: string;
+  };
+}
+
+export interface MarketingPlan {
+  fourWeekPlan: {
+    week1: WeekPlan;
+    week2: WeekPlan;
+    week3: WeekPlan;
+    week4: WeekPlan;
+  };
+  budgetConsiderations: string[];
+  keyMetrics: string[];
+}
+
+export interface WeekPlan {
+  title: string;
+  goals: string[];
+  activities: string[];
+  contentIdeas: string[];
+}
+
 export interface PresentationOutline {
   chapters: Chapter[];
   openingStyles: string[];
@@ -84,6 +128,10 @@ export interface PresentationOutline {
   dynamicSalesStrategy?: DynamicSalesStrategy;
   salesProcess?: SalesProcessStep[];
   motivationalMessage?: string;
+  // New marketing content fields
+  socialMediaContent?: SocialMediaContent;
+  emailImageContent?: EmailImageContent;
+  marketingPlan?: MarketingPlan;
 }
 
 export interface OpeningSuggestion {

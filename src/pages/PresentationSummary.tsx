@@ -9,7 +9,7 @@ import { useToast } from '@/hooks/use-toast';
 import SpotlightLogo from '@/components/SpotlightLogo';
 import ExportDialog from '@/components/ExportDialog';
 import { Loader2, FileText, Users, Target, DollarSign, Presentation, Lightbulb, Zap, Home, Mail } from 'lucide-react';
-import { generateSlideStructure, generateSalesStrategy, generateEngagementContent } from '@/services/presentationService';
+import { generateSlideStructure, generateSalesStrategy, generateEngagementContent, generateSocialMediaContent, generateEmailImageContent, generateMarketingPlanContent } from '@/services/presentationService';
 
 interface LoadingStage {
   name: string;
@@ -21,21 +21,36 @@ const loadingStages: LoadingStage[] = [
   {
     name: 'outline',
     message: 'יצירת מבנה ההרצאה הושלמה...',
-    progress: 25
+    progress: 15
   },
   {
     name: 'slides',
     message: 'יוצר מבנה שקפים מפורט...',
-    progress: 50
+    progress: 30
   },
   {
     name: 'engagement',
     message: 'יוצר תוכן מעורבות אינטראקטיבי...',
-    progress: 75
+    progress: 45
   },
   {
     name: 'strategy',
     message: 'מפתח אסטרטגיית שיווק ומכירות...',
+    progress: 60
+  },
+  {
+    name: 'social-media',
+    message: 'יוצר תוכן לרשתות חברתיות...',
+    progress: 75
+  },
+  {
+    name: 'email-image',
+    message: 'יוצר אימייל שיווקי ותמונה קידומית...',
+    progress: 85
+  },
+  {
+    name: 'marketing-plan',
+    message: 'יוצר אסטרטגיית שיווק מותאמת... 95% הושלם',
     progress: 100
   }
 ];
@@ -49,6 +64,9 @@ const PresentationSummary = () => {
   const [dynamicSlides, setDynamicSlides] = useState<any[]>([]);
   const [dynamicStrategy, setDynamicStrategy] = useState<any>(null);
   const [engagementData, setEngagementData] = useState<any>(null);
+  const [socialMediaContent, setSocialMediaContent] = useState<any>(null);
+  const [emailImageContent, setEmailImageContent] = useState<any>(null);
+  const [marketingPlanContent, setMarketingPlanContent] = useState<any>(null);
   const [activeTab, setActiveTab] = useState("main");
   const [showExportDialog, setShowExportDialog] = useState(false);
 
@@ -107,6 +125,30 @@ const PresentationSummary = () => {
       const strategy = await generateSalesStrategy(formData, outline);
       console.log('🎯 Strategy response:', strategy);
       setDynamicStrategy(strategy);
+      await new Promise(resolve => setTimeout(resolve, 500));
+
+      // Stage 5: Generate social media content
+      setCurrentStage(4);
+      console.log('🎯 Starting social media generation...');
+      const socialMedia = await generateSocialMediaContent(formData, outline);
+      console.log('🎯 Social media response:', socialMedia);
+      setSocialMediaContent(socialMedia);
+      await new Promise(resolve => setTimeout(resolve, 500));
+
+      // Stage 6: Generate email and image content
+      setCurrentStage(5);
+      console.log('🎯 Starting email/image generation...');
+      const emailImage = await generateEmailImageContent(formData, outline);
+      console.log('🎯 Email/image response:', emailImage);
+      setEmailImageContent(emailImage);
+      await new Promise(resolve => setTimeout(resolve, 500));
+
+      // Stage 7: Generate marketing plan
+      setCurrentStage(6);
+      console.log('🎯 Starting marketing plan generation...');
+      const marketingPlan = await generateMarketingPlanContent(formData, outline);
+      console.log('🎯 Marketing plan response:', marketingPlan);
+      setMarketingPlanContent(marketingPlan);
 
       // Complete loading
       await new Promise(resolve => setTimeout(resolve, 1000));
@@ -141,7 +183,10 @@ const PresentationSummary = () => {
       outline,
       dynamicSlides,
       dynamicStrategy,
-      engagementData
+      engagementData,
+      socialMediaContent,
+      emailImageContent,
+      marketingPlanContent
     };
   };
 
@@ -178,7 +223,7 @@ const PresentationSummary = () => {
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full" dir="rtl">
-          <TabsList className="grid w-full grid-cols-8 mb-8 text-xs">
+          <TabsList className="grid w-full grid-cols-11 mb-8 text-xs">
             <TabsTrigger value="main" className="flex items-center gap-1">
               <Home className="w-3 h-3" />
               <span className="hidden sm:inline">ראשי</span>
@@ -210,6 +255,18 @@ const PresentationSummary = () => {
             <TabsTrigger value="marketing" className="flex items-center gap-1">
               <DollarSign className="w-3 h-3" />
               <span className="hidden sm:inline">שיווק</span>
+            </TabsTrigger>
+            <TabsTrigger value="social-media" className="flex items-center gap-1">
+              <Users className="w-3 h-3" />
+              <span className="hidden sm:inline">רשתות</span>
+            </TabsTrigger>
+            <TabsTrigger value="email-marketing" className="flex items-center gap-1">
+              <Mail className="w-3 h-3" />
+              <span className="hidden sm:inline">אימייל</span>
+            </TabsTrigger>
+            <TabsTrigger value="marketing-calendar" className="flex items-center gap-1">
+              <Target className="w-3 h-3" />
+              <span className="hidden sm:inline">לוח</span>
             </TabsTrigger>
           </TabsList>
 
@@ -564,6 +621,205 @@ const PresentationSummary = () => {
                     <p className="text-gray-500 text-right">אסטרטגיית השיווק בתהליך יצירה...</p>
                     <p className="text-gray-400 text-sm text-right mt-2">אנא המתן, התוכן נטען</p>
                   </div>}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* New Social Media Tab */}
+          <TabsContent value="social-media" className="space-y-6">
+            <Card className="border-whiskey/20" dir="rtl">
+              <CardHeader className="bg-whiskey/5 text-right">
+                <CardTitle className="text-2xl text-gray-dark text-right">תוכן לרשתות חברתיות</CardTitle>
+              </CardHeader>
+              <CardContent className="pt-6" dir="rtl">
+                {socialMediaContent ? (
+                  <div className="space-y-6 text-right">
+                    {/* Facebook Short Post */}
+                    <div className="mb-6">
+                      <h3 className="text-xl font-bold text-gray-800 mb-4">פוסט פייסבוק קצר</h3>
+                      <div className="p-4 bg-blue-50 rounded-lg">
+                        <p className="text-gray-700">{socialMediaContent.facebookShortPost}</p>
+                      </div>
+                    </div>
+
+                    {/* Facebook Story Post */}
+                    <div className="mb-6">
+                      <h3 className="text-xl font-bold text-gray-800 mb-4">פוסט סיפור לפייסבוק/לינקדאין</h3>
+                      <div className="p-4 bg-blue-50 rounded-lg">
+                        <p className="text-gray-700 whitespace-pre-line">{socialMediaContent.facebookStoryPost}</p>
+                      </div>
+                    </div>
+
+                    {/* Instagram Stories */}
+                    <div className="mb-6">
+                      <h3 className="text-xl font-bold text-gray-800 mb-4">סדרת סטוריז לאינסטגרם</h3>
+                      <div className="space-y-3">
+                        {socialMediaContent.instagramStories?.map((story: string, index: number) => (
+                          <div key={index} className="p-4 bg-purple-50 rounded-lg">
+                            <h4 className="font-semibold text-purple-800 mb-2">סטורי {index + 1}</h4>
+                            <p className="text-gray-700">{story}</p>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* TikTok Script */}
+                    <div className="mb-6">
+                      <h3 className="text-xl font-bold text-gray-800 mb-4">סקריפט לטיקטוק</h3>
+                      <div className="space-y-3">
+                        {socialMediaContent.tiktokScript && Object.entries(socialMediaContent.tiktokScript).map(([key, value]) => (
+                          <div key={key} className="p-4 bg-yellow-50 rounded-lg">
+                            <h4 className="font-semibold text-yellow-800 mb-2">
+                              {key === 'disrupt' && 'פתיחה מושכת תשומת לב'}
+                              {key === 'hook' && 'הוק - למה להמשיך לצפות'}
+                              {key === 'issue' && 'הבעיה שההרצאה פותרת'}
+                              {key === 'credibility' && 'אמינות המרצה'}
+                              {key === 'lectureDetails' && 'פרטי ההרצאה'}
+                              {key === 'callToAction' && 'קריאה לפעולה'}
+                            </h4>
+                            <p className="text-gray-700">{value as string}</p>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="text-center py-8">
+                    <p className="text-gray-500 text-right">תוכן רשתות חברתיות בתהליך יצירה...</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* New Email Marketing Tab */}
+          <TabsContent value="email-marketing" className="space-y-6">
+            <Card className="border-whiskey/20" dir="rtl">
+              <CardHeader className="bg-whiskey/5 text-right">
+                <CardTitle className="text-2xl text-gray-dark text-right">שיווק באימייל ותמונה קידומית</CardTitle>
+              </CardHeader>
+              <CardContent className="pt-6" dir="rtl">
+                {emailImageContent ? (
+                  <div className="space-y-6 text-right">
+                    {/* Storytelling Email */}
+                    <div className="mb-6">
+                      <h3 className="text-xl font-bold text-gray-800 mb-4">אימייל שיווקי בסגנון סיפור</h3>
+                      <div className="p-4 bg-green-50 rounded-lg">
+                        <h4 className="font-semibold text-green-800 mb-2">נושא: {emailImageContent.storytellingEmail?.subject}</h4>
+                        <div className="text-gray-700 whitespace-pre-line">{emailImageContent.storytellingEmail?.body}</div>
+                      </div>
+                    </div>
+
+                    {/* Promotional Image */}
+                    <div className="mb-6">
+                      <h3 className="text-xl font-bold text-gray-800 mb-4">תמונה קידומית</h3>
+                      <div className="p-4 bg-orange-50 rounded-lg">
+                        <h4 className="font-semibold text-orange-800 mb-2">תיאור התמונה:</h4>
+                        <p className="text-gray-700 mb-4">{emailImageContent.promotionalImage?.description}</p>
+                        
+                        <div className="bg-white p-4 rounded border-2 border-dashed border-orange-300">
+                          <p className="text-center text-gray-600 mb-2">💡 {emailImageContent.promotionalImage?.downloadNote}</p>
+                          <div className="text-center">
+                            <a 
+                              href={emailImageContent.promotionalImage?.canvaLink} 
+                              target="_blank" 
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center gap-2 bg-orange-600 text-white px-4 py-2 rounded hover:bg-orange-700"
+                            >
+                              📥 פתח ב-Canva
+                            </a>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="text-center py-8">
+                    <p className="text-gray-500 text-right">תוכן שיווק באימייל בתהליך יצירה...</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* New Marketing Calendar Tab */}
+          <TabsContent value="marketing-calendar" className="space-y-6">
+            <Card className="border-whiskey/20" dir="rtl">
+              <CardHeader className="bg-whiskey/5 text-right">
+                <CardTitle className="text-2xl text-gray-dark text-right">לוח שיווק 4 שבועות</CardTitle>
+              </CardHeader>
+              <CardContent className="pt-6" dir="rtl">
+                {marketingPlanContent ? (
+                  <div className="space-y-6 text-right">
+                    {/* 4 Week Plan */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      {marketingPlanContent.fourWeekPlan && Object.entries(marketingPlanContent.fourWeekPlan).map(([weekKey, weekData]: [string, any]) => (
+                        <div key={weekKey} className="p-4 bg-blue-50 rounded-lg">
+                          <h3 className="text-lg font-bold text-blue-800 mb-3">{weekData.title}</h3>
+                          
+                          <div className="mb-3">
+                            <h4 className="font-semibold text-blue-700 mb-2">מטרות:</h4>
+                            <ul className="space-y-1">
+                              {weekData.goals?.map((goal: string, index: number) => (
+                                <li key={index} className="text-gray-700 text-sm">• {goal}</li>
+                              ))}
+                            </ul>
+                          </div>
+
+                          <div className="mb-3">
+                            <h4 className="font-semibold text-blue-700 mb-2">פעילויות:</h4>
+                            <ul className="space-y-1">
+                              {weekData.activities?.map((activity: string, index: number) => (
+                                <li key={index} className="text-gray-700 text-sm">• {activity}</li>
+                              ))}
+                            </ul>
+                          </div>
+
+                          <div>
+                            <h4 className="font-semibold text-blue-700 mb-2">רעיונות לתוכן:</h4>
+                            <ul className="space-y-1">
+                              {weekData.contentIdeas?.map((idea: string, index: number) => (
+                                <li key={index} className="text-gray-700 text-sm">• {idea}</li>
+                              ))}
+                            </ul>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* Budget Considerations */}
+                    {marketingPlanContent.budgetConsiderations && (
+                      <div className="mt-6">
+                        <h3 className="text-xl font-bold text-gray-800 mb-4">שיקולי תקציב</h3>
+                        <div className="space-y-2">
+                          {marketingPlanContent.budgetConsiderations.map((consideration: string, index: number) => (
+                            <div key={index} className="p-3 bg-yellow-50 rounded">
+                              <p className="text-gray-700">• {consideration}</p>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Key Metrics */}
+                    {marketingPlanContent.keyMetrics && (
+                      <div className="mt-6">
+                        <h3 className="text-xl font-bold text-gray-800 mb-4">מדדי מפתח למעקב</h3>
+                        <div className="space-y-2">
+                          {marketingPlanContent.keyMetrics.map((metric: string, index: number) => (
+                            <div key={index} className="p-3 bg-green-50 rounded">
+                              <p className="text-gray-700">• {metric}</p>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div className="text-center py-8">
+                    <p className="text-gray-500 text-right">תוכנית השיווק בתהליך יצירה...</p>
+                  </div>
+                )}
               </CardContent>
             </Card>
           </TabsContent>

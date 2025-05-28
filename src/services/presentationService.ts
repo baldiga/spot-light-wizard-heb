@@ -1,4 +1,3 @@
-
 import { PresentationFormData, PresentationOutline } from '@/types/presentation';
 import { supabase } from '@/integrations/supabase/client';
 import { generateId } from '@/utils/helpers';
@@ -137,6 +136,72 @@ export async function generatePresentationTools(formData: PresentationFormData, 
     return data || null;
   } catch (error) {
     console.error("Error generating presentation tools:", error);
+    throw error;
+  }
+}
+
+/**
+ * Generates social media content using Supabase Edge Function
+ */
+export async function generateSocialMediaContent(formData: PresentationFormData, outline: any): Promise<any> {
+  try {
+    console.log('Generating social media content...');
+    
+    const { data, error } = await supabase.functions.invoke('generate-social-media', {
+      body: { formData: formData, outline: outline }
+    });
+
+    if (error) {
+      throw new Error(`Failed to generate social media content: ${error.message}`);
+    }
+
+    return data || null;
+  } catch (error) {
+    console.error("Error generating social media content:", error);
+    throw error;
+  }
+}
+
+/**
+ * Generates email and image content using Supabase Edge Function
+ */
+export async function generateEmailImageContent(formData: PresentationFormData, outline: any): Promise<any> {
+  try {
+    console.log('Generating email and image content...');
+    
+    const { data, error } = await supabase.functions.invoke('generate-email-image', {
+      body: { formData: formData, outline: outline }
+    });
+
+    if (error) {
+      throw new Error(`Failed to generate email/image content: ${error.message}`);
+    }
+
+    return data || null;
+  } catch (error) {
+    console.error("Error generating email/image content:", error);
+    throw error;
+  }
+}
+
+/**
+ * Generates marketing plan using Supabase Edge Function
+ */
+export async function generateMarketingPlanContent(formData: PresentationFormData, outline: any): Promise<any> {
+  try {
+    console.log('Generating marketing plan...');
+    
+    const { data, error } = await supabase.functions.invoke('generate-marketing-plan', {
+      body: { formData: formData, outline: outline }
+    });
+
+    if (error) {
+      throw new Error(`Failed to generate marketing plan: ${error.message}`);
+    }
+
+    return data || null;
+  } catch (error) {
+    console.error("Error generating marketing plan:", error);
     throw error;
   }
 }
