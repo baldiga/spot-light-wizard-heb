@@ -16,6 +16,7 @@ serve(async (req) => {
     const { formData } = await req.json();
     
     if (!formData) {
+      console.error('No form data provided');
       throw new Error('No form data provided');
     }
 
@@ -24,6 +25,7 @@ serve(async (req) => {
     const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
     
     if (!openAIApiKey) {
+      console.error('OpenAI API key not configured');
       throw new Error('OpenAI API key not configured');
     }
 
@@ -62,14 +64,16 @@ Create exactly 4 chapters with 3 points each. Make it relevant to the presentati
 
 Topic: ${formData.idea}
 Duration: ${formData.duration} minutes
-Speaker Background: ${formData.speakerBackground}
-Target Audience: ${formData.audienceProfile}
-Common Objections: ${formData.commonObjections}
-Service/Product: ${formData.serviceOrProduct}
-Call to Action: ${formData.callToAction}
+Speaker Background: ${formData.speakerBackground || 'לא צוין'}
+Target Audience: ${formData.audienceProfile || 'לא צוין'}
+Common Objections: ${formData.commonObjections || 'לא צוין'}
+Service/Product: ${formData.serviceOrProduct || 'לא צוין'}
+Call to Action: ${formData.callToAction || 'לא צוין'}
 
 Create a professional presentation structure with 4 chapters, each containing exactly 3 main points. Focus on creating engaging content that builds toward the call to action naturally.`;
 
+    console.log('Making request to OpenAI API...');
+    
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -77,7 +81,7 @@ Create a professional presentation structure with 4 chapters, each containing ex
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-4',
+        model: 'gpt-4o',
         messages: [
           { role: 'system', content: systemPrompt },
           { role: 'user', content: userPrompt }
@@ -89,11 +93,17 @@ Create a professional presentation structure with 4 chapters, each containing ex
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('OpenAI API error:', errorText);
+      console.error('OpenAI API error:', response.status, errorText);
       throw new Error(`OpenAI API error: ${response.status} - ${errorText}`);
     }
 
     const data = await response.json();
+    
+    if (!data.choices || !data.choices[0] || !data.choices[0].message) {
+      console.error('Invalid response structure from OpenAI:', data);
+      throw new Error('Invalid response structure from OpenAI API');
+    }
+    
     const content = data.choices[0].message.content;
 
     console.log('Raw AI response:', content);
@@ -104,17 +114,40 @@ Create a professional presentation structure with 4 chapters, each containing ex
     } catch (parseError) {
       console.error('Failed to parse AI response as JSON:', parseError);
       console.error('Content that failed to parse:', content);
-      throw new Error('Invalid JSON response from AI');
+      throw new Error('Invalid JSON response from AI - response was not properly formatted');
     }
 
-    console.log('Successfully generated basic outline');
+    // Validate the response structure
+    if (!parsedContent.chapters || !Array.isArray(parsedContent.chapters)) {
+      console.error('Invalid response structure - missing chapters array:', parsedContent);
+      throw new Error('Invalid response structure from AI - missing chapters');
+    }
+
+    if (parsedContent.chapters.length !== 4) {
+      console.error('Invalid number of chapters:', parsedContent.chapters.length);
+      throw new Error('AI did not generate exactly 4 chapters as requested');
+    }
+
+    // Validate each chapter has 3 points
+    for (let i = 0; i < parsedContent.chapters.length; i++) {
+      const chapter = parsedContent.chapters[i];
+      if (!chapter.points || !Array.isArray(chapter.points) || chapter.points.length !== 3) {
+        console.error(`Chapter ${i + 1} does not have exactly 3 points:`, chapter);
+        throw new Error(`Chapter ${i + 1} does not have exactly 3 points`);
+      }
+    }
+
+    console.log('Successfully generated basic outline with', parsedContent.chapters.length, 'chapters');
     return new Response(JSON.stringify(parsedContent), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
 
   } catch (error) {
     console.error('Error in generate-outline function:', error);
-    return new Response(JSON.stringify({ error: error.message }), {
+    return new Response(JSON.stringify({ 
+      error: error.message || 'Unknown error occurred',
+      details: error.toString()
+    }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
