@@ -21,6 +21,7 @@ interface PresentationState {
   updatePoint: (chapterId: string, pointId: string, content: string) => void;
   generateOutlineFromAPI: () => Promise<void>;
   generateDummyOutline: () => void;
+  resetError: () => void;
 }
 
 export const usePresentationStore = create<PresentationState>((set, get) => ({
@@ -36,6 +37,7 @@ export const usePresentationStore = create<PresentationState>((set, get) => ({
   setUserRegistration: (data) => set({ userRegistration: data }),
   setOutline: (outline) => set({ outline }),
   setChapters: (chapters) => set({ chapters }),
+  resetError: () => set({ error: null }),
   
   updateChapter: (chapterId, title) => set((state) => ({
     chapters: state.chapters.map(chapter => 
@@ -60,9 +62,13 @@ export const usePresentationStore = create<PresentationState>((set, get) => ({
     const { formData, userRegistration } = get();
     
     if (!formData) {
+      console.error('No form data available for outline generation');
       set({ error: "אין מידע זמין ליצירת מבנה הרצאה" });
       return;
     }
+    
+    // Store the formData to ensure it doesn't get lost during the process
+    const currentFormData = { ...formData };
     
     set({ 
       isLoading: true, 
@@ -71,12 +77,12 @@ export const usePresentationStore = create<PresentationState>((set, get) => ({
     });
     
     try {
-      console.log('Starting outline generation for topic:', formData.idea);
-      console.log('Speaker background:', formData.speakerBackground);
-      console.log('Audience profile:', formData.audienceProfile);
+      console.log('Starting outline generation for topic:', currentFormData.idea);
+      console.log('Speaker background:', currentFormData.speakerBackground);
+      console.log('Audience profile:', currentFormData.audienceProfile);
       
       // Generate outline using the secure Edge Function
-      const outlineData = await generatePresentationOutline(formData);
+      const outlineData = await generatePresentationOutline(currentFormData);
       
       console.log('Outline generated successfully with', outlineData.chapters.length, 'chapters');
       console.log('Sales process steps:', outlineData.salesProcess?.length);
@@ -88,10 +94,10 @@ export const usePresentationStore = create<PresentationState>((set, get) => ({
       
       // Validate that we got real content, not dummy content
       const hasPersonalizedContent = outlineData.chapters.some(chapter => 
-        chapter.title.includes(formData.idea) || 
+        chapter.title.toLowerCase().includes(currentFormData.idea.toLowerCase()) || 
         chapter.points.some(point => 
-          point.content.includes(formData.speakerBackground) ||
-          point.content.includes(formData.audienceProfile)
+          point.content.toLowerCase().includes(currentFormData.speakerBackground.toLowerCase()) ||
+          point.content.toLowerCase().includes(currentFormData.audienceProfile.toLowerCase())
         )
       );
 
@@ -99,30 +105,37 @@ export const usePresentationStore = create<PresentationState>((set, get) => ({
         console.warn('Generated content may not be properly personalized');
       }
       
+      // Ensure formData is restored even after successful generation
       set({ 
+        formData: currentFormData, // Restore formData
         outline: outlineData,
         chapters: outlineData.chapters,
         isLoading: false,
-        loadingMessage: "יוצרים את מבנה ההרצאה..."
+        loadingMessage: "יוצרים את מבנה ההרצאה...",
+        error: null
       });
 
-      // Send data to Zapier webhook after successful outline generation
+      // Send data to Zapier webhook after successful outline generation (non-blocking)
       if (userRegistration) {
         try {
-          await sendToZapierWebhook({
-            presentationData: formData,
+          console.log('Sending data to webhook in background...');
+          // Make webhook call non-blocking so it doesn't affect the main flow
+          sendToZapierWebhook({
+            presentationData: currentFormData,
             userRegistration,
             outline: outlineData
+          }).catch(webhookError => {
+            console.error("Webhook failed but continuing with main flow:", webhookError);
           });
         } catch (webhookError) {
-          console.error("Failed to send data to webhook:", webhookError);
+          console.error("Failed to initiate webhook call, but continuing:", webhookError);
         }
       }
     } catch (error) {
       console.error("Failed to generate outline:", error);
       
       // Provide more specific error messages based on error type
-      let errorMessage = "אירעה שגיאה ביצירת מבנה הרצאה.";
+      let errorMessage = "אירעה שגיאה ביצירת מבנה הרצאה. אנא נסה שנית.";
       
       if (error.message.includes('API key')) {
         errorMessage = "בעיה במפתח ה-API של OpenAI. אנא בדוק את ההגדרות.";
@@ -136,7 +149,9 @@ export const usePresentationStore = create<PresentationState>((set, get) => ({
         errorMessage = "השירות לא הצליח ליצור מבנה הרצאה. אנא נסה שנית או צור קשר עם התמיכה.";
       }
       
+      // Ensure formData is preserved even on error
       set({ 
+        formData: currentFormData, // Preserve formData
         error: errorMessage, 
         isLoading: false,
         loadingMessage: "יוצרים את מבנה ההרצאה..."
@@ -145,6 +160,11 @@ export const usePresentationStore = create<PresentationState>((set, get) => ({
   },
 
   generateDummyOutline: () => {
+    const { formData } = get();
+    
+    // Ensure we don't lose formData when generating dummy outline
+    const currentFormData = formData ? { ...formData } : null;
+    
     const dummyChapters: Chapter[] = [
       {
         id: generateId(),
@@ -172,6 +192,15 @@ export const usePresentationStore = create<PresentationState>((set, get) => ({
           { id: generateId(), content: "שילוב השיטות בעבודה היומיומית" },
           { id: generateId(), content: "מדידת הצלחה ואופטימיזציה מתמשכת" }
         ]
+      },
+      {
+        id: generateId(),
+        title: "סיכום והמלצות",
+        points: [
+          { id: generateId(), content: "סיכום הנקודות המרכזיות" },
+          { id: generateId(), content: "המלצות ליישום מיידי" },
+          { id: generateId(), content: "צעדים הבאים והמשך הלמידה" }
+        ]
       }
     ];
 
@@ -183,6 +212,7 @@ export const usePresentationStore = create<PresentationState>((set, get) => ({
     }));
     
     set({ 
+      formData: currentFormData, // Preserve formData
       chapters: dummyChapters,
       outline: {
         chapters: dummyChapters,
@@ -191,13 +221,13 @@ export const usePresentationStore = create<PresentationState>((set, get) => ({
           "שאלה רטורית: 'האם אי פעם תהיתם כיצד החברות המובילות בתחום מצליחות להשיג תוצאות כה מרשימות?'",
           "עובדה מפתיעה: הצג סטטיסטיקה מפתיעה שתעורר את תשומת לב הקהל מיד בהתחלה"
         ],
-        timeDistribution: "פתיחה - 10%, פרק 1 - 25%, פרק 2 - 35%, פרק 3 - 20%, סיכום וקריאה לפעולה - 10%",
+        timeDistribution: "פתיחה - 10%, פרק 1 - 25%, פרק 2 - 30%, פרק 3 - 25%, פרק 4 - 10%",
         interactiveActivities: [
           "סקר מהיר: שאל את הקהל שאלה רלוונטית והצג את התוצאות על המסך",
           "תרגיל בזוגות: הנחה את המשתתפים לדון עם השכן שלהם בנקודה ספציפית למשך 2 דקות",
           "סיעור מוחות קצר: בקש מהקהל להציע פתרונות אפשריים לבעיה שהצגת"
         ],
-        presentationStructure: "שקף פתיחה, הצגה עצמית, מבנה ההרצאה, תוכן מרכזי (3 פרקים), הדגמה של המוצר/שירות, סיכום עם נקודות מפתח, קריאה לפעולה",
+        presentationStructure: "שקף פתיחה, הצגה עצמית, מבנה ההרצאה, תוכן מרכזי (4 פרקים), הדגמה של המוצר/שירות, סיכום עם נקודות מפתח, קריאה לפעולה",
         discussionQuestions: {
           "חלק 1": [
             "כיצד הידע הבסיסי שהוצג משתלב במציאות היומיומית שלכם?",
