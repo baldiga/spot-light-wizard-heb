@@ -21,6 +21,31 @@ interface ExportRequest {
   };
 }
 
+// Function to sanitize email subject line
+function sanitizeSubject(rawSubject: string): string {
+  if (!rawSubject || typeof rawSubject !== 'string') {
+    return 'סיכום ההרצאה שלך';
+  }
+  
+  // Remove newlines, tabs, and other problematic characters
+  let cleaned = rawSubject
+    .replace(/[\r\n\t]+/g, ' ')  // Replace newlines and tabs with spaces
+    .replace(/\s+/g, ' ')        // Replace multiple spaces with single space
+    .trim();                     // Remove leading/trailing whitespace
+  
+  // Limit length to prevent overly long subjects
+  if (cleaned.length > 80) {
+    cleaned = cleaned.substring(0, 77) + '...';
+  }
+  
+  // If still empty after cleaning, use fallback
+  if (!cleaned) {
+    cleaned = 'סיכום ההרצאה שלך';
+  }
+  
+  return cleaned;
+}
+
 const handler = async (req: Request): Promise<Response> => {
   // Handle CORS preflight requests
   if (req.method === "OPTIONS") {
@@ -45,6 +70,11 @@ const handler = async (req: Request): Promise<Response> => {
     }
 
     const { formData, chapters, outline, dynamicSlides, dynamicStrategy, engagementData } = summaryData;
+
+    // Sanitize the email subject
+    const cleanSubject = sanitizeSubject(`סיכום ההרצאה: ${formData?.idea || ''}`);
+    console.log('Original subject idea:', formData?.idea);
+    console.log('Cleaned subject:', cleanSubject);
 
     // Create comprehensive HTML email
     const htmlContent = `
@@ -199,17 +229,17 @@ const handler = async (req: Request): Promise<Response> => {
       </div>
     `;
 
-    // Send the email
+    // Send the email with sanitized subject
     const emailResponse = await resend.emails.send({
       from: "Spotlight <noreply@verify.amirbaldiga.com>",
       to: [recipientEmail],
-      subject: `סיכום ההרצאה: ${formData?.idea || 'ההרצאה שלך'}`,
+      subject: cleanSubject,
       html: htmlContent,
     });
 
     if (emailResponse.error) {
       console.error("Error sending email:", emailResponse.error);
-      throw new Error("Failed to send email");
+      throw new Error(`Failed to send email: ${emailResponse.error.message || 'Unknown error'}`);
     }
 
     console.log("Summary email sent successfully:", emailResponse);
@@ -225,7 +255,10 @@ const handler = async (req: Request): Promise<Response> => {
   } catch (error: any) {
     console.error("Error in export-summary function:", error);
     return new Response(
-      JSON.stringify({ error: error.message || "Internal server error" }),
+      JSON.stringify({ 
+        error: error.message || "Internal server error",
+        details: error.toString()
+      }),
       {
         status: 500,
         headers: { "Content-Type": "application/json", ...corsHeaders },
