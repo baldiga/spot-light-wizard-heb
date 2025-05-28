@@ -31,7 +31,9 @@ serve(async (req) => {
 
     const systemPrompt = `You are an expert presentation consultant. Generate a structured presentation outline in Hebrew based on the user's input.
 
-Return ONLY a valid JSON object with this exact structure - no additional text or explanations:
+CRITICAL: Return ONLY the JSON object without any markdown formatting, code blocks, or additional text. Do not wrap the response in \`\`\`json or any other formatting. Start directly with { and end with }.
+
+The response must be a valid JSON object with this exact structure:
 
 {
   "chapters": [
@@ -104,9 +106,24 @@ Create a professional presentation structure with 4 chapters, each containing ex
       throw new Error('Invalid response structure from OpenAI API');
     }
     
-    const content = data.choices[0].message.content;
+    let content = data.choices[0].message.content;
 
     console.log('Raw AI response:', content);
+
+    // Clean and extract JSON from potential markdown formatting
+    content = content.trim();
+    
+    // Remove markdown code block formatting if present
+    if (content.startsWith('```json')) {
+      content = content.replace(/^```json\s*/, '').replace(/\s*```$/, '');
+    } else if (content.startsWith('```')) {
+      content = content.replace(/^```\s*/, '').replace(/\s*```$/, '');
+    }
+    
+    // Remove any leading/trailing whitespace after cleaning
+    content = content.trim();
+    
+    console.log('Cleaned content for parsing:', content);
 
     let parsedContent;
     try {
