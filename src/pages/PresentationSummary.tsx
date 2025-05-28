@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -8,7 +9,7 @@ import { usePresentationStore } from '@/store/presentationStore';
 import { useToast } from '@/hooks/use-toast';
 import SpotlightLogo from '@/components/SpotlightLogo';
 import ExportDialog from '@/components/ExportDialog';
-import { Loader2, FileText, Users, Target, DollarSign, Presentation, Lightbulb, Zap, Home } from 'lucide-react';
+import { Loader2, FileText, Users, Target, DollarSign, Presentation, Lightbulb, Zap, Home, Mail } from 'lucide-react';
 import { generateSlideStructure, generateSalesStrategy, generateEngagementContent, generateSocialMediaContent, generateEmailContent, generateMarketingPlanContent } from '@/services/presentationService';
 
 interface LoadingStage {
