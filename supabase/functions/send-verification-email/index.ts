@@ -56,9 +56,9 @@ const handler = async (req: Request): Promise<Response> => {
     
     console.log(`Sending verification code ${code} to ${email}`);
 
-    // Send the verification email
+    // Send the verification email using verified domain
     const emailResponse = await resend.emails.send({
-      from: "Spotlight <onboarding@resend.dev>",
+      from: "Spotlight <noreply@verify.amirbaldiga.com>",
       to: [email],
       subject: "קוד אימות - Spotlight",
       html: `
