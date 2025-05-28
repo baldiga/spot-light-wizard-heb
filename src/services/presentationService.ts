@@ -22,6 +22,46 @@ export const generatePresentationOutline = async (formData: PresentationFormData
   return data;
 };
 
+export const generateSlideStructure = async (formData: PresentationFormData, outline: PresentationOutline): Promise<any> => {
+  console.log('Calling generate-slides function...');
+  
+  const { data, error } = await supabase.functions.invoke('generate-slides', {
+    body: { formData, outline }
+  });
+
+  if (error) {
+    console.error('Slides generation error:', error);
+    throw new Error(`Failed to generate slides: ${error.message}`);
+  }
+
+  if (!data) {
+    throw new Error('No slides data returned');
+  }
+
+  console.log('Slides generated successfully');
+  return data;
+};
+
+export const generateEngagementContent = async (formData: PresentationFormData, outline: PresentationOutline): Promise<any> => {
+  console.log('Calling generate-engagement function...');
+  
+  const { data, error } = await supabase.functions.invoke('generate-engagement', {
+    body: { formData, outline }
+  });
+
+  if (error) {
+    console.error('Engagement content generation error:', error);
+    throw new Error(`Failed to generate engagement content: ${error.message}`);
+  }
+
+  if (!data) {
+    throw new Error('No engagement content data returned');
+  }
+
+  console.log('Engagement content generated successfully');
+  return data;
+};
+
 export const generateMarketingContent = async (formData: PresentationFormData): Promise<MarketingContent> => {
   console.log('Calling generate-marketing-content function...');
   
